@@ -67,7 +67,6 @@
 
         forceCrashBtn.addEventListener('click', () => { isForceCrashed = true; });
 
-        // Rare 500x Algorithm (500x ঘনঘন ওঠা রোধ)
         function generateCrashPoint() {
             const rand = Math.random() * 100;
             let crash = 1.00;
@@ -76,12 +75,13 @@
             else if (rand < 65) crash = 1.01 + Math.random() * 0.49; // 60% (1.01x - 1.50x)
             else if (rand < 90) crash = 1.51 + Math.random() * 1.49; // 25% (1.51x - 3.00x)
             else if (rand < 99.5) crash = 3.01 + Math.random() * 16.99; // 9.5% (3.01x - 20.00x)
-            else crash = 20.01 + Math.random() * 479.99; // 0.5% (খুব বিরল ক্ষেত্রে 500x পর্যন্ত)
+            else crash = 20.01 + Math.random() * 479.99; // 0.5% Rare 500x
 
             if (crash > 500) crash = 500.00;
             return parseFloat(crash.toFixed(2));
         }
 
+        // অ্যান্টি-ফ্রিজ সার্ভার অ্যানিমেশন লুপ
         async function runAutoGameLoop() {
             if (gameLoopActive) return;
             gameLoopActive = true;
@@ -92,7 +92,7 @@
                 
                 const waitStart = Date.now();
                 await set(ref(db, 'gameState'), { status: 'waiting', waitStartTime: waitStart });
-                await new Promise(r => setTimeout(r, 3000)); // ফাস্ট ৩ সেকেন্ডের কাউন্টডাউন
+                await new Promise(r => setTimeout(r, 3000));
 
                 const crashPoint = generateCrashPoint();
                 const startTime = Date.now();
@@ -100,7 +100,6 @@
 
                 await set(ref(db, 'gameState'), { status: 'running', crashPoint: crashPoint, startTime: startTime });
 
-                // স্লো-মোশন টাইমিং সমীকরণ (ধীরগতির ফ্লাইট টাইম)
                 let targetDuration = (Math.pow((crashPoint - 1) / 0.05, 1 / 1.3)) * 1000;
                 let elapsed = 0;
 
