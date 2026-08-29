@@ -296,11 +296,11 @@
             }
         });
 
-        // Fast, Slow-Motion & Smooth Floating Animation Engine
+        // স্মুথ লুপ ও ফাস্ট টেক-অফ অ্যানিমেশন ইঞ্জাকশন
         function renderLoop() {
             if (gameStatus === 'waiting' && waitStartTime > 0) {
                 let elapsedSec = (Date.now() - waitStartTime) / 1000;
-                let count = Math.max(1, 5 - Math.floor(elapsedSec * 1.66));
+                let count = Math.max(1, 3 - Math.floor(elapsedSec));
                 
                 multiplierDisplay.innerText = `NEXT ROUND IN ${count}s`;
                 multiplierDisplay.classList.remove('crashed');
@@ -309,11 +309,9 @@
             }
             else if (gameStatus === 'running' && gameStartTime > 0) {
                 let elapsed = (Date.now() - gameStartTime) / 1000;
-                
-                // স্লো-মোশন গতি লজিক (Slower Multiplier Increase Rate)
                 currentLocalMult = parseFloat((1 + Math.pow(elapsed, 1.3) * 0.05).toFixed(2));
 
-                // 500x এ পৌঁছামাত্র ইনস্ট্যান্ট অটো-ক্র্যাশ ট্রিগার
+                // ৫০0x অটো ক্র্যাশ সেফটি
                 if (currentLocalMult >= targetCrashPoint || currentLocalMult >= 500) {
                     currentLocalMult = targetCrashPoint || 500.00;
                     multiplierDisplay.innerText = "FLEW AWAY!\n" + currentLocalMult.toFixed(2) + "x";
@@ -331,13 +329,13 @@
                     betBtn.disabled = true;
 
                     if (animFrameId) cancelAnimationFrame(animFrameId);
-                    return; // অটো-ক্র্যাশ করে সাথে সাথে লুপ বন্ধ করা
+                    return;
                 }
 
                 multiplierDisplay.innerText = currentLocalMult.toFixed(2) + "x";
                 multiplierDisplay.classList.remove('crashed');
                 
-                // রিয়েলিস্টিক ফ্লাইং ও রেড-শ্যাডো ড্রয়িং
+                // ১.৫ সেকেন্ডে ফাস্ট টেক-অফ এবং ফ্লোটিং মোশন
                 drawAviatorFlight(currentLocalMult, elapsed);
 
                 if (betPlacedForNextRound && !hasCashedOut) {
@@ -351,7 +349,7 @@
             }
         }
 
-        // Database Synchronizer
+        // ডাটাবেস লিসেনার (লুপ ফ্রিজ হওয়া রোধ করবে)
         onValue(ref(db, 'gameState'), (snapshot) => {
             const data = snapshot.val();
             if (!data) return;
@@ -438,31 +436,35 @@
             }
         });
 
-        // অরিজিনাল এভিয়েটর রেড-শ্যাডো ও হোভারিং মোশন ইঞ্জেকশন
+        // ১.৫ সেকেন্ডে মিডল টেক-অফ অ্যানিমেশন ফাংশন
         function drawAviatorFlight(mult, timeElapsed) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            let progress = Math.min((mult - 1) / 10, 0.75); // স্ক্রিনের ৭৫% পর্যন্ত কার্ভ ওঠাবে
-            let startX = 0;
-            let startY = canvas.height;
-            let targetX = canvas.width * progress;
-            let targetY = canvas.height - (canvas.height * progress * 0.75);
+            // ১.৫ সেকেন্ডের মধ্যে বিমানকে অতি দ্রুত মাঝখানে নিয়ে আসার লজিক
+            let flightProgress = Math.min(timeElapsed / 1.5, 1.0);
+            
+            // চূড়ান্ত সেন্টার পজিশন (Center Position Logic)
+            let targetX = canvas.width * 0.55;
+            let targetY = canvas.height * 0.40;
 
-            // মাঝপথের পর মসৃণ উপরে-নিচে হোভারিং (Up-Down Floating Wave)
-            let hoverOffset = Math.sin(timeElapsed * 3) * 12;
-            let finalX = targetX;
-            let finalY = targetY + hoverOffset;
+            let finalX = targetX * flightProgress;
+            let finalY = canvas.height - ((canvas.height - targetY) * flightProgress);
 
-            let controlX = finalX * 0.4;
+            // ১.৫ সেকেন্ড পর মাঝখানে পৌঁছালে উপরে-নিচে ভাসবে (Hovering Wave)
+            if (flightProgress >= 1.0) {
+                finalY += Math.sin(timeElapsed * 4) * 10;
+            }
+
+            let controlX = finalX * 0.35;
             let controlY = canvas.height;
 
-            // ১. রেড ট্রান্সপারেন্ট শ্যাডো ফিল (Aura Shadow Gradient)
+            // ১. রেডিয়েন্ট রেড শ্যাডো (Aura Fill)
             let fillGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             fillGradient.addColorStop(0, 'rgba(229, 57, 53, 0.45)');
             fillGradient.addColorStop(1, 'rgba(229, 57, 53, 0.00)');
 
             ctx.beginPath();
-            ctx.moveTo(startX, startY);
+            ctx.moveTo(0, canvas.height);
             ctx.quadraticCurveTo(controlX, controlY, finalX, finalY);
             ctx.lineTo(finalX, canvas.height);
             ctx.closePath();
@@ -473,14 +475,14 @@
             ctx.beginPath();
             ctx.strokeStyle = '#e53935';
             ctx.lineWidth = 4;
-            ctx.moveTo(startX, startY);
+            ctx.moveTo(0, canvas.height);
             ctx.quadraticCurveTo(controlX, controlY, finalX, finalY);
             ctx.stroke();
 
-            // ৩. থ্রিডি প্লেন ড্রয়িং (Plane Rendering at Path End)
+            // ৩. থ্রিডি প্লেন
             ctx.save();
             ctx.translate(finalX, finalY);
-            ctx.rotate(-Math.PI / 8);
+            ctx.rotate(-Math.PI / 10);
 
             ctx.fillStyle = "#e53935";
             ctx.beginPath();
