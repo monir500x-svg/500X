@@ -252,10 +252,9 @@
         let currentBalance = 0;
         let isSignUp = false;
 
-        // গেম স্টেট ভেরিয়েবল
         let currentLocalMult = 1.00;
         let activeBet = 0;
-        let betRoundIndex = -1; // রাউন্ড লক করার ভেরিয়েবল
+        let betRoundIndex = -1;
         let hasCashedOut = false;
         let cashedMultiplier = 0;
         let cashedAmount = 0;
@@ -351,7 +350,7 @@
             }
         });
 
-        // ফিক্সড ডাইনামিক ক্র্যাশ পয়েন্ট অ্যালগরিদম
+        // ক্র্যাশ পয়েন্ট জেনারেটর
         function getDeterministicCrashPoint(roundIndex) {
             let hash = Math.sin(roundIndex * 12.9898 + 78.233) * 43758.5453;
             let rand = hash - Math.floor(hash);
@@ -365,15 +364,15 @@
             return parseFloat(crash.toFixed(2));
         }
 
-        // সময় থেকে মাল্টিপ্লায়ার বের করার একক ফর্মুলা (সমস্যা ফিক্স করার প্রধান লজিক)
+        // সময় থেকে মাল্টিপ্লায়ার বের করার নিখুঁত সুত্র
         function calculateMultiplierFromTime(seconds) {
-            return parseFloat((1.00 + Math.pow(seconds, 1.4) * 0.15).toFixed(2));
+            return parseFloat((1.00 + Math.pow(seconds, 1.35) * 0.15).toFixed(2));
         }
 
-        // মাল্টিপ্লায়ার থেকে সময় বের করার বিপরীত ফর্মুলা
+        // মাল্টিপ্লায়ার থেকে সময় বের করার সুত্র (যাতে সময় এবং মাল্টিপ্লায়ার ১০০% সিঙ্ক থাকে)
         function calculateTimeFromMultiplier(mult) {
             if (mult <= 1.00) return 0;
-            return Math.pow((mult - 1.00) / 0.15, 1 / 1.4);
+            return Math.pow((mult - 1.00) / 0.15, 1 / 1.35);
         }
 
         function renderHistoryUI() {
@@ -421,10 +420,10 @@
             `;
         }
 
-        // মাস্টার গেম লুপ
+        // মাস্টার লুপ (একদম ১০০% সিঙ্ক রাখা হয়েছে)
         function masterGameLoop() {
-            const CYCLE_DURATION = 18000; // প্রতি রাউন্ডের মোট সময়
-            const WAIT_DURATION = 3000;  // ওয়েটিং ফেজ ৩ সেকেন্ড
+            const CYCLE_DURATION = 18000;
+            const WAIT_DURATION = 3000;
 
             const now = Date.now();
             const currentRoundIndex = Math.floor(now / CYCLE_DURATION);
@@ -433,7 +432,6 @@
             const targetCrashPoint = getDeterministicCrashPoint(currentRoundIndex);
             const totalFlightTimeNeeded = calculateTimeFromMultiplier(targetCrashPoint);
 
-            // নতুন রাউন্ড শনাক্ত হলে রিসেট
             if (currentRoundIndex !== lastProcessedRound) {
                 if (lastProcessedRound !== -1) {
                     let prevCrash = getDeterministicCrashPoint(lastProcessedRound);
@@ -484,9 +482,9 @@
             else {
                 let flyElapsed = (cycleElapsed - WAIT_DURATION) / 1000;
 
-                // ক্র্যাশ পয়েন্ট এবং টাইমিং এর সিঙ্ক
+                // যদি ওড়ার সময় পার হয়ে যায়, তাহলে ঠিক targetCrashPoint-এ ক্র্যাশ হবে
                 if (flyElapsed >= totalFlightTimeNeeded) {
-                    currentLocalMult = targetCrashPoint;
+                    currentLocalMult = targetCrashPoint; // কোনো অমিল থাকবে না
                     multiplierDisplay.innerText = "FLEW AWAY!\n" + targetCrashPoint.toFixed(2) + "x";
                     multiplierDisplay.classList.add('crashed');
 
@@ -532,7 +530,7 @@
 
         masterGameLoop();
 
-        // বেট এবং ক্যাশআউট হ্যান্ডলার
+        // বেট ও ক্যাশআউট বাটনের লজিক
         betBtn.addEventListener('click', async () => {
             if (!currentUser) return alert("Please Login First!");
 
@@ -542,7 +540,6 @@
             const cycleElapsed = now % CYCLE_DURATION;
             const currentRoundIndex = Math.floor(now / CYCLE_DURATION);
 
-            // ১. বেটিং লজিক
             if (cycleElapsed < WAIT_DURATION) {
                 const targetRoundIndex = currentRoundIndex;
 
@@ -584,7 +581,6 @@
                     isProcessingBet = false;
                 }
             } 
-            // ২. ক্যাশআউট লজিক
             else if (cycleElapsed >= WAIT_DURATION && betRoundIndex === currentRoundIndex && !hasCashedOut) {
                 const targetCrashPoint = getDeterministicCrashPoint(currentRoundIndex);
                 const totalFlightTimeNeeded = calculateTimeFromMultiplier(targetCrashPoint);
@@ -609,30 +605,31 @@
             }
         });
 
-        // ক্যানভাস ডাইনামিক ড্রয়িং
-        function drawAviatorFlight(mult, timeElapsed, totalDuration) {
+        // মিডল জোনে বিমান ওড়ার অ্যানিমেশন
+        function drawAviatorFlight(mult, timeElapsed, totalDurationNeeded) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let flightProgress = Math.min(timeElapsed / Math.max(totalDuration, 1), 1.0);
             
-            let targetX = canvas.width * 0.75;
-            let targetY = canvas.height * 0.25;
+            let flightProgress = Math.min(timeElapsed / Math.max(totalDurationNeeded, 0.1), 1.0);
 
-            let finalX = targetX * flightProgress;
-            let finalY = canvas.height - ((canvas.height - targetY) * flightProgress);
+            let startX = 0;
+            let startY = canvas.height;
 
-            if (flightProgress >= 1.0) {
-                finalY += Math.sin(timeElapsed * 5) * 3;
-            }
+            let targetX = canvas.width * (0.15 + 0.55 * flightProgress);
+            let targetY = canvas.height * 0.50; 
 
-            let controlX = finalX * 0.4;
-            let controlY = canvas.height;
+            let waveOffset = Math.sin(timeElapsed * 4) * 10;
+            let finalX = targetX;
+            let finalY = targetY + waveOffset;
+
+            let controlX = finalX * 0.5;
+            let controlY = canvas.height * 0.85;
 
             let fillGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             fillGradient.addColorStop(0, 'rgba(229, 57, 53, 0.45)');
             fillGradient.addColorStop(1, 'rgba(229, 57, 53, 0.00)');
 
             ctx.beginPath();
-            ctx.moveTo(0, canvas.height);
+            ctx.moveTo(startX, startY);
             ctx.quadraticCurveTo(controlX, controlY, finalX, finalY);
             ctx.lineTo(finalX, canvas.height);
             ctx.closePath();
@@ -642,13 +639,15 @@
             ctx.beginPath();
             ctx.strokeStyle = '#e53935';
             ctx.lineWidth = 3;
-            ctx.moveTo(0, canvas.height);
+            ctx.moveTo(startX, startY);
             ctx.quadraticCurveTo(controlX, controlY, finalX, finalY);
             ctx.stroke();
 
             ctx.save();
             ctx.translate(finalX, finalY);
-            ctx.rotate(-Math.PI / 10);
+            
+            let angle = -Math.PI / 16 + (Math.sin(timeElapsed * 4) * 0.05);
+            ctx.rotate(angle);
 
             ctx.fillStyle = "#e53935";
             ctx.beginPath();
@@ -660,7 +659,6 @@
             ctx.restore();
         }
 
-        // মোডাল হ্যান্ডলিং
         document.getElementById('open-deposit-btn').onclick = () => depositModal.classList.remove('hidden');
         document.getElementById('close-dep-btn').onclick = () => depositModal.classList.add('hidden');
         document.getElementById('open-withdraw-btn').onclick = () => withdrawModal.classList.remove('hidden');
