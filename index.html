@@ -17,11 +17,10 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        
-        /* নো-স্ক্রোল লেআউট সেটআপ */
+
         html, body { 
-            height: 100%; 
-            width: 100%; 
+            height: 100vh; 
+            width: 100vw; 
             overflow: hidden; 
             background-color: var(--bg-color); 
             color: var(--text-color); 
@@ -40,7 +39,7 @@
 
         .logo { font-size: 0.9rem; font-weight: bold; color: var(--accent-red); white-space: nowrap; }
         .user-info { display: flex; align-items: center; gap: 6px; }
-        #user-email-display { font-size: 0.7rem; color: var(--text-dim); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #user-email-display { font-size: 0.7rem; color: var(--text-dim); max-width: 85px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         .balance-box { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--accent-green); border-radius: 5px; padding: 2px 6px; font-size: 0.75rem; }
         .balance-amount { color: var(--accent-green); font-weight: bold; }
@@ -50,20 +49,15 @@
         .btn-withdraw { background: #fb8c00; }
         .btn-logout { background: #546e7a; }
 
-        /* প্রধান গেমের ২ কলাম বা ১ কলাম লেআউট */
         .container { 
             display: flex; flex-direction: column; gap: 6px; 
-            flex: 1; margin-top: 6px; overflow: hidden; 
-        }
-
-        @media (min-width: 650px) {
-            .container { display: grid; grid-template-columns: 2.2fr 1fr; }
+            flex: 1; margin-top: 6px; overflow: hidden; height: calc(100vh - 54px);
         }
 
         .glass-card { 
             background: var(--card-bg); 
             border: 1px solid var(--glass-border); 
-            border-radius: 8px; padding: 8px; 
+            border-radius: 8px; padding: 6px; 
             display: flex; flex-direction: column; 
             height: 100%; overflow: hidden;
         }
@@ -71,7 +65,7 @@
         .history-bar {
             display: flex; gap: 4px; overflow-x: auto;
             padding-bottom: 4px; margin-bottom: 4px;
-            scrollbar-width: none; flex-shrink: 0; height: 26px;
+            scrollbar-width: none; flex-shrink: 0; height: 24px;
         }
         .history-bar::-webkit-scrollbar { display: none; }
         .history-item {
@@ -84,23 +78,25 @@
         .history-item.mid { color: #c084fc; }
         .history-item.high { color: #ffd700; border-color: #ffd700; }
 
-        /* ফ্লুইড গেম ডিসপ্লে স্ক্রিন */
         .game-display {
-            position: relative; flex: 1; width: 100%;
+            position: relative; 
+            height: 42%; 
+            width: 100%;
             background: radial-gradient(circle at bottom left, #1a233a 0%, #0b0e14 70%);
             border-radius: 6px; overflow: hidden; 
             display: flex; justify-content: center; align-items: center;
+            flex-shrink: 0;
         }
 
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .multiplier-text { font-size: 1.6rem; font-weight: 800; z-index: 2; text-shadow: 0 0 15px rgba(0, 0, 0, 0.8); text-align: center; }
+        .multiplier-text { font-size: 1.5rem; font-weight: 800; z-index: 2; text-shadow: 0 0 15px rgba(0, 0, 0, 0.8); text-align: center; }
         .multiplier-text.crashed { color: var(--accent-red); }
 
         .cashout-banner {
-            position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+            position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
             background: linear-gradient(135deg, #43a047, #2e7d32);
             color: white; padding: 2px 10px; border-radius: 10px;
-            font-size: 0.7rem; font-weight: bold; z-index: 10; white-space: nowrap;
+            font-size: 0.68rem; font-weight: bold; z-index: 10; white-space: nowrap;
         }
 
         .controls-panel { margin-top: 6px; display: flex; gap: 6px; align-items: flex-end; flex-shrink: 0; }
@@ -113,8 +109,26 @@
         .btn-cashout { background: var(--accent-yellow); color: #000; }
         .btn-waiting { background: #546e7a; cursor: not-allowed; }
 
-        .sidebar { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
-        @media (max-width: 649px) { .sidebar { display: none; } } /* মোবাইল স্ক্রিনে বাড়তি সাইডবার হাইড রাখা হলো স্ক্রোল বন্ধের স্বার্থে */
+        .live-bets-container {
+            margin-top: 6px; flex: 1; background: rgba(0,0,0,0.3);
+            border-radius: 6px; border: 1px solid var(--glass-border);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .live-bets-header {
+            background: rgba(255,255,255,0.03); padding: 4px 8px;
+            font-size: 0.65rem; color: var(--text-dim); font-weight: bold;
+            display: grid; grid-template-columns: 2fr 1fr 1fr; border-bottom: 1px solid var(--glass-border);
+        }
+        .live-bets-list { flex: 1; overflow-y: auto; scrollbar-width: none; }
+        .live-bets-list::-webkit-scrollbar { display: none; }
+        .live-bet-row {
+            display: grid; grid-template-columns: 2fr 1fr 1fr;
+            padding: 5px 8px; font-size: 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.02);
+            align-items: center; font-weight: 500;
+        }
+        .live-bet-row.cashed { background: rgba(67, 160, 71, 0.15); color: #81c784; }
+        .live-bet-row.lost { background: rgba(229, 57, 53, 0.15); color: #ef9a9a; }
+        .no-bet-text { text-align: center; padding: 10px; font-size: 0.7rem; color: var(--text-dim); }
 
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 100; }
         .hidden { display: none !important; }
@@ -153,14 +167,15 @@
                 </div>
                 <button class="btn btn-action btn-bet" id="bet-btn">BET NEXT ROUND</button>
             </div>
-        </div>
 
-        <div class="sidebar">
-            <div class="glass-card">
-                <h3 style="font-size: 0.8rem;">Stats</h3>
-                <div style="display: flex; gap: 8px; margin-top: 4px;">
-                    <div>Games: <b id="games-count">0</b></div>
-                    <div>Wins: <b id="wins-count">0</b></div>
+            <div class="live-bets-container">
+                <div class="live-bets-header">
+                    <span>User</span>
+                    <span>Bet</span>
+                    <span>Status / Win</span>
+                </div>
+                <div class="live-bets-list" id="live-bets-list">
+                    <div class="no-bet-text">No active bet for this round</div>
                 </div>
             </div>
         </div>
@@ -241,9 +256,10 @@
         let activeBet = 0;
         let betPlacedForNextRound = false;
         let hasCashedOut = false;
+        let cashedMultiplier = 0;
+        let cashedAmount = 0;
         let lastProcessedRound = -1;
 
-        // হিস্টোরি স্টোরেজ
         let historyArray = [];
 
         const authModal = document.getElementById('auth-modal');
@@ -255,14 +271,13 @@
 
         const userEmailDisplay = document.getElementById('user-email-display');
         const balDisplay = document.getElementById('bal');
-        const gamesCountDisplay = document.getElementById('games-count');
-        const winsCountDisplay = document.getElementById('wins-count');
 
         const betBtn = document.getElementById('bet-btn');
         const betInput = document.getElementById('bet-amount');
         const multiplierDisplay = document.getElementById('multiplier-display');
         const cashoutBannerContainer = document.getElementById('cashout-banner-container');
         const historyBar = document.getElementById('history-bar');
+        const liveBetsList = document.getElementById('live-bets-list');
 
         const depositModal = document.getElementById('deposit-modal');
         const withdrawModal = document.getElementById('withdraw-modal');
@@ -323,8 +338,6 @@
                     if (data) {
                         currentBalance = data.balance || 0;
                         balDisplay.innerText = `৳ ${currentBalance.toFixed(2)}`;
-                        if(gamesCountDisplay) gamesCountDisplay.innerText = data.games || 0;
-                        if(winsCountDisplay) winsCountDisplay.innerText = data.wins || 0;
                     } else {
                         update(ref(db, `users/${user.uid}`), { email: user.email, balance: 100, games: 0, wins: 0 });
                     }
@@ -336,14 +349,14 @@
             }
         });
 
-        // হিস্টোরি ফিক্সড অ্যালগরিদম (প্রকৃত ক্র্যাশ পয়েন্ট জেনারেট করবে)
+        // ১. ১০০% সিঙ্ক্রোনাইজড এবং ডেটারমিনিস্টিক ক্র্যাশ অ্যালগরিদম
         function getDeterministicCrashPoint(roundIndex) {
             let hash = Math.sin(roundIndex * 12.9898 + 78.233) * 43758.5453;
             let rand = hash - Math.floor(hash);
 
             let crash = 1.00;
-            if (rand < 0.10) crash = 1.00 + rand * 1.5;
-            else if (rand < 0.65) crash = 1.20 + ((rand - 0.10) / 0.55) * 0.80;
+            if (rand < 0.12) crash = 1.00 + rand * 1.5;
+            else if (rand < 0.65) crash = 1.20 + ((rand - 0.12) / 0.53) * 0.80;
             else if (rand < 0.90) crash = 2.00 + ((rand - 0.65) / 0.25) * 3.00;
             else crash = 5.00 + ((rand - 0.90) / 0.10) * 15.00;
 
@@ -363,6 +376,37 @@
             });
         }
 
+        function renderMyLiveBetUI(isCrashed = false) {
+            if (!betPlacedForNextRound || !currentUser) {
+                liveBetsList.innerHTML = `<div class="no-bet-text">No active bet for this round</div>`;
+                return;
+            }
+
+            let nameDisplay = currentUser.email ? currentUser.email.split('@')[0] : 'You';
+            let statusText = "";
+            let rowClass = "live-bet-row";
+
+            if (hasCashedOut) {
+                statusText = `${cashedMultiplier.toFixed(2)}x (৳${cashedAmount.toFixed(2)})`;
+                rowClass += " cashed";
+            } else if (isCrashed) {
+                statusText = "CRASHED (৳0.00)";
+                rowClass += " lost";
+            } else {
+                let liveWin = (activeBet * currentLocalMult).toFixed(2);
+                statusText = `In Flight (৳${liveWin})`;
+            }
+
+            liveBetsList.innerHTML = `
+                <div class="${rowClass}">
+                    <span>${nameDisplay} (You)</span>
+                    <span>৳${activeBet}</span>
+                    <span>${statusText}</span>
+                </div>
+            `;
+        }
+
+        // ২ & ৩ & ৪. প্রপার টাইমিং, রিয়েল ক্র্যাশ এবং হিস্টোরি সিঙ্ক্রোনাইজেশন লুপ
         function masterGameLoop() {
             const CYCLE_DURATION = 15000;
             const WAIT_DURATION = 3000;
@@ -371,18 +415,19 @@
             const currentRoundIndex = Math.floor(now / CYCLE_DURATION);
             const cycleElapsed = now % CYCLE_DURATION;
 
-            // মূল ক্র্যাশ পয়েন্ট
+            // বর্তমান রাউন্ডের ফিক্সড ক্র্যাশ পয়েন্ট
             const targetCrashPoint = getDeterministicCrashPoint(currentRoundIndex);
 
+            // নতুন রাউন্ডে প্রবেশ করার মুহূর্ত (History আপডেট কেবল রাউন্ড শেষেই হবে)
             if (currentRoundIndex !== lastProcessedRound) {
-                // নতুন রাউন্ড শুরু হলে আগের রাউন্ডের রিয়েল ক্র্যাশ পয়েন্টটি হিস্টোরিতে যোগ
                 if (lastProcessedRound !== -1) {
+                    // শেষ হয়ে যাওয়া আগের রাউন্ডের ঠিক সেই ক্র্যাশ পয়েন্টই হিস্টোরিতে বসবে
                     let prevCrash = getDeterministicCrashPoint(lastProcessedRound);
                     historyArray.unshift(prevCrash);
                     if (historyArray.length > 15) historyArray.pop();
                     renderHistoryUI();
                 } else {
-                    // প্রথম লোডের জন্য বিগত ৩টি রাউন্ডের ডেটা
+                    // পেজ প্রথম লোড হওয়ার সময় আগের রাউন্ডের ইতিহাস তৈরি
                     for(let k = 3; k >= 1; k--) {
                         historyArray.push(getDeterministicCrashPoint(currentRoundIndex - k));
                     }
@@ -391,14 +436,20 @@
 
                 lastProcessedRound = currentRoundIndex;
                 hasCashedOut = false;
+                betPlacedForNextRound = false;
+                cashedMultiplier = 0;
+                cashedAmount = 0;
                 cashoutBannerContainer.innerHTML = '';
             }
 
+            // A. WAITING PHASE
             if (cycleElapsed < WAIT_DURATION) {
                 let waitLeft = Math.ceil((WAIT_DURATION - cycleElapsed) / 1000);
                 multiplierDisplay.innerText = `NEXT ROUND IN ${waitLeft}s`;
                 multiplierDisplay.classList.remove('crashed');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                renderMyLiveBetUI(false);
 
                 if (betPlacedForNextRound) {
                     betBtn.innerText = "BET PLACED";
@@ -410,28 +461,33 @@
                     betBtn.disabled = false;
                 }
             } 
+            // B. FLYING & CRASH PHASE
             else {
                 let flyElapsed = (cycleElapsed - WAIT_DURATION) / 1000;
                 let calculatedMult = parseFloat((1 + Math.pow(flyElapsed, 1.35) * 0.12).toFixed(2));
 
+                // ক্র্যাশ পয়েন্ট ছুয়ে যাওয়া বা অতিক্রম করার পর ফিক্সড স্টপ
                 if (calculatedMult >= targetCrashPoint) {
-                    currentLocalMult = targetCrashPoint;
+                    currentLocalMult = targetCrashPoint; // কোনো বাড়তি মান দেখাবে না
                     multiplierDisplay.innerText = "FLEW AWAY!\n" + targetCrashPoint.toFixed(2) + "x";
                     multiplierDisplay.classList.add('crashed');
 
                     if (betPlacedForNextRound && !hasCashedOut && currentUser) {
                         runTransaction(ref(db, `users/${currentUser.uid}/games`), (g) => (g || 0) + 1);
-                        betPlacedForNextRound = false;
                     }
+
+                    renderMyLiveBetUI(true);
 
                     betBtn.innerText = "WAITING...";
                     betBtn.className = "btn btn-action btn-waiting";
                     betBtn.disabled = true;
                 } else {
-                    currentLocalMult = calculatedMult;
+                    // আকাশে ওড়ার সময় মানটি নিয়ন্ত্রণ
+                    currentLocalMult = Math.min(calculatedMult, targetCrashPoint);
                     multiplierDisplay.innerText = currentLocalMult.toFixed(2) + "x";
                     multiplierDisplay.classList.remove('crashed');
 
+                    renderMyLiveBetUI(false);
                     drawAviatorFlight(currentLocalMult, flyElapsed);
 
                     if (betPlacedForNextRound && !hasCashedOut) {
@@ -471,22 +527,24 @@
                     betBtn.innerText = "BET PLACED";
                     betBtn.className = "btn btn-action btn-waiting";
                     betBtn.disabled = true;
+                    renderMyLiveBetUI(false);
                 }
             } 
             else if (cycleElapsed >= WAIT_DURATION && betPlacedForNextRound && !hasCashedOut) {
                 hasCashedOut = true;
-                const winMultiplier = currentLocalMult;
-                const winAmount = activeBet * winMultiplier;
+                cashedMultiplier = currentLocalMult;
+                cashedAmount = activeBet * cashedMultiplier;
 
-                betBtn.innerText = `CASHED OUT\n(৳${winAmount.toFixed(2)})`;
+                betBtn.innerText = `CASHED OUT\n(৳${cashedAmount.toFixed(2)})`;
                 betBtn.className = "btn btn-action btn-waiting";
                 betBtn.disabled = true;
 
-                await runTransaction(ref(db, `users/${currentUser.uid}/balance`), (b) => (b || 0) + winAmount);
+                await runTransaction(ref(db, `users/${currentUser.uid}/balance`), (b) => (b || 0) + cashedAmount);
                 await runTransaction(ref(db, `users/${currentUser.uid}/wins`), (w) => (w || 0) + 1);
                 await runTransaction(ref(db, `users/${currentUser.uid}/games`), (g) => (g || 0) + 1);
 
-                cashoutBannerContainer.innerHTML = `<div class="cashout-banner">CASHED OUT ৳${winAmount.toFixed(2)} (${winMultiplier.toFixed(2)}x)</div>`;
+                cashoutBannerContainer.innerHTML = `<div class="cashout-banner">CASHED OUT ৳${cashedAmount.toFixed(2)} (${cashedMultiplier.toFixed(2)}x)</div>`;
+                renderMyLiveBetUI(false);
             }
         });
 
