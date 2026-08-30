@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aviator Pro - Ultimate Edition</title>
+    <title>Aviator Pro - Official Replica</title>
     <style>
         :root {
             --bg-color: #0e121b;
@@ -85,7 +85,7 @@
 
         .game-display {
             position: relative; 
-            height: 48%; 
+            height: 52%; 
             width: 100%;
             background: radial-gradient(circle at bottom left, #121926 0%, #080b10 80%);
             border-radius: 8px; overflow: hidden; 
@@ -95,7 +95,7 @@
         }
 
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .multiplier-text { font-size: 2.2rem; font-weight: 900; z-index: 2; text-shadow: 0 0 20px rgba(0, 0, 0, 0.9); text-align: center; letter-spacing: -0.5px; }
+        .multiplier-text { font-size: 2.5rem; font-weight: 900; z-index: 2; text-shadow: 0 0 20px rgba(0, 0, 0, 0.9); text-align: center; letter-spacing: -0.5px; }
         .multiplier-text.crashed { color: var(--accent-red); }
 
         .cashout-banner {
@@ -116,7 +116,6 @@
         .input-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
         .input-group label { font-size: 0.68rem; color: var(--text-dim); font-weight: 500; }
         .input-group input { background: rgba(0, 0, 0, 0.6); border: 1px solid var(--glass-border); color: white; padding: 8px; border-radius: 6px; font-size: 0.85rem; width: 100%; outline: none; }
-        .input-group input:focus { border-color: #1e88e5; }
 
         .btn-action { height: 42px; font-size: 0.8rem; flex: 1.2; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 800; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-bet { background: linear-gradient(180deg, #43a047, #2e7d32); color: white; }
@@ -364,15 +363,16 @@
             }
         });
 
+        // Provably Fair Crash Algorithm
         function getDeterministicCrashPoint(roundIndex) {
             let hash = Math.sin(roundIndex * 12.9898 + 78.233) * 43758.5453;
             let rand = hash - Math.floor(hash);
 
             let crash = 1.00;
-            if (rand < 0.10) crash = 1.00 + (rand * 1.2);
-            else if (rand < 0.60) crash = 1.15 + ((rand - 0.10) / 0.50) * 0.85;
-            else if (rand < 0.88) crash = 2.00 + ((rand - 0.60) / 0.28) * 3.00;
-            else crash = 5.00 + ((rand - 0.88) / 0.12) * 20.00;
+            if (rand < 0.12) crash = 1.00 + (rand * 0.8); 
+            else if (rand < 0.65) crash = 1.10 + ((rand - 0.12) / 0.53) * 0.90; 
+            else if (rand < 0.90) crash = 2.00 + ((rand - 0.65) / 0.25) * 3.00; 
+            else crash = 5.00 + ((rand - 0.90) / 0.10) * 20.00; 
 
             return parseFloat(crash.toFixed(2));
         }
@@ -431,13 +431,13 @@
             `;
         }
 
-        // আসল স্প্রাইব এভিয়েটর ডাইনামিক ক্যামেরা ও জুম লজিক
+        // আসল স্প্রাইব এভিয়েটরের মতো রিয়েল-টাইম ক্র্যাশ ও ফ্লাই-অ্যাওয়ে অ্যানিমেশন
         function drawAviatorFlight(mult, timeElapsed, totalDurationNeeded) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             let isCrashed = (timeElapsed >= totalDurationNeeded);
 
-            // ১. ব্যাকগ্রাউন্ড সানবার্স্ট সানরে
+            // ১. ব্যাকগ্রাউন্ড সানবার্স্ট
             let centerX = canvas.width / 2;
             let centerY = canvas.height / 2;
             ctx.save();
@@ -451,40 +451,36 @@
             }
             ctx.restore();
 
-            // ২. ডাইনামিক পজিশনিং (Dynamic Scale so it never stops or gets stuck at corners)
+            // ২. ডাইনামিক ট্র্যাজেক্টরি (কোনো ফিক্সড ম্যাক্সিমাম কর্নার নেই)
             let startX = canvas.width * 0.05;
             let startY = canvas.height * 0.90;
 
-            // টার্গেট পজিশন স্ক্রিনের ৮০% পর্যন্ত যাবে, তারপর জুম/ভাসমান ইফেক্ট শুরু হবে
-            let maxX = canvas.width * 0.72;
-            let maxY = canvas.height * 0.25;
+            // সময় বাড়ার সাথে সাথে প্লেন স্ক্রিনের উপরের দিকে উঠতে থাকবে
+            let currentX = startX + (timeElapsed * (canvas.width * 0.18));
+            let currentY = startY - (timeElapsed * (canvas.height * 0.15));
 
-            // প্রোগ্রেস লজিক: শুরুতে দ্রুত উঠবে, পরে ফ্ল্যাট হয়ে ভেসে থাকবে
-            let normProgress = Math.min(timeElapsed / 3.5, 1.0); 
-            
-            let currentX = startX + (maxX - startX) * Math.pow(normProgress, 0.7);
-            let currentY = startY - (startY - maxY) * Math.pow(normProgress, 0.65);
+            // ক্যামেরা ট্র্যাকিং: প্লেন যেন স্ক্রিনের বেশি বাইরে চলে না যায়, তার জন্য স্কেলিং
+            let overflowX = Math.max(0, currentX - (canvas.width * 0.75));
+            let overflowY = Math.max(0, (canvas.height * 0.20) - currentY);
 
-            // আরও বেশি সময় ধরে উড়ালে হালকা দোলাচল এবং ওপর-নিচ মোশন তৈরি হবে
-            let waveOffset = Math.sin(timeElapsed * 5) * 6;
-            
+            currentX -= overflowX * 0.85;
+            currentY += overflowY * 0.85;
+
             if (isCrashed) {
-                // ক্র্যাশ করলে দ্রুত ডান দিকে স্ক্রিনের বাইরে উড়ে চলে যাবে
+                // ক্র্যাশ টাইম আসার সাথে সাথে প্লেনটি যেখানেই থাকুক না কেন দ্রুত উড়ে চলে যাবে
                 let crashTime = (timeElapsed - totalDurationNeeded);
-                currentX += crashTime * canvas.width * 1.8;
-                currentY -= crashTime * canvas.height * 1.2;
-            } else {
-                currentY += waveOffset;
+                currentX += crashTime * canvas.width * 2.2;
+                currentY -= crashTime * canvas.height * 1.5;
             }
 
-            let controlX = startX + (currentX - startX) * 0.5;
+            let controlX = startX + (currentX - startX) * 0.4;
             let controlY = startY;
 
-            // ৩. রেড ফিল ও ট্র্যাকিং কার্ভ ড্রয়িং
+            // ৩. রেড কার্ভ ফিল
             if (currentX <= canvas.width + 100 && currentY >= -100) {
                 let fillGradient = ctx.createLinearGradient(0, startY, 0, Math.max(currentY, 0));
                 fillGradient.addColorStop(0, 'rgba(229, 57, 53, 0.00)');
-                fillGradient.addColorStop(1, 'rgba(229, 57, 53, 0.50)');
+                fillGradient.addColorStop(1, 'rgba(229, 57, 53, 0.55)');
 
                 ctx.beginPath();
                 ctx.moveTo(startX, startY);
@@ -503,16 +499,15 @@
                 ctx.stroke();
             }
 
-            // ৪. এয়ারপ্লেন অবজেক্ট ড্রয়িং
-            if (currentX <= canvas.width + 60 && currentY >= -60) {
+            // ৪. লাল প্লেন
+            if (currentX <= canvas.width + 80 && currentY >= -80) {
                 ctx.save();
                 ctx.translate(currentX, currentY);
 
-                // প্লেনের মুখ সবসময় উড্ডয়নমুখী হালকা কাত হয়ে থাকবে
-                let tiltAngle = -Math.PI / 12 + (Math.cos(timeElapsed * 5) * 0.03);
+                let tiltAngle = -Math.PI / 10 + (Math.sin(timeElapsed * 6) * 0.02);
                 ctx.rotate(tiltAngle);
 
-                // প্লেনের বডি
+                // বডি
                 ctx.fillStyle = "#e53935";
                 ctx.beginPath();
                 ctx.moveTo(18, 0);
