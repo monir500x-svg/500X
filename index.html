@@ -252,13 +252,15 @@
         let currentBalance = 0;
         let isSignUp = false;
 
+        // গেম স্টেট ভেরিয়েবল
         let currentLocalMult = 1.00;
         let activeBet = 0;
-        let betPlacedForNextRound = false;
+        let betRoundIndex = -1; // রাউন্ড লক করার ভেরিয়েবল
         let hasCashedOut = false;
         let cashedMultiplier = 0;
         let cashedAmount = 0;
         let lastProcessedRound = -1;
+        let isProcessingBet = false;
 
         let historyArray = [];
 
@@ -349,18 +351,29 @@
             }
         });
 
-        // ১. ১০০% সিঙ্ক্রোনাইজড এবং ডেটারমিনিস্টিক ক্র্যাশ অ্যালগরিদম
+        // ফিক্সড ডাইনামিক ক্র্যাশ পয়েন্ট অ্যালগরিদম
         function getDeterministicCrashPoint(roundIndex) {
             let hash = Math.sin(roundIndex * 12.9898 + 78.233) * 43758.5453;
             let rand = hash - Math.floor(hash);
 
             let crash = 1.00;
-            if (rand < 0.12) crash = 1.00 + rand * 1.5;
-            else if (rand < 0.65) crash = 1.20 + ((rand - 0.12) / 0.53) * 0.80;
-            else if (rand < 0.90) crash = 2.00 + ((rand - 0.65) / 0.25) * 3.00;
-            else crash = 5.00 + ((rand - 0.90) / 0.10) * 15.00;
+            if (rand < 0.10) crash = 1.00 + (rand * 1.2);
+            else if (rand < 0.60) crash = 1.15 + ((rand - 0.10) / 0.50) * 0.85;
+            else if (rand < 0.88) crash = 2.00 + ((rand - 0.60) / 0.28) * 3.00;
+            else crash = 5.00 + ((rand - 0.88) / 0.12) * 20.00;
 
             return parseFloat(crash.toFixed(2));
+        }
+
+        // সময় থেকে মাল্টিপ্লায়ার বের করার একক ফর্মুলা (সমস্যা ফিক্স করার প্রধান লজিক)
+        function calculateMultiplierFromTime(seconds) {
+            return parseFloat((1.00 + Math.pow(seconds, 1.4) * 0.15).toFixed(2));
+        }
+
+        // মাল্টিপ্লায়ার থেকে সময় বের করার বিপরীত ফর্মুলা
+        function calculateTimeFromMultiplier(mult) {
+            if (mult <= 1.00) return 0;
+            return Math.pow((mult - 1.00) / 0.15, 1 / 1.4);
         }
 
         function renderHistoryUI() {
@@ -376,8 +389,10 @@
             });
         }
 
-        function renderMyLiveBetUI(isCrashed = false) {
-            if (!betPlacedForNextRound || !currentUser) {
+        function renderMyLiveBetUI(currentRoundIndex, isCrashed = false) {
+            const hasActiveBetThisRound = (betRoundIndex === currentRoundIndex);
+
+            if (!hasActiveBetThisRound || !currentUser) {
                 liveBetsList.innerHTML = `<div class="no-bet-text">No active bet for this round</div>`;
                 return;
             }
@@ -406,28 +421,26 @@
             `;
         }
 
-        // ২ & ৩ & ৪. প্রপার টাইমিং, রিয়েল ক্র্যাশ এবং হিস্টোরি সিঙ্ক্রোনাইজেশন লুপ
+        // মাস্টার গেম লুপ
         function masterGameLoop() {
-            const CYCLE_DURATION = 15000;
-            const WAIT_DURATION = 3000;
+            const CYCLE_DURATION = 18000; // প্রতি রাউন্ডের মোট সময়
+            const WAIT_DURATION = 3000;  // ওয়েটিং ফেজ ৩ সেকেন্ড
 
             const now = Date.now();
             const currentRoundIndex = Math.floor(now / CYCLE_DURATION);
             const cycleElapsed = now % CYCLE_DURATION;
 
-            // বর্তমান রাউন্ডের ফিক্সড ক্র্যাশ পয়েন্ট
             const targetCrashPoint = getDeterministicCrashPoint(currentRoundIndex);
+            const totalFlightTimeNeeded = calculateTimeFromMultiplier(targetCrashPoint);
 
-            // নতুন রাউন্ডে প্রবেশ করার মুহূর্ত (History আপডেট কেবল রাউন্ড শেষেই হবে)
+            // নতুন রাউন্ড শনাক্ত হলে রিসেট
             if (currentRoundIndex !== lastProcessedRound) {
                 if (lastProcessedRound !== -1) {
-                    // শেষ হয়ে যাওয়া আগের রাউন্ডের ঠিক সেই ক্র্যাশ পয়েন্টই হিস্টোরিতে বসবে
                     let prevCrash = getDeterministicCrashPoint(lastProcessedRound);
                     historyArray.unshift(prevCrash);
                     if (historyArray.length > 15) historyArray.pop();
                     renderHistoryUI();
                 } else {
-                    // পেজ প্রথম লোড হওয়ার সময় আগের রাউন্ডের ইতিহাস তৈরি
                     for(let k = 3; k >= 1; k--) {
                         historyArray.push(getDeterministicCrashPoint(currentRoundIndex - k));
                     }
@@ -436,64 +449,79 @@
 
                 lastProcessedRound = currentRoundIndex;
                 hasCashedOut = false;
-                betPlacedForNextRound = false;
                 cashedMultiplier = 0;
                 cashedAmount = 0;
                 cashoutBannerContainer.innerHTML = '';
+                
+                if (betRoundIndex < currentRoundIndex) {
+                    betRoundIndex = -1;
+                    activeBet = 0;
+                }
             }
 
-            // A. WAITING PHASE
+            const isBetActiveForCurrentRound = (betRoundIndex === currentRoundIndex);
+
+            // ১. WAITING PHASE
             if (cycleElapsed < WAIT_DURATION) {
                 let waitLeft = Math.ceil((WAIT_DURATION - cycleElapsed) / 1000);
                 multiplierDisplay.innerText = `NEXT ROUND IN ${waitLeft}s`;
                 multiplierDisplay.classList.remove('crashed');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                renderMyLiveBetUI(false);
+                renderMyLiveBetUI(currentRoundIndex, false);
 
-                if (betPlacedForNextRound) {
+                if (isBetActiveForCurrentRound) {
                     betBtn.innerText = "BET PLACED";
                     betBtn.className = "btn btn-action btn-waiting";
                     betBtn.disabled = true;
                 } else {
-                    betBtn.innerText = "BET NEXT ROUND";
+                    betBtn.innerText = isProcessingBet ? "PROCESSING..." : "BET NEXT ROUND";
                     betBtn.className = "btn btn-action btn-bet";
-                    betBtn.disabled = false;
+                    betBtn.disabled = isProcessingBet;
                 }
             } 
-            // B. FLYING & CRASH PHASE
+            // ২. FLYING & CRASH PHASE
             else {
                 let flyElapsed = (cycleElapsed - WAIT_DURATION) / 1000;
-                let calculatedMult = parseFloat((1 + Math.pow(flyElapsed, 1.35) * 0.12).toFixed(2));
 
-                // ক্র্যাশ পয়েন্ট ছুয়ে যাওয়া বা অতিক্রম করার পর ফিক্সড স্টপ
-                if (calculatedMult >= targetCrashPoint) {
-                    currentLocalMult = targetCrashPoint; // কোনো বাড়তি মান দেখাবে না
+                // ক্র্যাশ পয়েন্ট এবং টাইমিং এর সিঙ্ক
+                if (flyElapsed >= totalFlightTimeNeeded) {
+                    currentLocalMult = targetCrashPoint;
                     multiplierDisplay.innerText = "FLEW AWAY!\n" + targetCrashPoint.toFixed(2) + "x";
                     multiplierDisplay.classList.add('crashed');
 
-                    if (betPlacedForNextRound && !hasCashedOut && currentUser) {
+                    if (isBetActiveForCurrentRound && !hasCashedOut && currentUser) {
                         runTransaction(ref(db, `users/${currentUser.uid}/games`), (g) => (g || 0) + 1);
                     }
 
-                    renderMyLiveBetUI(true);
+                    renderMyLiveBetUI(currentRoundIndex, true);
 
                     betBtn.innerText = "WAITING...";
                     betBtn.className = "btn btn-action btn-waiting";
                     betBtn.disabled = true;
-                } else {
-                    // আকাশে ওড়ার সময় মানটি নিয়ন্ত্রণ
-                    currentLocalMult = Math.min(calculatedMult, targetCrashPoint);
+                } 
+                else {
+                    currentLocalMult = calculateMultiplierFromTime(flyElapsed);
+                    if (currentLocalMult > targetCrashPoint) currentLocalMult = targetCrashPoint;
+
                     multiplierDisplay.innerText = currentLocalMult.toFixed(2) + "x";
                     multiplierDisplay.classList.remove('crashed');
 
-                    renderMyLiveBetUI(false);
-                    drawAviatorFlight(currentLocalMult, flyElapsed);
+                    renderMyLiveBetUI(currentRoundIndex, false);
+                    drawAviatorFlight(currentLocalMult, flyElapsed, totalFlightTimeNeeded);
 
-                    if (betPlacedForNextRound && !hasCashedOut) {
+                    if (isBetActiveForCurrentRound && !hasCashedOut) {
                         const liveWin = (activeBet * currentLocalMult).toFixed(2);
                         betBtn.innerText = `CASH OUT\n(৳${liveWin})`;
                         betBtn.className = "btn btn-action btn-cashout";
+                        betBtn.disabled = false;
+                    } else if (hasCashedOut) {
+                        betBtn.innerText = `CASHED OUT\n(৳${cashedAmount.toFixed(2)})`;
+                        betBtn.className = "btn btn-action btn-waiting";
+                        betBtn.disabled = true;
+                    } else {
+                        betBtn.innerText = "BET NEXT ROUND";
+                        betBtn.className = "btn btn-action btn-bet";
                         betBtn.disabled = false;
                     }
                 }
@@ -504,33 +532,66 @@
 
         masterGameLoop();
 
+        // বেট এবং ক্যাশআউট হ্যান্ডলার
         betBtn.addEventListener('click', async () => {
             if (!currentUser) return alert("Please Login First!");
-            const CYCLE_DURATION = 15000;
-            const WAIT_DURATION = 3000;
-            const cycleElapsed = Date.now() % CYCLE_DURATION;
 
-            if (cycleElapsed < WAIT_DURATION && !betPlacedForNextRound) {
+            const CYCLE_DURATION = 18000;
+            const WAIT_DURATION = 3000;
+            const now = Date.now();
+            const cycleElapsed = now % CYCLE_DURATION;
+            const currentRoundIndex = Math.floor(now / CYCLE_DURATION);
+
+            // ১. বেটিং লজিক
+            if (cycleElapsed < WAIT_DURATION) {
+                const targetRoundIndex = currentRoundIndex;
+
+                if (betRoundIndex === targetRoundIndex) return;
+                if (isProcessingBet) return;
+
                 const betAmt = parseFloat(betInput.value);
-                if (isNaN(betAmt) || betAmt <= 0) return alert("Invalid Bet Amount");
+                if (isNaN(betAmt) || betAmt < 10) return alert("Minimum Bet Amount is ৳10");
                 if (betAmt > currentBalance) return alert("Insufficient Balance!");
 
-                const userBalRef = ref(db, `users/${currentUser.uid}/balance`);
-                const txResult = await runTransaction(userBalRef, (current) => {
-                    if (current >= betAmt) return current - betAmt;
-                });
+                isProcessingBet = true;
+                betBtn.innerText = "PROCESSING...";
+                betBtn.disabled = true;
 
-                if (txResult.committed) {
-                    activeBet = betAmt;
-                    betPlacedForNextRound = true;
-                    hasCashedOut = false;
-                    betBtn.innerText = "BET PLACED";
-                    betBtn.className = "btn btn-action btn-waiting";
-                    betBtn.disabled = true;
-                    renderMyLiveBetUI(false);
+                try {
+                    const userBalRef = ref(db, `users/${currentUser.uid}/balance`);
+                    const txResult = await runTransaction(userBalRef, (current) => {
+                        if (current >= betAmt) {
+                            return current - betAmt;
+                        }
+                    });
+
+                    if (txResult.committed) {
+                        activeBet = betAmt;
+                        betRoundIndex = targetRoundIndex;
+                        hasCashedOut = false;
+                        
+                        betBtn.innerText = "BET PLACED";
+                        betBtn.className = "btn btn-action btn-waiting";
+                        betBtn.disabled = true;
+                        renderMyLiveBetUI(targetRoundIndex, false);
+                    } else {
+                        alert("Transaction failed! Insufficient balance.");
+                    }
+                } catch (err) {
+                    console.error("Bet Placement Error:", err);
+                    alert("Error placing bet. Please try again.");
+                } finally {
+                    isProcessingBet = false;
                 }
             } 
-            else if (cycleElapsed >= WAIT_DURATION && betPlacedForNextRound && !hasCashedOut) {
+            // ২. ক্যাশআউট লজিক
+            else if (cycleElapsed >= WAIT_DURATION && betRoundIndex === currentRoundIndex && !hasCashedOut) {
+                const targetCrashPoint = getDeterministicCrashPoint(currentRoundIndex);
+                const totalFlightTimeNeeded = calculateTimeFromMultiplier(targetCrashPoint);
+                let flyElapsed = (cycleElapsed - WAIT_DURATION) / 1000;
+                
+                if (flyElapsed >= totalFlightTimeNeeded) return;
+
                 hasCashedOut = true;
                 cashedMultiplier = currentLocalMult;
                 cashedAmount = activeBet * cashedMultiplier;
@@ -544,25 +605,26 @@
                 await runTransaction(ref(db, `users/${currentUser.uid}/games`), (g) => (g || 0) + 1);
 
                 cashoutBannerContainer.innerHTML = `<div class="cashout-banner">CASHED OUT ৳${cashedAmount.toFixed(2)} (${cashedMultiplier.toFixed(2)}x)</div>`;
-                renderMyLiveBetUI(false);
+                renderMyLiveBetUI(currentRoundIndex, false);
             }
         });
 
-        function drawAviatorFlight(mult, timeElapsed) {
+        // ক্যানভাস ডাইনামিক ড্রয়িং
+        function drawAviatorFlight(mult, timeElapsed, totalDuration) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let flightProgress = Math.min(timeElapsed / 2.5, 1.0);
+            let flightProgress = Math.min(timeElapsed / Math.max(totalDuration, 1), 1.0);
             
-            let targetX = canvas.width * 0.70;
-            let targetY = canvas.height * 0.30;
+            let targetX = canvas.width * 0.75;
+            let targetY = canvas.height * 0.25;
 
             let finalX = targetX * flightProgress;
             let finalY = canvas.height - ((canvas.height - targetY) * flightProgress);
 
             if (flightProgress >= 1.0) {
-                finalY += Math.sin(timeElapsed * 4) * 4;
+                finalY += Math.sin(timeElapsed * 5) * 3;
             }
 
-            let controlX = finalX * 0.35;
+            let controlX = finalX * 0.4;
             let controlY = canvas.height;
 
             let fillGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -598,6 +660,7 @@
             ctx.restore();
         }
 
+        // মোডাল হ্যান্ডলিং
         document.getElementById('open-deposit-btn').onclick = () => depositModal.classList.remove('hidden');
         document.getElementById('close-dep-btn').onclick = () => depositModal.classList.add('hidden');
         document.getElementById('open-withdraw-btn').onclick = () => withdrawModal.classList.remove('hidden');
