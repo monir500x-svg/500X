@@ -45,7 +45,6 @@
 
         .glass-card { background: var(--card-bg); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; position: relative; }
 
-        /* Multiplier History Top Bar */
         .history-bar {
             display: flex;
             gap: 6px;
@@ -64,8 +63,8 @@
             white-space: nowrap;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .history-item.low { color: #ff5252; }
-        .history-item.mid { color: #9c27b0; }
+        .history-item.low { color: #00e5ff; }
+        .history-item.mid { color: #c084fc; }
         .history-item.high { color: #ffd700; border-color: #ffd700; box-shadow: 0 0 6px rgba(255, 215, 0, 0.3); }
 
         .game-display {
@@ -131,9 +130,7 @@
     <div class="container">
         <div class="main-content">
             <div class="glass-card">
-                <!-- Multiplier History Top Bar -->
                 <div class="history-bar" id="history-bar"></div>
-
                 <div id="cashout-banner-container"></div>
                 <div class="game-display">
                     <canvas id="game-canvas"></canvas>
@@ -166,7 +163,7 @@
         </div>
     </div>
 
-    <!-- Auth Modal -->
+    <!-- Modals -->
     <div class="modal-overlay" id="auth-modal">
         <div class="glass-card modal">
             <h2 id="auth-title">AVIATOR PRO LOGIN</h2>
@@ -182,7 +179,6 @@
         </div>
     </div>
 
-    <!-- Deposit Modal -->
     <div class="modal-overlay hidden" id="deposit-modal">
         <div class="glass-card modal">
             <h2>Deposit Request</h2>
@@ -197,7 +193,6 @@
         </div>
     </div>
 
-    <!-- Withdraw Modal -->
     <div class="modal-overlay hidden" id="withdraw-modal">
         <div class="glass-card modal">
             <h2>Withdraw Request</h2>
@@ -329,33 +324,34 @@
             }
         });
 
-        // ব্যালেন্সড ক্র্যাশ পয়েন্ট লজিক
+        // নিখুঁত র্যান্ডম অ্যালগরিদম (কোনো সিকোয়েন্স মেনে চলবে না)
         function getDeterministicCrashPoint(roundIndex) {
-            let seed = (roundIndex * 9301 + 49297) % 233280;
-            let rand = (seed / 233280) * 100;
-            let crash = 1.00;
+            let hash = Math.sin(roundIndex * 12.9898 + 78.233) * 43758.5453;
+            let rand = hash - Math.floor(hash); // 0.0 to 1.0
 
-            if (rand < 4) {
-                crash = 1.00;
-            } else if (rand < 55) {
-                crash = 1.01 + ((rand - 4) / 51) * 0.99;
-            } else if (rand < 82) {
-                crash = 2.01 + ((rand - 55) / 27) * 2.99;
-            } else if (rand < 94) {
-                crash = 5.01 + ((rand - 82) / 12) * 6.99;
-            } else if (rand < 99) {
-                crash = 12.01 + ((rand - 94) / 5) * 12.99;
+            let crash = 1.00;
+            if (rand < 0.05) {
+                crash = 1.00; // 5% Instant Crash
+            } else if (rand < 0.65) {
+                // 60% Chance: 1.01x - 2.00x
+                crash = 1.01 + ((rand - 0.05) / 0.60) * 0.99;
+            } else if (rand < 0.88) {
+                // 23% Chance: 2.01x - 6.00x
+                crash = 2.01 + ((rand - 0.65) / 0.23) * 3.99;
+            } else if (rand < 0.97) {
+                // 9% Chance: 6.01x - 15.00x
+                crash = 6.01 + ((rand - 0.88) / 0.09) * 8.99;
             } else {
-                crash = 25.01 + ((rand - 99) / 1) * 74.99;
+                // 3% Chance: 15.01x - 100.00x
+                crash = 15.01 + ((rand - 0.97) / 0.03) * 84.99;
             }
 
             return parseFloat(crash.toFixed(2));
         }
 
-        // হিস্ট্রি বার আপডেট (শেষ ১০টি রাউন্ড)
         function renderHistoryBar(currentRoundIndex) {
             historyBar.innerHTML = '';
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 12; i++) {
                 let pastRoundIndex = currentRoundIndex - 1 - i;
                 if (pastRoundIndex < 0) break;
                 
@@ -372,11 +368,9 @@
             }
         }
 
-        // অটোনোমাস ২৪/৭ লুপ
         function masterGameLoop() {
-            const CYCLE_DURATION = 15000; // প্রতি রাউন্ড ১৫ সেকেন্ড
-            const WAIT_DURATION = 3000;   // ৩ সেকেন্ড ওয়েটিং
-            const MAX_FLY_TIME = 10000;   // সর্বোচ্চ ১০ সেকেন্ড ফ্লাইং
+            const CYCLE_DURATION = 15000;
+            const WAIT_DURATION = 3000;
 
             const now = Date.now();
             const currentRoundIndex = Math.floor(now / CYCLE_DURATION);
@@ -391,7 +385,6 @@
                 renderHistoryBar(currentRoundIndex);
             }
 
-            // ১. ওয়েটিং ফেজ
             if (cycleElapsed < WAIT_DURATION) {
                 let waitLeft = Math.ceil((WAIT_DURATION - cycleElapsed) / 1000);
                 multiplierDisplay.innerText = `NEXT ROUND IN ${waitLeft}s`;
@@ -408,17 +401,14 @@
                     betBtn.disabled = false;
                 }
             } 
-            // ২. ফ্লাইং ও ক্র্যাশ ফেজ
             else {
-                let flyElapsed = (cycleElapsed - WAIT_DURATION) / 1000; // কত সেকেন্ড উড়ছে
+                let flyElapsed = (cycleElapsed - WAIT_DURATION) / 1000;
                 let flyStartTime = now - (flyElapsed * 1000);
 
-                // ফ্লাইং টাইমের উপর ভিত্তি করে মসৃণভাবে মাল্টিপ্লায়ার বৃদ্ধি
-                let calculatedMult = parseFloat((1 + Math.pow(flyElapsed, 1.45) * 0.08).toFixed(2));
-                
+                // সময় ও গ্রাফ অ্যানিমেশনের সাথে নিখুঁত সিঙ্ক
+                let calculatedMult = parseFloat((1 + Math.pow(flyElapsed, 1.35) * 0.12).toFixed(2));
                 let isForceCrashed = (lastForceCrashTime >= flyStartTime);
 
-                // যদি মাল্টিপ্লায়ার নির্দিষ্ট ক্র্যাশ পয়েন্ট ছুঁয়ে ফেলে বা এডমিন ক্র্যাশ করায়
                 if (calculatedMult >= targetCrashPoint || isForceCrashed) {
                     currentLocalMult = targetCrashPoint;
                     multiplierDisplay.innerText = "FLEW AWAY!\n" + targetCrashPoint.toFixed(2) + "x";
@@ -496,17 +486,16 @@
 
         function drawAviatorFlight(mult, timeElapsed) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            let flightProgress = Math.min(timeElapsed / 2.0, 1.0);
+            let flightProgress = Math.min(timeElapsed / 2.5, 1.0);
             
-            let targetX = canvas.width * 0.60;
-            let targetY = canvas.height * 0.35;
+            let targetX = canvas.width * 0.65;
+            let targetY = canvas.height * 0.30;
 
             let finalX = targetX * flightProgress;
             let finalY = canvas.height - ((canvas.height - targetY) * flightProgress);
 
             if (flightProgress >= 1.0) {
-                finalY += Math.sin(timeElapsed * 4) * 8;
+                finalY += Math.sin(timeElapsed * 4) * 6;
             }
 
             let controlX = finalX * 0.35;
