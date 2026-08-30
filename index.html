@@ -3,205 +3,601 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Portal - Login System</title>
+    <title>Aviator Pro Multiplayer</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --bg-color: #0b0e14;
+            --card-bg: rgba(22, 27, 38, 0.85);
+            --accent-red: #e53935;
+            --accent-green: #43a047;
+            --accent-yellow: #fdd835;
+            --text-color: #ffffff;
+            --text-dim: #90a4ae;
+            --glass-border: rgba(255, 255, 255, 0.08);
         }
 
-        body {
-            background-color: #0f172a;
-            color: #f8fafc;
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+
+        header {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 8px 14px;
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;
+        }
+
+        .logo { font-size: 1rem; font-weight: bold; color: var(--accent-red); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .user-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        #user-email-display { font-size: 0.75rem; color: var(--text-dim); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .balance-box { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--accent-green); border-radius: 6px; padding: 3px 8px; font-size: 0.8rem; }
+        .balance-amount { color: var(--accent-green); font-weight: bold; }
+        
+        .btn { background: #1e88e5; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: all 0.2s; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-deposit { background: var(--accent-green); }
+        .btn-withdraw { background: #fb8c00; }
+        .btn-logout { background: #546e7a; }
+
+        .container { max-width: 900px; margin: 8px auto; width: 95%; display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+        @media (max-width: 850px) { .container { grid-template-columns: 1fr; } }
+
+        .glass-card { background: var(--card-bg); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 10px; padding: 10px; position: relative; }
+
+        .history-bar {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100dvh;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            margin-bottom: 6px;
+            scrollbar-width: none;
         }
-
-        .card {
-            background: #1e293b;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-
-        h2 {
-            margin-bottom: 1.5rem;
-            color: #38bdf8;
-        }
-
-        .input-group {
-            margin-bottom: 1.2rem;
-            text-align: left;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            color: #94a3b8;
-        }
-
-        input {
-            width: 100%;
-            padding: 0.75rem;
-            border-radius: 6px;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: #fff;
-            outline: none;
-        }
-
-        input:focus {
-            border-color: #38bdf8;
-        }
-
-        button {
-            width: 100%;
-            padding: 0.75rem;
-            background: #0284c7;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 1rem;
+        .history-bar::-webkit-scrollbar { display: none; }
+        .history-item {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 2px 7px;
+            border-radius: 8px;
+            font-size: 0.68rem;
             font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
+            white-space: nowrap;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .history-item.low { color: #00e5ff; }
+        .history-item.mid { color: #c084fc; }
+        .history-item.high { color: #ffd700; border-color: #ffd700; box-shadow: 0 0 6px rgba(255, 215, 0, 0.3); }
+
+        .game-display {
+            position: relative; 
+            height: 180px; 
+            background: radial-gradient(circle at bottom left, #1a233a 0%, #0b0e14 70%);
+            border-radius: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center;
         }
 
-        button:hover {
-            background: #0369a1;
+        @media (min-width: 600px) {
+            .game-display { height: 220px; }
         }
 
-        .error-msg {
-            color: #f87171;
-            font-size: 0.85rem;
-            margin-bottom: 1rem;
-            display: none;
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .multiplier-text { font-size: 1.8rem; font-weight: 800; z-index: 2; text-shadow: 0 0 20px rgba(0, 0, 0, 0.8); text-align: center; }
+        .multiplier-text.crashed { color: var(--accent-red); }
+
+        .cashout-banner {
+            position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(135deg, #43a047, #2e7d32);
+            color: white; padding: 4px 12px; border-radius: 12px;
+            font-size: 0.78rem; font-weight: bold; box-shadow: 0 4px 15px rgba(67, 160, 71, 0.5);
+            z-index: 10; animation: popup 0.3s ease-out; text-align: center; white-space: nowrap;
         }
 
-        /* Screen visibility handling */
-        .hidden {
-            display: none !important;
+        @keyframes popup {
+            0% { transform: translate(-50%, -20px); opacity: 0; }
+            100% { transform: translate(-50%, 0); opacity: 1; }
         }
 
-        .portal-container {
-            text-align: center;
-        }
+        .controls-panel { margin-top: 8px; display: flex; gap: 8px; align-items: flex-end; }
+        .input-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+        .input-group label { font-size: 0.72rem; color: var(--text-dim); }
+        .input-group input { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--glass-border); color: white; padding: 6px; border-radius: 6px; font-size: 0.85rem; width: 100%; }
 
-        .portal-container h1 {
-            color: #4ade80;
-            margin-bottom: 1rem;
-        }
+        .btn-action { height: 36px; font-size: 0.8rem; flex: 1.4; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4px; line-height: 1.2; }
+        .btn-bet { background: var(--accent-green); }
+        .btn-cashout { background: var(--accent-yellow); color: #000; }
+        .btn-waiting { background: #546e7a; cursor: not-allowed; }
 
-        .logout-btn {
-            background: #dc2626;
-            margin-top: 1.5rem;
-        }
+        .sidebar { display: flex; flex-direction: column; gap: 8px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .stat-box { background: rgba(0, 0, 0, 0.3); border-radius: 6px; padding: 6px; text-align: center; }
+        .stat-val { font-size: 1rem; font-weight: bold; margin-top: 2px; }
 
-        .logout-btn:hover {
-            background: #b91c1c;
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        .hidden { display: none !important; }
+        .modal { width: 90%; max-width: 360px; }
+        .modal h2 { margin-bottom: 10px; font-size: 1rem; }
+        .modal .form-group { margin-bottom: 8px; }
+        .modal .form-group input { width: 100%; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: white; border-radius: 6px; font-size: 0.85rem; }
+        .error-msg { color: var(--accent-red); font-size: 0.75rem; margin-top: 4px; }
     </style>
 </head>
 <body>
 
-    <!-- 1. LOGIN SCREEN -->
-    <div id="login-screen" class="card">
-        <h2>গেম পোর্টাল লগইন</h2>
-        <div id="error-message" class="error-msg">ইউজারনেম ও পাসওয়ার্ড দিন</div>
-        
-        <form id="login-form">
-            <div class="input-group">
-                <label for="username">ইউজারনেম</label>
-                <input type="text" id="username" placeholder="যেকোনো নাম লিখুন" required>
-            </div>
-            
-            <div class="input-group">
-                <label for="password">পাসওয়ার্ড</label>
-                <input type="password" id="password" placeholder="******" required>
-            </div>
-            
-            <button type="submit">লগইন করুন</button>
-        </form>
-    </div>
+    <header>
+        <div class="logo">✈️ AVIATOR PRO</div>
+        <div class="user-info">
+            <span id="user-email-display"></span>
+            <div class="balance-box">Bal: <span class="balance-amount" id="bal">৳ 0.00</span></div>
+            <button class="btn btn-deposit" id="open-deposit-btn">DEP</button>
+            <button class="btn btn-withdraw" id="open-withdraw-btn">WD</button>
+            <button class="btn btn-logout" id="logout-btn">Logout</button>
+        </div>
+    </header>
 
-    <!-- 2. GAME PORTAL SCREEN -->
-    <div id="portal-screen" class="card hidden">
-        <div class="portal-container">
-            <h1>স্বাগতম গেম পোর্টালে!</h1>
-            <p>আপনার সেশন সফলভাবে সক্রিয় হয়েছে।</p>
-            <p style="margin-top: 10px; color: #94a3b8;">User: <span id="user-display" style="color: #38bdf8;"></span></p>
-            
-            <button id="logout-btn" class="logout-btn">লগআউট</button>
+    <div class="container">
+        <div class="main-content">
+            <div class="glass-card">
+                <div class="history-bar" id="history-bar"></div>
+                <div id="cashout-banner-container"></div>
+                <div class="game-display">
+                    <canvas id="game-canvas"></canvas>
+                    <div class="multiplier-text" id="multiplier-display">WAITING...</div>
+                </div>
+                <div class="controls-panel">
+                    <div class="input-group">
+                        <label>Bet Amount (৳)</label>
+                        <input type="number" id="bet-amount" value="10" min="10" step="10">
+                    </div>
+                    <button class="btn btn-action btn-bet" id="bet-btn">BET NEXT ROUND</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="glass-card">
+                <h3 style="font-size: 0.85rem;">User Statistics</h3>
+                <div class="stat-grid" style="margin-top: 6px;">
+                    <div class="stat-box">
+                        <div style="font-size: 0.68rem; color: var(--text-dim);">Games</div>
+                        <div class="stat-val" id="games-count">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div style="font-size: 0.68rem; color: var(--text-dim);">Wins</div>
+                        <div class="stat-val" id="wins-count">0</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
-        // DOM Elements
-        const loginScreen = document.getElementById('login-screen');
-        const portalScreen = document.getElementById('portal-screen');
-        const loginForm = document.getElementById('login-form');
-        const usernameInput = document.getElementById('username');
-        const userDisplay = document.getElementById('user-display');
-        const logoutBtn = document.getElementById('logout-btn');
+    <!-- Modals -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="glass-card modal">
+            <h2 id="auth-title">AVIATOR PRO LOGIN</h2>
+            <form id="auth-form">
+                <div class="form-group"><input type="email" id="auth-email" placeholder="Email" required></div>
+                <div class="form-group"><input type="password" id="auth-password" placeholder="Password" required></div>
+                <button type="submit" class="btn btn-deposit" style="width: 100%;" id="auth-submit-btn">Login</button>
+                <div style="margin-top: 8px; font-size: 0.75rem; text-align: center;">
+                    <a href="#" id="toggle-auth-mode" style="color: #64b5f6;">Create Account</a>
+                </div>
+                <div class="error-msg" id="auth-error"></div>
+            </form>
+        </div>
+    </div>
 
-        // Page Load - Check Authentication State
-        window.addEventListener('DOMContentLoaded', () => {
-            checkAuthState();
+    <div class="modal-overlay hidden" id="deposit-modal">
+        <div class="glass-card modal">
+            <h2>Deposit Request</h2>
+            <form id="deposit-form">
+                <div class="form-group"><input type="number" id="dep-amount" placeholder="Amount (৳)" min="50" required></div>
+                <div class="form-group"><input type="text" id="dep-trx" placeholder="TrxID (bKash/Nagad)" required></div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="submit" class="btn btn-deposit" style="flex: 1;">Submit</button>
+                    <button type="button" class="btn btn-logout" id="close-dep-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="withdraw-modal">
+        <div class="glass-card modal">
+            <h2>Withdraw Request</h2>
+            <form id="withdraw-form">
+                <div class="form-group"><input type="number" id="with-amount" placeholder="Amount (৳)" min="100" required></div>
+                <div class="form-group"><input type="text" id="with-receiver" placeholder="Receiver Phone Number" required></div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="submit" class="btn btn-withdraw" style="flex: 1;">Withdraw</button>
+                    <button type="button" class="btn btn-logout" id="close-with-btn">Cancel</button>
+                </div>
+                <div class="error-msg" id="with-error"></div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getDatabase, ref, set, onValue, off, runTransaction, push, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAyTOnCm5IuPcB-yvGjFl3KbwRVxNrcNSY",
+            authDomain: "ff-to-gaming-4ea1b.firebaseapp.com",
+            databaseURL: "https://ff-to-gaming-4ea1b-default-rtdb.firebaseio.com",
+            projectId: "ff-to-gaming-4ea1b",
+            storageBucket: "ff-to-gaming-4ea1b.appspot.com",
+            messagingSenderId: "816776130875",
+            appId: "1:816776130875:web:c3e7984e0de53cbd89871e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Ensure session persists inside LocalStorage
+        setPersistence(auth, browserLocalPersistence);
+
+        let currentUser = null;
+        let userDbRef = null;
+        let currentBalance = 0;
+        let isSignUp = false;
+
+        let animFrameId = null;
+        let currentLocalMult = 1.00;
+
+        let activeBet = 0;
+        let betPlacedForNextRound = false;
+        let hasCashedOut = false;
+        let lastProcessedRound = -1;
+
+        let lastForceCrashTime = 0;
+
+        const authModal = document.getElementById('auth-modal');
+        const authForm = document.getElementById('auth-form');
+        const authError = document.getElementById('auth-error');
+        const toggleAuthMode = document.getElementById('toggle-auth-mode');
+        const authTitle = document.getElementById('auth-title');
+        const authSubmitBtn = document.getElementById('auth-submit-btn');
+
+        const userEmailDisplay = document.getElementById('user-email-display');
+        const balDisplay = document.getElementById('bal');
+        const gamesCountDisplay = document.getElementById('games-count');
+        const winsCountDisplay = document.getElementById('wins-count');
+
+        const betBtn = document.getElementById('bet-btn');
+        const betInput = document.getElementById('bet-amount');
+        const multiplierDisplay = document.getElementById('multiplier-display');
+        const cashoutBannerContainer = document.getElementById('cashout-banner-container');
+        const historyBar = document.getElementById('history-bar');
+
+        const depositModal = document.getElementById('deposit-modal');
+        const withdrawModal = document.getElementById('withdraw-modal');
+
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        function resizeCanvas() { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        toggleAuthMode.addEventListener('click', (e) => {
+            e.preventDefault();
+            isSignUp = !isSignUp;
+            authTitle.innerText = isSignUp ? "CREATE ACCOUNT" : "AVIATOR PRO LOGIN";
+            authSubmitBtn.innerText = isSignUp ? "Sign Up" : "Login";
+            toggleAuthMode.innerText = isSignUp ? "Already have an account? Login" : "Create Account";
         });
 
-        // Function to check if user is logged in
-        function checkAuthState() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn');
-            const savedUser = localStorage.getItem('username');
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            authError.innerText = "Processing...";
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            
+            try {
+                if (isSignUp) {
+                    const cred = await createUserWithEmailAndPassword(auth, email, password);
+                    await set(ref(db, `users/${cred.user.uid}`), { email, balance: 100, games: 0, wins: 0, createdAt: Date.now() });
+                } else {
+                    await signInWithEmailAndPassword(auth, email, password);
+                }
+                authError.innerText = "";
+            } catch (err) { 
+                authError.innerText = err.message; 
+            }
+        });
 
-            if (isLoggedIn === 'true' && savedUser) {
-                // User is authenticated -> Show Portal, Hide Login
-                userDisplay.textContent = savedUser;
-                loginScreen.classList.add('hidden');
-                portalScreen.classList.remove('hidden');
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            signOut(auth).then(() => {
+                window.location.reload();
+            });
+        });
+
+        // FIXED AUTH STATE LISTENER - PREVENTS INFINITE LOOP
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                authModal.classList.add('hidden');
+                userEmailDisplay.innerText = user.email;
+
+                if (userDbRef) off(userDbRef);
+                userDbRef = ref(db, `users/${user.uid}`);
+
+                onValue(userDbRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        currentBalance = data.balance || 0;
+                        balDisplay.innerText = `৳ ${currentBalance.toFixed(2)}`;
+                        gamesCountDisplay.innerText = data.games || 0;
+                        winsCountDisplay.innerText = data.wins || 0;
+                    } else {
+                        // Fallback if database record missing
+                        update(userDbRef, { email: user.email, balance: 0, games: 0, wins: 0 });
+                    }
+                }, (error) => {
+                    console.error("DB Listener Error:", error);
+                });
             } else {
-                // User is NOT authenticated -> Show Login, Hide Portal
-                loginScreen.classList.remove('hidden');
-                portalScreen.classList.add('hidden');
+                currentUser = null;
+                authModal.classList.remove('hidden');
+                balDisplay.innerText = "৳ 0.00";
+            }
+        });
+
+        try {
+            onValue(ref(db, 'forceCrash'), (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.timestamp) {
+                    lastForceCrashTime = data.timestamp;
+                }
+            });
+        } catch(e) {}
+
+        function getDeterministicCrashPoint(roundIndex) {
+            let hash = Math.sin(roundIndex * 12.9898 + 78.233) * 43758.5453;
+            let rand = hash - Math.floor(hash);
+
+            let crash = 1.00;
+            if (rand < 0.09) {
+                crash = 1.00 + rand * 2.2;
+            } else if (rand < 0.64) {
+                crash = 1.21 + ((rand - 0.09) / 0.55) * 0.78;
+            } else if (rand < 0.89) {
+                crash = 2.00 + ((rand - 0.64) / 0.25) * 2.99;
+            } else if (rand < 0.97) {
+                crash = 5.00 + ((rand - 0.89) / 0.08) * 4.99;
+            } else {
+                crash = 10.00 + ((rand - 0.97) / 0.03) * 40.00;
+            }
+
+            return parseFloat(crash.toFixed(2));
+        }
+
+        function renderHistoryBar(currentRoundIndex) {
+            historyBar.innerHTML = '';
+            for (let i = 0; i < 12; i++) {
+                let pastRoundIndex = currentRoundIndex - 1 - i;
+                if (pastRoundIndex < 0) break;
+                
+                let pastMult = getDeterministicCrashPoint(pastRoundIndex);
+                let badge = document.createElement('div');
+                badge.className = 'history-item';
+                
+                if (pastMult < 2.00) badge.classList.add('low');
+                else if (pastMult < 10.00) badge.classList.add('mid');
+                else badge.classList.add('high');
+
+                badge.innerText = `${pastMult.toFixed(2)}x`;
+                historyBar.appendChild(badge);
             }
         }
 
-        // Handle Login Form Submit
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault(); // Stop default form submit loop
+        function masterGameLoop() {
+            const CYCLE_DURATION = 15000;
+            const WAIT_DURATION = 3000;
 
-            const username = usernameInput.value.trim();
+            const now = Date.now();
+            const currentRoundIndex = Math.floor(now / CYCLE_DURATION);
+            const cycleElapsed = now % CYCLE_DURATION;
 
-            if (username !== '') {
-                // Save session in LocalStorage
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('username', username);
+            const targetCrashPoint = getDeterministicCrashPoint(currentRoundIndex);
 
-                // Clear input
-                usernameInput.value = '';
+            if (currentRoundIndex !== lastProcessedRound) {
+                lastProcessedRound = currentRoundIndex;
+                hasCashedOut = false;
+                cashoutBannerContainer.innerHTML = '';
+                renderHistoryBar(currentRoundIndex);
+            }
 
-                // Update UI instantly without page refresh loop
-                checkAuthState();
+            if (cycleElapsed < WAIT_DURATION) {
+                let waitLeft = Math.ceil((WAIT_DURATION - cycleElapsed) / 1000);
+                multiplierDisplay.innerText = `NEXT ROUND IN ${waitLeft}s`;
+                multiplierDisplay.classList.remove('crashed');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (betPlacedForNextRound) {
+                    betBtn.innerText = "BET PLACED";
+                    betBtn.className = "btn btn-action btn-waiting";
+                    betBtn.disabled = true;
+                } else {
+                    betBtn.innerText = "BET NEXT ROUND";
+                    betBtn.className = "btn btn-action btn-bet";
+                    betBtn.disabled = false;
+                }
+            } 
+            else {
+                let flyElapsed = (cycleElapsed - WAIT_DURATION) / 1000;
+                let flyStartTime = now - (flyElapsed * 1000);
+
+                let calculatedMult = parseFloat((1 + Math.pow(flyElapsed, 1.35) * 0.12).toFixed(2));
+                let isForceCrashed = (lastForceCrashTime >= flyStartTime);
+
+                if (calculatedMult >= targetCrashPoint || isForceCrashed) {
+                    currentLocalMult = targetCrashPoint;
+                    multiplierDisplay.innerText = "FLEW AWAY!\n" + targetCrashPoint.toFixed(2) + "x";
+                    multiplierDisplay.classList.add('crashed');
+
+                    if (betPlacedForNextRound && !hasCashedOut && currentUser) {
+                        runTransaction(ref(db, `users/${currentUser.uid}/games`), (g) => (g || 0) + 1);
+                        betPlacedForNextRound = false;
+                    }
+
+                    betBtn.innerText = "WAITING...";
+                    betBtn.className = "btn btn-action btn-waiting";
+                    betBtn.disabled = true;
+                } else {
+                    currentLocalMult = calculatedMult;
+                    multiplierDisplay.innerText = currentLocalMult.toFixed(2) + "x";
+                    multiplierDisplay.classList.remove('crashed');
+
+                    drawAviatorFlight(currentLocalMult, flyElapsed);
+
+                    if (betPlacedForNextRound && !hasCashedOut) {
+                        const liveWin = (activeBet * currentLocalMult).toFixed(2);
+                        betBtn.innerText = `CASH OUT\n(৳${liveWin})`;
+                        betBtn.className = "btn btn-action btn-cashout";
+                        betBtn.disabled = false;
+                    }
+                }
+            }
+
+            animFrameId = requestAnimationFrame(masterGameLoop);
+        }
+
+        masterGameLoop();
+
+        betBtn.addEventListener('click', async () => {
+            if (!currentUser) return alert("Please Login First!");
+            const CYCLE_DURATION = 15000;
+            const WAIT_DURATION = 3000;
+            const cycleElapsed = Date.now() % CYCLE_DURATION;
+
+            if (cycleElapsed < WAIT_DURATION && !betPlacedForNextRound) {
+                const betAmt = parseFloat(betInput.value);
+                if (isNaN(betAmt) || betAmt <= 0) return alert("Invalid Bet Amount");
+                if (betAmt > currentBalance) return alert("Insufficient Balance!");
+
+                const userBalRef = ref(db, `users/${currentUser.uid}/balance`);
+                const txResult = await runTransaction(userBalRef, (current) => {
+                    if (current >= betAmt) return current - betAmt;
+                });
+
+                if (txResult.committed) {
+                    activeBet = betAmt;
+                    betPlacedForNextRound = true;
+                    hasCashedOut = false;
+                    betBtn.innerText = "BET PLACED";
+                    betBtn.className = "btn btn-action btn-waiting";
+                    betBtn.disabled = true;
+                }
+            } 
+            else if (cycleElapsed >= WAIT_DURATION && betPlacedForNextRound && !hasCashedOut) {
+                hasCashedOut = true;
+                const winMultiplier = currentLocalMult;
+                const winAmount = activeBet * winMultiplier;
+
+                betBtn.innerText = `CASHED OUT\n(৳${winAmount.toFixed(2)})`;
+                betBtn.className = "btn btn-action btn-waiting";
+                betBtn.disabled = true;
+
+                await runTransaction(ref(db, `users/${currentUser.uid}/balance`), (b) => (b || 0) + winAmount);
+                await runTransaction(ref(db, `users/${currentUser.uid}/wins`), (w) => (w || 0) + 1);
+                await runTransaction(ref(db, `users/${currentUser.uid}/games`), (g) => (g || 0) + 1);
+
+                cashoutBannerContainer.innerHTML = `<div class="cashout-banner">CASHED OUT ৳${winAmount.toFixed(2)} (${winMultiplier.toFixed(2)}x)</div>`;
             }
         });
 
-        // Handle Logout
-        logoutBtn.addEventListener('click', () => {
-            // Clear session
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('username');
+        function drawAviatorFlight(mult, timeElapsed) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let flightProgress = Math.min(timeElapsed / 2.5, 1.0);
+            
+            let targetX = canvas.width * 0.65;
+            let targetY = canvas.height * 0.30;
 
-            // Reset UI instantly
-            checkAuthState();
-        });
+            let finalX = targetX * flightProgress;
+            let finalY = canvas.height - ((canvas.height - targetY) * flightProgress);
+
+            if (flightProgress >= 1.0) {
+                finalY += Math.sin(timeElapsed * 4) * 6;
+            }
+
+            let controlX = finalX * 0.35;
+            let controlY = canvas.height;
+
+            let fillGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            fillGradient.addColorStop(0, 'rgba(229, 57, 53, 0.45)');
+            fillGradient.addColorStop(1, 'rgba(229, 57, 53, 0.00)');
+
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            ctx.quadraticCurveTo(controlX, controlY, finalX, finalY);
+            ctx.lineTo(finalX, canvas.height);
+            ctx.closePath();
+            ctx.fillStyle = fillGradient;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#e53935';
+            ctx.lineWidth = 3;
+            ctx.moveTo(0, canvas.height);
+            ctx.quadraticCurveTo(controlX, controlY, finalX, finalY);
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(finalX, finalY);
+            ctx.rotate(-Math.PI / 10);
+
+            ctx.fillStyle = "#e53935";
+            ctx.beginPath();
+            ctx.moveTo(0, 0); ctx.lineTo(-20, -8); ctx.lineTo(-15, 0); ctx.lineTo(-20, 8);
+            ctx.closePath(); ctx.fill();
+
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath(); ctx.arc(-5, 0, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
+
+        document.getElementById('open-deposit-btn').onclick = () => depositModal.classList.remove('hidden');
+        document.getElementById('close-dep-btn').onclick = () => depositModal.classList.add('hidden');
+        document.getElementById('open-withdraw-btn').onclick = () => withdrawModal.classList.remove('hidden');
+        document.getElementById('close-with-btn').onclick = () => withdrawModal.classList.add('hidden');
+
+        document.getElementById('deposit-form').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!currentUser) return alert("Please login first");
+            const amount = parseFloat(document.getElementById('dep-amount').value);
+            const trxId = document.getElementById('dep-trx').value;
+            try {
+                await push(ref(db, 'depositRequests'), { uid: currentUser.uid, email: currentUser.email, amount, trxId, status: 'pending', createdAt: Date.now() });
+                alert("Deposit request submitted!");
+                depositModal.classList.add('hidden');
+                document.getElementById('deposit-form').reset();
+            } catch (err) { alert(err.message); }
+        };
+
+        document.getElementById('withdraw-form').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!currentUser) return alert("Please login first");
+            const amount = parseFloat(document.getElementById('with-amount').value);
+            const receiver = document.getElementById('with-receiver').value;
+            const errorElem = document.getElementById('with-error');
+            errorElem.innerText = "";
+
+            if (isNaN(amount) || amount < 100) return errorElem.innerText = "Minimum withdraw amount is ৳100";
+            if (amount > currentBalance) return errorElem.innerText = "Insufficient balance!";
+
+            try {
+                const userBalRef = ref(db, `users/${currentUser.uid}/balance`);
+                const txResult = await runTransaction(userBalRef, (current) => {
+                    if (current >= amount) return current - amount;
+                });
+
+                if (!txResult.committed) return errorElem.innerText = "Insufficient balance!";
+
+                await push(ref(db, 'withdrawRequests'), { uid: currentUser.uid, email: currentUser.email, amount, receiver, status: 'pending', createdAt: Date.now() });
+                alert(`Withdraw request submitted! ৳${amount.toFixed(2)} deducted.`);
+                withdrawModal.classList.add('hidden');
+                document.getElementById('withdraw-form').reset();
+            } catch (err) { errorElem.innerText = err.message; }
+        };
     </script>
 </body>
 </html>
