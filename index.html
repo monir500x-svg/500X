@@ -17,7 +17,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; display: flex; flex-direction: column; }
+        body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
 
         header {
             background: var(--card-bg);
@@ -40,25 +40,25 @@
         .btn-withdraw { background: #fb8c00; }
         .btn-logout { background: #546e7a; }
 
-        .container { max-width: 1000px; margin: 10px auto; width: 95%; display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
+        .container { max-width: 900px; margin: 8px auto; width: 95%; display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
         @media (max-width: 850px) { .container { grid-template-columns: 1fr; } }
 
-        .glass-card { background: var(--card-bg); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 10px; padding: 12px; position: relative; }
+        .glass-card { background: var(--card-bg); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 10px; padding: 10px; position: relative; }
 
         .history-bar {
             display: flex;
             gap: 6px;
             overflow-x: auto;
-            padding-bottom: 8px;
-            margin-bottom: 8px;
+            padding-bottom: 6px;
+            margin-bottom: 6px;
             scrollbar-width: none;
         }
         .history-bar::-webkit-scrollbar { display: none; }
         .history-item {
             background: rgba(0, 0, 0, 0.4);
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 0.7rem;
+            padding: 2px 7px;
+            border-radius: 8px;
+            font-size: 0.68rem;
             font-weight: bold;
             white-space: nowrap;
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -67,23 +67,26 @@
         .history-item.mid { color: #c084fc; }
         .history-item.high { color: #ffd700; border-color: #ffd700; box-shadow: 0 0 6px rgba(255, 215, 0, 0.3); }
 
-        /* আগের ফাইলের সাইজ অনুযায়ী ক্যানভাস ও ডিসপ্লে স্ক্রিন */
         .game-display {
             position: relative; 
-            height: 220px; /* আগের ফাইলগুলোর মতো নিখুঁত হাইট */
+            height: 180px; 
             background: radial-gradient(circle at bottom left, #1a233a 0%, #0b0e14 70%);
             border-radius: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center;
         }
 
+        @media (min-width: 600px) {
+            .game-display { height: 220px; }
+        }
+
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .multiplier-text { font-size: 2.2rem; font-weight: 800; z-index: 2; text-shadow: 0 0 20px rgba(0, 0, 0, 0.8); text-align: center; }
+        .multiplier-text { font-size: 1.8rem; font-weight: 800; z-index: 2; text-shadow: 0 0 20px rgba(0, 0, 0, 0.8); text-align: center; }
         .multiplier-text.crashed { color: var(--accent-red); }
 
         .cashout-banner {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
             background: linear-gradient(135deg, #43a047, #2e7d32);
-            color: white; padding: 6px 16px; border-radius: 16px;
-            font-size: 0.85rem; font-weight: bold; box-shadow: 0 4px 15px rgba(67, 160, 71, 0.5);
+            color: white; padding: 4px 12px; border-radius: 12px;
+            font-size: 0.78rem; font-weight: bold; box-shadow: 0 4px 15px rgba(67, 160, 71, 0.5);
             z-index: 10; animation: popup 0.3s ease-out; text-align: center; white-space: nowrap;
         }
 
@@ -92,28 +95,28 @@
             100% { transform: translate(-50%, 0); opacity: 1; }
         }
 
-        .controls-panel { margin-top: 10px; display: flex; gap: 8px; align-items: flex-end; }
+        .controls-panel { margin-top: 8px; display: flex; gap: 8px; align-items: flex-end; }
         .input-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-        .input-group label { font-size: 0.75rem; color: var(--text-dim); }
-        .input-group input { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--glass-border); color: white; padding: 8px; border-radius: 6px; font-size: 0.9rem; width: 100%; }
+        .input-group label { font-size: 0.72rem; color: var(--text-dim); }
+        .input-group input { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--glass-border); color: white; padding: 6px; border-radius: 6px; font-size: 0.85rem; width: 100%; }
 
-        .btn-action { height: 38px; font-size: 0.85rem; flex: 1.4; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4px 8px; line-height: 1.2; word-break: break-word; }
+        .btn-action { height: 36px; font-size: 0.8rem; flex: 1.4; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4px; line-height: 1.2; }
         .btn-bet { background: var(--accent-green); }
         .btn-cashout { background: var(--accent-yellow); color: #000; }
         .btn-waiting { background: #546e7a; cursor: not-allowed; }
 
-        .sidebar { display: flex; flex-direction: column; gap: 12px; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .stat-box { background: rgba(0, 0, 0, 0.3); border-radius: 6px; padding: 8px; text-align: center; }
-        .stat-val { font-size: 1.1rem; font-weight: bold; margin-top: 2px; }
+        .sidebar { display: flex; flex-direction: column; gap: 8px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .stat-box { background: rgba(0, 0, 0, 0.3); border-radius: 6px; padding: 6px; text-align: center; }
+        .stat-val { font-size: 1rem; font-weight: bold; margin-top: 2px; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 100; }
         .hidden { display: none !important; }
-        .modal { width: 90%; max-width: 380px; }
-        .modal h2 { margin-bottom: 12px; font-size: 1.1rem; }
-        .modal .form-group { margin-bottom: 10px; }
-        .modal .form-group input { width: 100%; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: white; border-radius: 6px; font-size: 0.9rem; }
-        .error-msg { color: var(--accent-red); font-size: 0.8rem; margin-top: 6px; }
+        .modal { width: 90%; max-width: 360px; }
+        .modal h2 { margin-bottom: 10px; font-size: 1rem; }
+        .modal .form-group { margin-bottom: 8px; }
+        .modal .form-group input { width: 100%; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: white; border-radius: 6px; font-size: 0.85rem; }
+        .error-msg { color: var(--accent-red); font-size: 0.75rem; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -150,14 +153,14 @@
 
         <div class="sidebar">
             <div class="glass-card">
-                <h3 style="font-size: 0.95rem;">User Statistics</h3>
-                <div class="stat-grid" style="margin-top: 8px;">
+                <h3 style="font-size: 0.85rem;">User Statistics</h3>
+                <div class="stat-grid" style="margin-top: 6px;">
                     <div class="stat-box">
-                        <div style="font-size: 0.7rem; color: var(--text-dim);">Games</div>
+                        <div style="font-size: 0.68rem; color: var(--text-dim);">Games</div>
                         <div class="stat-val" id="games-count">0</div>
                     </div>
                     <div class="stat-box">
-                        <div style="font-size: 0.7rem; color: var(--text-dim);">Wins</div>
+                        <div style="font-size: 0.68rem; color: var(--text-dim);">Wins</div>
                         <div class="stat-val" id="wins-count">0</div>
                     </div>
                 </div>
@@ -173,7 +176,7 @@
                 <div class="form-group"><input type="email" id="auth-email" placeholder="Email" required></div>
                 <div class="form-group"><input type="password" id="auth-password" placeholder="Password" required></div>
                 <button type="submit" class="btn btn-deposit" style="width: 100%;" id="auth-submit-btn">Login</button>
-                <div style="margin-top: 10px; font-size: 0.8rem; text-align: center;">
+                <div style="margin-top: 8px; font-size: 0.75rem; text-align: center;">
                     <a href="#" id="toggle-auth-mode" style="color: #64b5f6;">Create Account</a>
                 </div>
                 <div class="error-msg" id="auth-error"></div>
@@ -331,16 +334,16 @@
             let rand = hash - Math.floor(hash);
 
             let crash = 1.00;
-            if (rand < 0.05) {
-                crash = 1.00;
-            } else if (rand < 0.65) {
-                crash = 1.01 + ((rand - 0.05) / 0.60) * 0.99;
-            } else if (rand < 0.88) {
-                crash = 2.01 + ((rand - 0.65) / 0.23) * 3.99;
+            if (rand < 0.09) {
+                crash = 1.00 + rand * 2.2;
+            } else if (rand < 0.64) {
+                crash = 1.21 + ((rand - 0.09) / 0.55) * 0.78;
+            } else if (rand < 0.89) {
+                crash = 2.00 + ((rand - 0.64) / 0.25) * 2.99;
             } else if (rand < 0.97) {
-                crash = 6.01 + ((rand - 0.88) / 0.09) * 8.99;
+                crash = 5.00 + ((rand - 0.89) / 0.08) * 4.99;
             } else {
-                crash = 15.01 + ((rand - 0.97) / 0.03) * 84.99;
+                crash = 10.00 + ((rand - 0.97) / 0.03) * 40.00;
             }
 
             return parseFloat(crash.toFixed(2));
@@ -511,7 +514,7 @@
 
             ctx.beginPath();
             ctx.strokeStyle = '#e53935';
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 3;
             ctx.moveTo(0, canvas.height);
             ctx.quadraticCurveTo(controlX, controlY, finalX, finalY);
             ctx.stroke();
@@ -522,11 +525,11 @@
 
             ctx.fillStyle = "#e53935";
             ctx.beginPath();
-            ctx.moveTo(0, 0); ctx.lineTo(-24, -10); ctx.lineTo(-18, 0); ctx.lineTo(-24, 10);
+            ctx.moveTo(0, 0); ctx.lineTo(-20, -8); ctx.lineTo(-15, 0); ctx.lineTo(-20, 8);
             ctx.closePath(); ctx.fill();
 
             ctx.fillStyle = "#ffffff";
-            ctx.beginPath(); ctx.arc(-6, 0, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(-5, 0, 2.5, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
         }
 
