@@ -232,7 +232,6 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        // Ensure session persists inside LocalStorage
         setPersistence(auth, browserLocalPersistence);
 
         let currentUser = null;
@@ -283,6 +282,7 @@
             authTitle.innerText = isSignUp ? "CREATE ACCOUNT" : "AVIATOR PRO LOGIN";
             authSubmitBtn.innerText = isSignUp ? "Sign Up" : "Login";
             toggleAuthMode.innerText = isSignUp ? "Already have an account? Login" : "Create Account";
+            authError.innerText = "";
         });
 
         authForm.addEventListener('submit', async (e) => {
@@ -294,13 +294,19 @@
             try {
                 if (isSignUp) {
                     const cred = await createUserWithEmailAndPassword(auth, email, password);
-                    await set(ref(db, `users/${cred.user.uid}`), { email, balance: 100, games: 0, wins: 0, createdAt: Date.now() });
+                    await set(ref(db, `users/${cred.user.uid}`), { 
+                        email: email, 
+                        balance: 500, 
+                        games: 0, 
+                        wins: 0, 
+                        createdAt: Date.now() 
+                    });
                 } else {
                     await signInWithEmailAndPassword(auth, email, password);
                 }
                 authError.innerText = "";
             } catch (err) { 
-                authError.innerText = err.message; 
+                authError.innerText = err.message.replace("Firebase: ", ""); 
             }
         });
 
@@ -310,7 +316,6 @@
             });
         });
 
-        // FIXED AUTH STATE LISTENER - PREVENTS INFINITE LOOP
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -328,11 +333,10 @@
                         gamesCountDisplay.innerText = data.games || 0;
                         winsCountDisplay.innerText = data.wins || 0;
                     } else {
-                        // Fallback if database record missing
-                        update(userDbRef, { email: user.email, balance: 0, games: 0, wins: 0 });
+                        update(ref(db, `users/${user.uid}`), { email: user.email, balance: 100, games: 0, wins: 0 });
                     }
                 }, (error) => {
-                    console.error("DB Listener Error:", error);
+                    console.error("Database Read Error:", error);
                 });
             } else {
                 currentUser = null;
@@ -341,31 +345,16 @@
             }
         });
 
-        try {
-            onValue(ref(db, 'forceCrash'), (snapshot) => {
-                const data = snapshot.val();
-                if (data && data.timestamp) {
-                    lastForceCrashTime = data.timestamp;
-                }
-            });
-        } catch(e) {}
-
         function getDeterministicCrashPoint(roundIndex) {
             let hash = Math.sin(roundIndex * 12.9898 + 78.233) * 43758.5453;
             let rand = hash - Math.floor(hash);
 
             let crash = 1.00;
-            if (rand < 0.09) {
-                crash = 1.00 + rand * 2.2;
-            } else if (rand < 0.64) {
-                crash = 1.21 + ((rand - 0.09) / 0.55) * 0.78;
-            } else if (rand < 0.89) {
-                crash = 2.00 + ((rand - 0.64) / 0.25) * 2.99;
-            } else if (rand < 0.97) {
-                crash = 5.00 + ((rand - 0.89) / 0.08) * 4.99;
-            } else {
-                crash = 10.00 + ((rand - 0.97) / 0.03) * 40.00;
-            }
+            if (rand < 0.09) crash = 1.00 + rand * 2.2;
+            else if (rand < 0.64) crash = 1.21 + ((rand - 0.09) / 0.55) * 0.78;
+            else if (rand < 0.89) crash = 2.00 + ((rand - 0.64) / 0.25) * 2.99;
+            else if (rand < 0.97) crash = 5.00 + ((rand - 0.89) / 0.08) * 4.99;
+            else crash = 10.00 + ((rand - 0.97) / 0.03) * 40.00;
 
             return parseFloat(crash.toFixed(2));
         }
@@ -424,12 +413,9 @@
             } 
             else {
                 let flyElapsed = (cycleElapsed - WAIT_DURATION) / 1000;
-                let flyStartTime = now - (flyElapsed * 1000);
-
                 let calculatedMult = parseFloat((1 + Math.pow(flyElapsed, 1.35) * 0.12).toFixed(2));
-                let isForceCrashed = (lastForceCrashTime >= flyStartTime);
 
-                if (calculatedMult >= targetCrashPoint || isForceCrashed) {
+                if (calculatedMult >= targetCrashPoint) {
                     currentLocalMult = targetCrashPoint;
                     multiplierDisplay.innerText = "FLEW AWAY!\n" + targetCrashPoint.toFixed(2) + "x";
                     multiplierDisplay.classList.add('crashed');
