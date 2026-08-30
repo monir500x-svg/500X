@@ -2,12 +2,12 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Pro Multiplayer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aviator Pro Mobile</title>
     <style>
         :root {
             --bg-color: #0b0e14;
-            --card-bg: rgba(22, 27, 38, 0.85);
+            --card-bg: rgba(22, 27, 38, 0.9);
             --accent-red: #e53935;
             --accent-green: #43a047;
             --accent-yellow: #fdd835;
@@ -16,154 +16,282 @@
             --glass-border: rgba(255, 255, 255, 0.08);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            height: 100vh;
+            height: 100dvh; 
+            overflow: hidden; 
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
 
         header {
             background: var(--card-bg);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--glass-border);
-            padding: 8px 14px;
-            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;
+            padding: 6px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 48px;
+            flex-shrink: 0;
         }
 
-        .logo { font-size: 1rem; font-weight: bold; color: var(--accent-red); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-        .user-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        #user-email-display { font-size: 0.75rem; color: var(--text-dim); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .logo { 
+            font-size: 0.9rem; 
+            font-weight: 800; 
+            color: var(--accent-red); 
+            display: flex; 
+            align-items: center; 
+            gap: 4px; 
+            letter-spacing: 0.5px;
+        }
 
-        .balance-box { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--accent-green); border-radius: 6px; padding: 3px 8px; font-size: 0.8rem; }
-        .balance-amount { color: var(--accent-green); font-weight: bold; }
-        
-        .btn { background: #1e88e5; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: all 0.2s; }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-deposit { background: var(--accent-green); }
-        .btn-withdraw { background: #fb8c00; }
-        .btn-logout { background: #546e7a; }
+        .user-info { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+        }
 
-        .container { max-width: 900px; margin: 8px auto; width: 95%; display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
-        @media (max-width: 850px) { .container { grid-template-columns: 1fr; } }
+        .balance-box { 
+            background: rgba(0, 0, 0, 0.6); 
+            border: 1px solid var(--accent-green); 
+            border-radius: 6px; 
+            padding: 2px 6px; 
+            font-size: 0.75rem; 
+        }
 
-        .glass-card { background: var(--card-bg); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 10px; padding: 10px; position: relative; }
+        .balance-amount { 
+            color: var(--accent-green); 
+            font-weight: bold; 
+        }
+
+        .btn { 
+            border: none; 
+            padding: 5px 8px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 700; 
+            font-size: 0.7rem; 
+            transition: active 0.1s;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-deposit { background: var(--accent-green); color: white; }
+        .btn-withdraw { background: #fb8c00; color: white; }
+        .btn-logout { background: #455a64; color: white; padding: 5px 6px; }
+
+        .app-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 6px;
+            gap: 6px;
+            min-height: 0; 
+        }
+
+        .glass-card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 10px; 
+            padding: 8px; 
+            position: relative; 
+            display: flex;
+            flex-direction: column;
+        }
 
         .history-bar {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             overflow-x: auto;
-            padding-bottom: 6px;
-            margin-bottom: 6px;
+            padding-bottom: 4px;
+            margin-bottom: 4px;
             scrollbar-width: none;
+            flex-shrink: 0;
         }
         .history-bar::-webkit-scrollbar { display: none; }
         .history-item {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 2px 7px;
-            border-radius: 8px;
-            font-size: 0.68rem;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 0.65rem;
             font-weight: bold;
             white-space: nowrap;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         .history-item.low { color: #00e5ff; }
         .history-item.mid { color: #c084fc; }
-        .history-item.high { color: #ffd700; border-color: #ffd700; box-shadow: 0 0 6px rgba(255, 215, 0, 0.3); }
+        .history-item.high { color: #ffd700; border-color: #ffd700; }
 
         .game-display {
             position: relative; 
-            height: 180px; 
-            background: radial-gradient(circle at bottom left, #1a233a 0%, #0b0e14 70%);
-            border-radius: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center;
-        }
-
-        @media (min-width: 600px) {
-            .game-display { height: 220px; }
+            flex: 1; 
+            min-height: 140px;
+            background: radial-gradient(circle at bottom left, #1a233a 0%, #0b0e14 75%);
+            border-radius: 8px; 
+            overflow: hidden; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
         }
 
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .multiplier-text { font-size: 1.8rem; font-weight: 800; z-index: 2; text-shadow: 0 0 20px rgba(0, 0, 0, 0.8); text-align: center; }
+
+        .multiplier-text { 
+            font-size: 2.2rem; 
+            font-weight: 900; 
+            z-index: 2; 
+            text-shadow: 0 0 15px rgba(0, 0, 0, 0.9); 
+            text-align: center; 
+            line-height: 1.1;
+        }
         .multiplier-text.crashed { color: var(--accent-red); }
 
         .cashout-banner {
-            position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+            position: absolute; 
+            top: 6px; 
+            left: 50%; 
+            transform: translateX(-50%);
             background: linear-gradient(135deg, #43a047, #2e7d32);
-            color: white; padding: 4px 12px; border-radius: 12px;
-            font-size: 0.78rem; font-weight: bold; box-shadow: 0 4px 15px rgba(67, 160, 71, 0.5);
-            z-index: 10; animation: popup 0.3s ease-out; text-align: center; white-space: nowrap;
+            color: white; 
+            padding: 3px 10px; 
+            border-radius: 10px;
+            font-size: 0.72rem; 
+            font-weight: bold; 
+            box-shadow: 0 4px 12px rgba(67, 160, 71, 0.5);
+            z-index: 10; 
+            white-space: nowrap;
         }
 
-        @keyframes popup {
-            0% { transform: translate(-50%, -20px); opacity: 0; }
-            100% { transform: translate(-50%, 0); opacity: 1; }
+        .controls-panel { 
+            margin-top: 6px; 
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 6px; 
+            align-items: center;
+            flex-shrink: 0;
         }
 
-        .controls-panel { margin-top: 8px; display: flex; gap: 8px; align-items: flex-end; }
-        .input-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-        .input-group label { font-size: 0.72rem; color: var(--text-dim); }
-        .input-group input { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--glass-border); color: white; padding: 6px; border-radius: 6px; font-size: 0.85rem; width: 100%; }
+        .input-group { display: flex; flex-direction: column; gap: 2px; }
+        .input-group label { font-size: 0.65rem; color: var(--text-dim); font-weight: 600; }
+        .input-group input { 
+            background: rgba(0, 0, 0, 0.6); 
+            border: 1px solid var(--glass-border); 
+            color: white; 
+            padding: 8px; 
+            border-radius: 6px; 
+            font-size: 0.9rem; 
+            width: 100%; 
+            font-weight: bold;
+            text-align: center;
+        }
 
-        .btn-action { height: 36px; font-size: 0.8rem; flex: 1.4; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4px; line-height: 1.2; }
-        .btn-bet { background: var(--accent-green); }
-        .btn-cashout { background: var(--accent-yellow); color: #000; }
-        .btn-waiting { background: #546e7a; cursor: not-allowed; }
+        .btn-action { 
+            height: 42px; 
+            font-size: 0.82rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center; 
+            padding: 4px; 
+            line-height: 1.1; 
+            border-radius: 6px;
+            font-weight: 800;
+        }
+        .btn-bet { background: var(--accent-green); color: white; }
+        .btn-cashout { background: var(--accent-yellow); color: #000; box-shadow: 0 0 10px rgba(253, 216, 53, 0.4); }
+        .btn-waiting { background: #37474f; color: #b0bec5; cursor: not-allowed; }
 
-        .sidebar { display: flex; flex-direction: column; gap: 8px; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .stat-box { background: rgba(0, 0, 0, 0.3); border-radius: 6px; padding: 6px; text-align: center; }
-        .stat-val { font-size: 1rem; font-weight: bold; margin-top: 2px; }
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 6px;
+            padding: 4px;
+            flex-shrink: 0;
+            font-size: 0.7rem;
+        }
+        .stat-item { text-align: center; }
+        .stat-lbl { color: var(--text-dim); font-size: 0.6rem; }
+        .stat-val { font-weight: bold; color: #fff; }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        .modal-overlay { 
+            position: fixed; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(0, 0, 0, 0.85); 
+            backdrop-filter: blur(6px); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 100; 
+            padding: 15px;
+        }
         .hidden { display: none !important; }
-        .modal { width: 90%; max-width: 360px; }
-        .modal h2 { margin-bottom: 10px; font-size: 1rem; }
+        .modal { width: 100%; max-width: 320px; }
+        .modal h2 { margin-bottom: 8px; font-size: 0.95rem; }
         .modal .form-group { margin-bottom: 8px; }
-        .modal .form-group input { width: 100%; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: white; border-radius: 6px; font-size: 0.85rem; }
-        .error-msg { color: var(--accent-red); font-size: 0.75rem; margin-top: 4px; }
+        .modal .form-group input { width: 100%; padding: 8px; background: rgba(0,0,0,0.6); border: 1px solid var(--glass-border); color: white; border-radius: 6px; font-size: 0.85rem; }
+        .error-msg { color: var(--accent-red); font-size: 0.7rem; margin-top: 4px; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">✈️ AVIATOR PRO</div>
+        <div class="logo">✈️ AVIATOR</div>
         <div class="user-info">
-            <span id="user-email-display"></span>
-            <div class="balance-box">Bal: <span class="balance-amount" id="bal">Loading...</span></div>
+            <div class="balance-box"><span class="balance-amount" id="bal">৳ 0.00</span></div>
             <button class="btn btn-deposit" id="open-deposit-btn">DEP</button>
             <button class="btn btn-withdraw" id="open-withdraw-btn">WD</button>
-            <button class="btn btn-logout" id="logout-btn">Logout</button>
+            <button class="btn btn-logout" id="logout-btn">✕</button>
         </div>
     </header>
 
-    <div class="container">
-        <div class="main-content">
-            <div class="glass-card">
-                <div class="history-bar" id="history-bar"></div>
-                <div id="cashout-banner-container"></div>
-                <div class="game-display">
-                    <canvas id="game-canvas"></canvas>
-                    <div class="multiplier-text" id="multiplier-display">WAITING...</div>
+    <div class="app-container">
+        <div class="glass-card" style="flex: 1; min-height: 0;">
+            <div class="history-bar" id="history-bar"></div>
+            <div id="cashout-banner-container"></div>
+            
+            <div class="game-display">
+                <canvas id="game-canvas"></canvas>
+                <div class="multiplier-text" id="multiplier-display">WAITING...</div>
+            </div>
+
+            <div class="controls-panel">
+                <div class="input-group">
+                    <label>BET (৳)</label>
+                    <input type="number" id="bet-amount" value="10" min="10" step="10">
                 </div>
-                <div class="controls-panel">
-                    <div class="input-group">
-                        <label>Bet Amount (৳)</label>
-                        <input type="number" id="bet-amount" value="10" min="10" step="10">
-                    </div>
-                    <button class="btn btn-action btn-bet" id="bet-btn">BET NEXT ROUND</button>
-                </div>
+                <button class="btn btn-action btn-bet" id="bet-btn">BET NEXT</button>
             </div>
         </div>
 
-        <div class="sidebar">
-            <div class="glass-card">
-                <h3 style="font-size: 0.85rem;">User Statistics</h3>
-                <div class="stat-grid" style="margin-top: 6px;">
-                    <div class="stat-box">
-                        <div style="font-size: 0.68rem; color: var(--text-dim);">Games</div>
-                        <div class="stat-val" id="games-count">0</div>
-                    </div>
-                    <div class="stat-box">
-                        <div style="font-size: 0.68rem; color: var(--text-dim);">Wins</div>
-                        <div class="stat-val" id="wins-count">0</div>
-                    </div>
-                </div>
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-lbl">USER</div>
+                <div class="stat-val" id="user-email-display" style="max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-lbl">GAMES</div>
+                <div class="stat-val" id="games-count">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-lbl">WINS</div>
+                <div class="stat-val" id="wins-count">0</div>
             </div>
         </div>
     </div>
@@ -171,12 +299,12 @@
     <!-- Modals -->
     <div class="modal-overlay" id="auth-modal">
         <div class="glass-card modal">
-            <h2 id="auth-title">AVIATOR PRO LOGIN</h2>
+            <h2 id="auth-title">AVIATOR LOGIN</h2>
             <form id="auth-form">
                 <div class="form-group"><input type="email" id="auth-email" placeholder="Email" required></div>
                 <div class="form-group"><input type="password" id="auth-password" placeholder="Password" required></div>
-                <button type="submit" class="btn btn-deposit" style="width: 100%;" id="auth-submit-btn">Login</button>
-                <div style="margin-top: 8px; font-size: 0.75rem; text-align: center;">
+                <button type="submit" class="btn btn-deposit" style="width: 100%; height: 36px;" id="auth-submit-btn">Login</button>
+                <div style="margin-top: 8px; font-size: 0.72rem; text-align: center;">
                     <a href="#" id="toggle-auth-mode" style="color: #64b5f6;">Create Account</a>
                 </div>
                 <div class="error-msg" id="auth-error"></div>
@@ -190,8 +318,8 @@
             <form id="deposit-form">
                 <div class="form-group"><input type="number" id="dep-amount" placeholder="Amount (৳)" min="50" required></div>
                 <div class="form-group"><input type="text" id="dep-trx" placeholder="TrxID (bKash/Nagad)" required></div>
-                <div style="display: flex; gap: 8px;">
-                    <button type="submit" class="btn btn-deposit" style="flex: 1;">Submit</button>
+                <div style="display: flex; gap: 6px;">
+                    <button type="submit" class="btn btn-deposit" style="flex: 1; height: 32px;">Submit</button>
                     <button type="button" class="btn btn-logout" id="close-dep-btn">Cancel</button>
                 </div>
             </form>
@@ -203,9 +331,9 @@
             <h2>Withdraw Request</h2>
             <form id="withdraw-form">
                 <div class="form-group"><input type="number" id="with-amount" placeholder="Amount (৳)" min="100" required></div>
-                <div class="form-group"><input type="text" id="with-receiver" placeholder="Receiver Phone Number" required></div>
-                <div style="display: flex; gap: 8px;">
-                    <button type="submit" class="btn btn-withdraw" style="flex: 1;">Withdraw</button>
+                <div class="form-group"><input type="text" id="with-receiver" placeholder="Phone Number" required></div>
+                <div style="display: flex; gap: 6px;">
+                    <button type="submit" class="btn btn-withdraw" style="flex: 1; height: 32px;">Withdraw</button>
                     <button type="button" class="btn btn-logout" id="close-with-btn">Cancel</button>
                 </div>
                 <div class="error-msg" id="with-error"></div>
@@ -237,14 +365,11 @@
         let currentBalance = 0;
         let isSignUp = false;
 
-        let animFrameId = null;
         let currentLocalMult = 1.00;
-
         let activeBet = 0;
         let betPlacedForNextRound = false;
         let hasCashedOut = false;
         let lastProcessedRound = -1;
-
         let lastForceCrashTime = 0;
 
         const authModal = document.getElementById('auth-modal');
@@ -270,14 +395,20 @@
 
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
-        function resizeCanvas() { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; }
+        
+        function resizeCanvas() { 
+            if (canvas.parentElement) {
+                canvas.width = canvas.parentElement.clientWidth; 
+                canvas.height = canvas.parentElement.clientHeight; 
+            }
+        }
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        setTimeout(resizeCanvas, 100);
 
         toggleAuthMode.addEventListener('click', (e) => {
             e.preventDefault();
             isSignUp = !isSignUp;
-            authTitle.innerText = isSignUp ? "CREATE ACCOUNT" : "AVIATOR PRO LOGIN";
+            authTitle.innerText = isSignUp ? "CREATE ACCOUNT" : "AVIATOR LOGIN";
             authSubmitBtn.innerText = isSignUp ? "Sign Up" : "Login";
             toggleAuthMode.innerText = isSignUp ? "Already have an account? Login" : "Create Account";
         });
@@ -304,7 +435,7 @@
             if (user) {
                 currentUser = user;
                 authModal.classList.add('hidden');
-                userEmailDisplay.innerText = user.email;
+                userEmailDisplay.innerText = user.email.split('@')[0];
                 userDbRef = ref(db, `users/${user.uid}`);
                 onValue(userDbRef, (snapshot) => {
                     const data = snapshot.val();
@@ -318,7 +449,7 @@
             } else {
                 currentUser = null;
                 authModal.classList.remove('hidden');
-                balDisplay.innerText = "Loading...";
+                balDisplay.innerText = "৳ 0.00";
             }
         });
 
@@ -329,21 +460,22 @@
             }
         });
 
+        // সুষম ও প্রফেশনাল ক্র্যাশ পয়েন্ট অ্যালগরিদম
         function getDeterministicCrashPoint(roundIndex) {
             let hash = Math.sin(roundIndex * 12.9898 + 78.233) * 43758.5453;
             let rand = hash - Math.floor(hash);
 
             let crash = 1.00;
-            if (rand < 0.09) {
-                crash = 1.00 + rand * 2.2;
-            } else if (rand < 0.64) {
-                crash = 1.21 + ((rand - 0.09) / 0.55) * 0.78;
-            } else if (rand < 0.89) {
-                crash = 2.00 + ((rand - 0.64) / 0.25) * 2.99;
-            } else if (rand < 0.97) {
-                crash = 5.00 + ((rand - 0.89) / 0.08) * 4.99;
+            if (rand < 0.10) {
+                crash = 1.00 + rand * 1.8;
+            } else if (rand < 0.65) {
+                crash = 1.18 + ((rand - 0.10) / 0.55) * 0.81;
+            } else if (rand < 0.88) {
+                crash = 2.00 + ((rand - 0.65) / 0.23) * 2.99;
+            } else if (rand < 0.96) {
+                crash = 5.00 + ((rand - 0.88) / 0.08) * 4.99;
             } else {
-                crash = 10.00 + ((rand - 0.97) / 0.03) * 40.00;
+                crash = 10.00 + ((rand - 0.96) / 0.04) * 30.00;
             }
 
             return parseFloat(crash.toFixed(2));
@@ -351,7 +483,7 @@
 
         function renderHistoryBar(currentRoundIndex) {
             historyBar.innerHTML = '';
-            for (let i = 0; i < 12; i++) {
+            for (let i = 0; i < 10; i++) {
                 let pastRoundIndex = currentRoundIndex - 1 - i;
                 if (pastRoundIndex < 0) break;
                 
@@ -387,16 +519,16 @@
 
             if (cycleElapsed < WAIT_DURATION) {
                 let waitLeft = Math.ceil((WAIT_DURATION - cycleElapsed) / 1000);
-                multiplierDisplay.innerText = `NEXT ROUND IN ${waitLeft}s`;
+                multiplierDisplay.innerText = `NEXT IN ${waitLeft}s`;
                 multiplierDisplay.classList.remove('crashed');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                 if (betPlacedForNextRound) {
-                    betBtn.innerText = "BET PLACED";
+                    betBtn.innerText = "WAITING...";
                     betBtn.className = "btn btn-action btn-waiting";
                     betBtn.disabled = true;
                 } else {
-                    betBtn.innerText = "BET NEXT ROUND";
+                    betBtn.innerText = "BET NEXT";
                     betBtn.className = "btn btn-action btn-bet";
                     betBtn.disabled = false;
                 }
@@ -410,7 +542,8 @@
 
                 if (calculatedMult >= targetCrashPoint || isForceCrashed) {
                     currentLocalMult = targetCrashPoint;
-                    multiplierDisplay.innerText = "FLEW AWAY!\n" + targetCrashPoint.toFixed(2) + "x";
+                    multiplierDisplay.innerText = "FLEW AWAY!
+" + targetCrashPoint.toFixed(2) + "x";
                     multiplierDisplay.classList.add('crashed');
 
                     if (betPlacedForNextRound && !hasCashedOut) {
@@ -418,7 +551,7 @@
                         betPlacedForNextRound = false;
                     }
 
-                    betBtn.innerText = "WAITING...";
+                    betBtn.innerText = "ENDED";
                     betBtn.className = "btn btn-action btn-waiting";
                     betBtn.disabled = true;
                 } else {
@@ -430,14 +563,15 @@
 
                     if (betPlacedForNextRound && !hasCashedOut) {
                         const liveWin = (activeBet * currentLocalMult).toFixed(2);
-                        betBtn.innerText = `CASH OUT\n(৳${liveWin})`;
+                        betBtn.innerText = `CASH OUT
+৳${liveWin}`;
                         betBtn.className = "btn btn-action btn-cashout";
                         betBtn.disabled = false;
                     }
                 }
             }
 
-            animFrameId = requestAnimationFrame(masterGameLoop);
+            requestAnimationFrame(masterGameLoop);
         }
 
         masterGameLoop();
@@ -461,7 +595,7 @@
                     activeBet = betAmt;
                     betPlacedForNextRound = true;
                     hasCashedOut = false;
-                    betBtn.innerText = "BET PLACED";
+                    betBtn.innerText = "WAITING...";
                     betBtn.className = "btn btn-action btn-waiting";
                     betBtn.disabled = true;
                 }
@@ -471,7 +605,7 @@
                 const winMultiplier = currentLocalMult;
                 const winAmount = activeBet * winMultiplier;
 
-                betBtn.innerText = `CASHED OUT\n(৳${winAmount.toFixed(2)})`;
+                betBtn.innerText = `WON ৳${winAmount.toFixed(0)}`;
                 betBtn.className = "btn btn-action btn-waiting";
                 betBtn.disabled = true;
 
@@ -479,29 +613,29 @@
                 await runTransaction(ref(db, `users/${currentUser.uid}/wins`), (w) => (w || 0) + 1);
                 await runTransaction(ref(db, `users/${currentUser.uid}/games`), (g) => (g || 0) + 1);
 
-                cashoutBannerContainer.innerHTML = `<div class="cashout-banner">CASHED OUT ৳${winAmount.toFixed(2)} (${winMultiplier.toFixed(2)}x)</div>`;
+                cashoutBannerContainer.innerHTML = `<div class="cashout-banner">WON ৳${winAmount.toFixed(2)} (${winMultiplier.toFixed(2)}x)</div>`;
             }
         });
 
         function drawAviatorFlight(mult, timeElapsed) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let flightProgress = Math.min(timeElapsed / 2.5, 1.0);
+            let flightProgress = Math.min(timeElapsed / 2.2, 1.0);
             
-            let targetX = canvas.width * 0.65;
-            let targetY = canvas.height * 0.30;
+            let targetX = canvas.width * 0.70;
+            let targetY = canvas.height * 0.25;
 
             let finalX = targetX * flightProgress;
             let finalY = canvas.height - ((canvas.height - targetY) * flightProgress);
 
             if (flightProgress >= 1.0) {
-                finalY += Math.sin(timeElapsed * 4) * 6;
+                finalY += Math.sin(timeElapsed * 4) * 4;
             }
 
-            let controlX = finalX * 0.35;
+            let controlX = finalX * 0.3;
             let controlY = canvas.height;
 
             let fillGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            fillGradient.addColorStop(0, 'rgba(229, 57, 53, 0.45)');
+            fillGradient.addColorStop(0, 'rgba(229, 57, 53, 0.4)');
             fillGradient.addColorStop(1, 'rgba(229, 57, 53, 0.00)');
 
             ctx.beginPath();
@@ -514,22 +648,22 @@
 
             ctx.beginPath();
             ctx.strokeStyle = '#e53935';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2.5;
             ctx.moveTo(0, canvas.height);
             ctx.quadraticCurveTo(controlX, controlY, finalX, finalY);
             ctx.stroke();
 
             ctx.save();
             ctx.translate(finalX, finalY);
-            ctx.rotate(-Math.PI / 10);
+            ctx.rotate(-Math.PI / 12);
 
             ctx.fillStyle = "#e53935";
             ctx.beginPath();
-            ctx.moveTo(0, 0); ctx.lineTo(-20, -8); ctx.lineTo(-15, 0); ctx.lineTo(-20, 8);
+            ctx.moveTo(0, 0); ctx.lineTo(-16, -6); ctx.lineTo(-12, 0); ctx.lineTo(-16, 6);
             ctx.closePath(); ctx.fill();
 
             ctx.fillStyle = "#ffffff";
-            ctx.beginPath(); ctx.arc(-5, 0, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(-4, 0, 2, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
         }
 
@@ -557,7 +691,7 @@
             const errorElem = document.getElementById('with-error');
             errorElem.innerText = "";
 
-            if (isNaN(amount) || amount < 100) return errorElem.innerText = "Minimum withdraw amount is ৳100";
+            if (isNaN(amount) || amount < 100) return errorElem.innerText = "Min withdraw ৳100";
             if (amount > currentBalance) return errorElem.innerText = "Insufficient balance!";
 
             try {
@@ -569,7 +703,7 @@
                 if (!txResult.committed) return errorElem.innerText = "Insufficient balance!";
 
                 await push(ref(db, 'withdrawRequests'), { uid: currentUser.uid, email: currentUser.email, amount, receiver, status: 'pending', createdAt: Date.now() });
-                alert(`Withdraw request submitted! ৳${amount.toFixed(2)} deducted.`);
+                alert(`Withdraw request submitted!`);
                 withdrawModal.classList.add('hidden');
                 document.getElementById('withdraw-form').reset();
             } catch (err) { errorElem.innerText = err.message; }
