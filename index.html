@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aviator Pro - Multiplayer Realtime</title>
+    <title>Aviator Pro - Official Replica</title>
 
-    <!-- WebView ও স্কেচওয়্যার অ্যাপের জন্য ১০০% সামঞ্জস্যপূর্ণ ফায়ারবেস v9 Compat SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -106,6 +105,16 @@
         .modal .form-group { margin-bottom: 8px; }
         .modal .form-group input { width: 100%; padding: 8px; background: rgba(0,0,0,0.6); border: 1px solid var(--glass-border); color: white; border-radius: 6px; font-size: 0.85rem; outline: none; }
         .error-msg { color: var(--accent-red); font-size: 0.72rem; margin-top: 4px; text-align: center; }
+
+        /* ডাইনামিক সেন্ড মানি বক্স স্টাইল */
+        .send-money-box {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px dashed var(--accent-green-bright);
+            padding: 10px; border-radius: 8px; margin-bottom: 12px;
+        }
+        .number-display-row {
+            display: flex; justify-content: space-between; align-items: center; margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -150,7 +159,6 @@
         </div>
     </div>
 
-    <!-- Modals -->
     <div class="modal-overlay" id="auth-modal">
         <div class="glass-card modal">
             <h2 id="auth-title">AVIATOR PRO LOGIN</h2>
@@ -168,12 +176,21 @@
 
     <div class="modal-overlay hidden" id="deposit-modal">
         <div class="glass-card modal">
-            <h2>Deposit Request</h2>
+            <h2>Deposit Money</h2>
+            
+            <div class="send-money-box">
+                <div style="font-size: 0.7rem; color: var(--text-dim);">Send Money Number:</div>
+                <div class="number-display-row">
+                    <span id="admin-send-number" style="font-size: 0.95rem; font-weight: bold; color: #ffd700;">Loading...</span>
+                    <button type="button" class="btn" id="copy-num-btn" style="padding: 2px 8px; font-size: 0.65rem; background: #37474f;">Copy</button>
+                </div>
+            </div>
+
             <form id="deposit-form" onsubmit="return false;">
                 <div class="form-group"><input type="number" id="dep-amount" placeholder="Amount (৳)" min="50" required></div>
-                <div class="form-group"><input type="text" id="dep-trx" placeholder="TrxID (bKash/Nagad)" required></div>
-                <div style="display: flex; gap: 6px; margin-top: 4px;">
-                    <button type="button" class="btn btn-deposit" id="sub-dep-btn" style="flex: 1; padding: 8px;">Submit</button>
+                <div class="form-group"><input type="text" id="dep-trx" placeholder="Transaction ID (TrxID)" required></div>
+                <div style="display: flex; gap: 6px; margin-top: 6px;">
+                    <button type="button" class="btn btn-deposit" id="sub-dep-btn" style="flex: 1; padding: 8px;">Submit Request</button>
                     <button type="button" class="btn btn-logout" id="close-dep-btn" style="padding: 8px;">Cancel</button>
                 </div>
             </form>
@@ -213,7 +230,6 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // স্কেচওয়্যার / WebView স্থায়ী লগইন পারসিস্টেন্স
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(err) {
             console.log("Persistence setup error:", err);
         });
@@ -224,7 +240,7 @@
         let isSignUp = false;
 
         let currentLocalMult = 1.00;
-        let lastCrashedDisplayValue = 1.00; // এটি সরাসরি স্ক্রিনের ক্র্যাশ হওয়া মান ধরে রাখবে
+        let lastCrashedDisplayValue = 1.00;
 
         let activeBet = 0;
         let betRoundIndex = -1;
@@ -235,6 +251,34 @@
         let isProcessingBet = false;
 
         let historyArray = [];
+
+        // এডমিন থেকে রিয়েল-টাইম সেন্ড মানি নম্বর আপডেট ফিচার
+        const adminSendNumberElem = document.getElementById('admin-send-number');
+        const copyNumBtn = document.getElementById('copy-num-btn');
+        const subDepBtn = document.getElementById('sub-dep-btn');
+
+        db.ref('adminSettings/sendMoneyNumber').on('value', function(snapshot) {
+            const num = snapshot.val();
+            if (num && num.trim() !== "") {
+                adminSendNumberElem.innerText = num;
+                adminSendNumberElem.style.color = "#ffd700";
+                copyNumBtn.style.display = "inline-block";
+                subDepBtn.disabled = false;
+            } else {
+                adminSendNumberElem.innerText = "Deposit Off Currently";
+                adminSendNumberElem.style.color = "#e53935";
+                copyNumBtn.style.display = "none";
+                subDepBtn.disabled = true;
+            }
+        });
+
+        copyNumBtn.addEventListener('click', function() {
+            const numText = adminSendNumberElem.innerText;
+            if (numText && numText !== "Deposit Off Currently" && numText !== "Loading...") {
+                navigator.clipboard.writeText(numText);
+                alert("Copied: " + numText);
+            }
+        });
 
         const authModal = document.getElementById('auth-modal');
         const authError = document.getElementById('auth-error');
@@ -329,7 +373,6 @@
             }
         });
 
-        // সিঙ্ক্রোনাইজড গ্লোবাল অ্যালগরিদম (সব প্লেয়ারের অনলাইন ম্যাচ)
         function getDeterministicCrashPoint(roundIndex) {
             let hash = Math.sin(roundIndex * 12.9898 + 78.233) * 43758.5453;
             let rand = hash - Math.floor(hash);
@@ -343,7 +386,6 @@
             return parseFloat(crash.toFixed(2));
         }
 
-        // স্মুথ গতির গণনাকারী
         function calculateMultiplierFromTime(seconds) {
             let mult = 1.00 + Math.pow(seconds, 1.25) * 0.12;
             return parseFloat(mult.toFixed(2));
@@ -481,7 +523,6 @@
             }
         }
 
-        // মাস্টার গেম লুপ
         function masterGameLoop() {
             const CYCLE_DURATION = 18000;
             const WAIT_DURATION = 3000;
@@ -493,10 +534,9 @@
             const targetCrashPoint = getDeterministicCrashPoint(currentRoundIndex);
             const totalFlightTimeNeeded = calculateTimeFromMultiplier(targetCrashPoint);
 
-            // রাউন্ড শুরু ও হিস্টোরি পুশ (সরাসরি স্ক্রিনের মান পুশ করা হচ্ছে)
             if (currentRoundIndex !== lastProcessedRound) {
                 if (lastProcessedRound !== -1) {
-                    historyArray.unshift(lastCrashedDisplayValue); // ডাটাবেস নয়, সরাসরি ডিসপ্লের স্ক্রীন মান যোগ হচ্ছে
+                    historyArray.unshift(lastCrashedDisplayValue);
                     if (historyArray.length > 15) historyArray.pop();
                     renderHistoryUI();
                 } else {
@@ -520,7 +560,6 @@
 
             const isBetActiveForCurrentRound = (betRoundIndex === currentRoundIndex);
 
-            // ১. ওয়েটিং ফেজ
             if (cycleElapsed < WAIT_DURATION) {
                 let waitLeft = Math.ceil((WAIT_DURATION - cycleElapsed) / 1000);
                 multiplierDisplay.innerText = "NEXT ROUND IN " + waitLeft + "s";
@@ -539,13 +578,12 @@
                     betBtn.disabled = isProcessingBet;
                 }
             } 
-            // ২. ওড়ার ও ক্র্যাশ ফেজ (মাল্টিপ্লায়ার জাম্প সেফগার্ড)
             else {
                 let flyElapsed = (cycleElapsed - WAIT_DURATION) / 1000;
 
                 if (flyElapsed >= totalFlightTimeNeeded) {
                     currentLocalMult = targetCrashPoint; 
-                    lastCrashedDisplayValue = currentLocalMult; // ক্র্যাশ মানটি হিস্টোরির জন্য সেভ করা হচ্ছে
+                    lastCrashedDisplayValue = currentLocalMult;
 
                     multiplierDisplay.innerText = "FLEW AWAY!\n" + targetCrashPoint.toFixed(2) + "x";
                     multiplierDisplay.classList.add('crashed');
@@ -563,8 +601,6 @@
                 } 
                 else {
                     let calculatedMult = calculateMultiplierFromTime(flyElapsed);
-                    
-                    // কড়া চেক: মান যেন কোনো অবস্থায় ক্র্যাশ পয়েন্ট ছাড়িয়ে না যায়
                     currentLocalMult = Math.min(calculatedMult, targetCrashPoint);
 
                     multiplierDisplay.innerText = currentLocalMult.toFixed(2) + "x";
@@ -595,7 +631,6 @@
 
         masterGameLoop();
 
-        // বেটিং ও ক্যাশআউট
         betBtn.addEventListener('click', function() {
             if (!currentUser) return alert("Please Login First!");
 
@@ -661,7 +696,6 @@
             }
         });
 
-        // মোডাল কন্টাক্ট ও অ্যাকশন
         document.getElementById('open-deposit-btn').onclick = function() { depositModal.classList.remove('hidden'); };
         document.getElementById('close-dep-btn').onclick = function() { depositModal.classList.add('hidden'); };
         document.getElementById('open-withdraw-btn').onclick = function() { withdrawModal.classList.remove('hidden'); };
@@ -678,6 +712,8 @@
             }).then(function() {
                 alert("Deposit request submitted!");
                 depositModal.classList.add('hidden');
+                document.getElementById('dep-amount').value = '';
+                document.getElementById('dep-trx').value = '';
             }).catch(function(err) { alert(err.message); });
         };
 
