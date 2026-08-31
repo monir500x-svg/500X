@@ -3,50 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Master Admin</title>
+    <title>Aviator Pro - Admin Dashboard</title>
+
+    <!-- Firebase v9 Compat SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <style>
-        :root { --bg: #0b0e14; --card: #161b26; --green: #43a047; --red: #e53935; --text: #fff; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background: var(--bg); color: var(--text); padding: 20px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
-        .card { background: var(--card); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 20px; }
-        h2 { margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
-        .status { font-size: 1.1rem; margin: 20px 0; color: #64b5f6; font-weight: bold; }
-        .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
-        .btn-crash { background: var(--red); width: 100%; padding: 18px; font-size: 1.2rem; margin-top: 15px; }
-        .btn-approve { background: var(--green); }
-        .btn-reject { background: var(--red); }
-        .req-item { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .req-info { font-size: 0.85rem; line-height: 1.4; }
+        :root {
+            --bg-dark: #0a0e17;
+            --card-bg: rgba(18, 26, 41, 0.95);
+            --accent-green: #00c853;
+            --accent-red: #ff1744;
+            --accent-blue: #29b6f6;
+            --accent-gold: #ffd700;
+            --text-main: #ffffff;
+            --text-dim: #90a4ae;
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 14px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .admin-title { font-size: 1.2rem; font-weight: 800; color: var(--accent-gold); letter-spacing: 1px; }
+
+        /* Stat Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-card h3 { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; }
+        .stat-card p { font-size: 1.5rem; font-weight: bold; color: var(--text-main); }
+
+        /* Main Section Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .card-header {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Form Inputs & Buttons */
+        .input-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+        input[type="text"], input[type="number"] {
+            flex: 1; min-width: 180px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--glass-border);
+            color: white; padding: 10px 14px;
+            border-radius: 8px; font-size: 0.9rem; outline: none;
+        }
+        
+        .btn {
+            background: #1976d2; color: white; border: none; padding: 10px 18px;
+            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85rem;
+            transition: 0.2s;
+        }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-green { background: var(--accent-green); color: #000; }
+        .btn-red { background: var(--accent-red); }
+        .btn-gold { background: var(--accent-gold); color: #000; }
+
+        /* Data Tables */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+        th { background: rgba(255, 255, 255, 0.04); color: var(--text-dim); padding: 10px; font-weight: 600; }
+        td { padding: 12px 10px; border-bottom: 1px solid var(--glass-border); }
+        tr:hover { background: rgba(255,255,255,0.02); }
+
+        .badge {
+            padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase;
+        }
+        .badge-pending { background: rgba(255, 215, 0, 0.2); color: var(--accent-gold); }
+        .badge-approved { background: rgba(0, 200, 83, 0.2); color: var(--accent-green); }
+        .badge-rejected { background: rgba(255, 23, 68, 0.2); color: var(--accent-red); }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px; }
+        .tab-btn { background: transparent; border: none; color: var(--text-dim); padding: 8px 16px; font-size: 0.9rem; font-weight: bold; cursor: pointer; border-radius: 6px; }
+        .tab-btn.active { background: rgba(41, 182, 246, 0.15); color: var(--accent-blue); }
     </style>
 </head>
 <body>
 
-    <h1 style="text-align: center; margin-bottom: 20px; color: #e53935;">✈️ AVIATOR MASTER ADMIN PANEL</h1>
+    <header>
+        <div class="admin-title">⚡ AVIATOR ADMIN CONTROL</div>
+        <div style="font-size: 0.8rem; color: var(--text-dim);" id="admin-status">Connected to Firebase</div>
+    </header>
 
-    <div class="grid">
-        <div class="card" style="text-align: center;">
-            <h2>ইনস্ট্যান্ট গেম কন্ট্রোল</h2>
-            <div class="status" id="admin-status">সার্ভার প্রস্তুত (অটো-লুপ সক্রিয়)</div>
-            <button class="btn btn-crash" id="force-crash-btn">🔥 FORCE CRASH NOW</button>
+    <!-- Stat Dashboard -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Registered Users</h3>
+            <p id="stat-total-users">0</p>
         </div>
-
-        <div class="card">
-            <h2>ডিপোজিট রিকোয়েস্ট (Deposit Requests)</h2>
-            <div id="dep-list">কোনো পেন্ডিং ডিপোজিট নেই</div>
+        <div class="stat-card">
+            <h3>Total User Balance</h3>
+            <p style="color: var(--accent-green);" id="stat-total-bal">৳ 0.00</p>
         </div>
-
-        <div class="card" style="grid-column: 1 / -1;">
-            <h2>উইথড্র রিকোয়েস্ট (Withdraw Requests)</h2>
-            <div id="with-list">কোনো পেন্ডিং উইথড্র নেই</div>
+        <div class="stat-card">
+            <h3>Pending Deposits</h3>
+            <p style="color: var(--accent-gold);" id="stat-pending-dep">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Pending Withdraws</h3>
+            <p style="color: var(--accent-blue);" id="stat-pending-with">0</p>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, remove, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    <!-- Send Money Controller -->
+    <div class="card">
+        <div class="card-header">
+            <span>💳 Deposit Send Money Number Settings</span>
+            <span id="current-send-num-display" style="font-size: 0.85rem; color: var(--accent-gold);">Current: Loading...</span>
+        </div>
+        <div class="input-group">
+            <input type="text" id="send-money-input" placeholder="Enter Send Money Number (e.g. 01700000000)">
+            <button class="btn btn-green" id="save-num-btn">Save Number</button>
+            <button class="btn btn-red" id="remove-num-btn">Turn Deposit OFF</button>
+        </div>
+    </div>
 
+    <!-- Requests Tabs & Tables -->
+    <div class="card">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('deposits')">Deposit Requests</button>
+            <button class="tab-btn" onclick="switchTab('withdraws')">Withdraw Requests</button>
+            <button class="tab-btn" onclick="switchTab('users')">User Balance Management</button>
+        </div>
+
+        <!-- Deposit Section -->
+        <div id="tab-deposits">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>User Email</th>
+                            <th>Amount</th>
+                            <th>TrxID</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deposit-list">
+                        <tr><td colspan="6" style="text-align: center;">Loading requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Withdraw Section -->
+        <div id="tab-withdraws" style="display: none;">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>User Email</th>
+                            <th>Amount</th>
+                            <th>Receiver Phone</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdraw-list">
+                        <tr><td colspan="6" style="text-align: center;">Loading requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- User Balance Control Section -->
+        <div id="tab-users" style="display: none;">
+            <div class="input-group" style="margin-bottom: 16px;">
+                <input type="text" id="user-search-input" placeholder="Search User by Email...">
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User Email</th>
+                            <th>UID</th>
+                            <th>Current Balance</th>
+                            <th>Direct Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-list">
+                        <tr><td colspan="4" style="text-align: center;">Loading users...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAyTOnCm5IuPcB-yvGjFl3KbwRVxNrcNSY",
             authDomain: "ff-to-gaming-4ea1b.firebaseapp.com",
@@ -57,94 +249,217 @@
             appId: "1:816776130875:web:c3e7984e0de53cbd89871e"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        const adminStatus = document.getElementById('admin-status');
-        const forceCrashBtn = document.getElementById('force-crash-btn');
+        let allUsers = {};
+        let allDeposits = {};
+        let allWithdraws = {};
 
-        // ইনস্ট্যান্ট ফোর্স ক্র্যাশ ট্রিগার
-        forceCrashBtn.addEventListener('click', async () => {
-            const now = Date.now();
-            await set(ref(db, 'forceCrash'), {
-                timestamp: now,
-                triggered: true
-            });
-            adminStatus.innerText = "গেম ম্যানুয়ালি ক্র্যাশ করানো হয়েছে!";
-            setTimeout(() => { adminStatus.innerText = "সার্ভার প্রস্তুত (অটো-লুপ সক্রিয়)"; }, 3000);
+        // 1. Send Money Number Logic
+        const sendNumInput = document.getElementById('send-money-input');
+        const currentSendNumDisplay = document.getElementById('current-send-num-display');
+
+        db.ref('adminSettings/sendMoneyNumber').on('value', snap => {
+            const num = snap.val();
+            if (num && num.trim() !== '') {
+                currentSendNumDisplay.innerText = "Current Active: " + num;
+                sendNumInput.value = num;
+            } else {
+                currentSendNumDisplay.innerText = "Status: Deposit OFF (No Active Number)";
+                sendNumInput.value = "";
+            }
         });
 
-        // Deposit Request Manager
-        onValue(ref(db, 'depositRequests'), (snapshot) => {
-            const depList = document.getElementById('dep-list');
-            depList.innerHTML = '';
-            const data = snapshot.val();
-            if (!data) return depList.innerText = 'কোনো পেন্ডিং ডিপোজিট নেই';
+        document.getElementById('save-num-btn').onclick = () => {
+            const val = sendNumInput.value.trim();
+            if (!val) return alert("Please enter a valid phone number!");
+            db.ref('adminSettings/sendMoneyNumber').set(val).then(() => alert("Send Money Number Saved Successfully!"));
+        };
 
-            Object.keys(data).forEach(key => {
-                const req = data[key];
+        document.getElementById('remove-num-btn').onclick = () => {
+            if (confirm("Are you sure you want to TURN OFF Deposits?")) {
+                db.ref('adminSettings/sendMoneyNumber').remove().then(() => alert("Deposits Disabled!"));
+            }
+        };
+
+        // 2. Fetch Users & Stats
+        db.ref('users').on('value', snap => {
+            allUsers = snap.val() || {};
+            let totalUsers = 0;
+            let totalBal = 0;
+
+            for (let uid in allUsers) {
+                totalUsers++;
+                totalBal += (allUsers[uid].balance || 0);
+            }
+
+            document.getElementById('stat-total-users').innerText = totalUsers;
+            document.getElementById('stat-total-bal').innerText = "৳ " + totalBal.toFixed(2);
+            renderUsersTable();
+        });
+
+        // 3. Deposit Requests Logic
+        db.ref('depositRequests').on('value', snap => {
+            allDeposits = snap.val() || {};
+            let pendingCount = 0;
+            let listHtml = "";
+
+            let keys = Object.keys(allDeposits).reverse();
+            keys.forEach(key => {
+                let req = allDeposits[key];
+                if (req.status === 'pending') pendingCount++;
+
+                let timeStr = new Date(req.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                let badge = `<span class="badge badge-${req.status}">${req.status}</span>`;
+                
+                let actions = "";
                 if (req.status === 'pending') {
-                    const div = document.createElement('div');
-                    div.className = 'req-item';
-                    div.innerHTML = `
-                        <div class="req-info">
-                            <b>User:</b> ${req.email}<br>
-                            <b>Amount:</b> ৳${req.amount} | <b>TrxID:</b> ${req.trxId}
-                        </div>
-                        <div>
-                            <button class="btn btn-approve" onclick="approveDep('${key}', '${req.uid}', ${req.amount})">Approve</button>
-                            <button class="btn btn-reject" onclick="rejectReq('depositRequests', '${key}')">Reject</button>
-                        </div>
+                    actions = `
+                        <button class="btn btn-green" style="padding:4px 8px; font-size:0.75rem;" onclick="approveDeposit('${key}', '${req.uid}', ${req.amount})">Approve</button>
+                        <button class="btn btn-red" style="padding:4px 8px; font-size:0.75rem;" onclick="rejectDeposit('${key}')">Reject</button>
                     `;
-                    depList.appendChild(div);
+                }
+
+                listHtml += `
+                    <tr>
+                        <td>${timeStr}</td>
+                        <td>${req.email}</td>
+                        <td style="color:#81c784; font-weight:bold;">৳${req.amount}</td>
+                        <td><code style="color:#ffd700;">${req.trxId}</code></td>
+                        <td>${badge}</td>
+                        <td>${actions}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('stat-pending-dep').innerText = pendingCount;
+            document.getElementById('deposit-list').innerHTML = listHtml || `<tr><td colspan="6" style="text-align:center;">No deposit requests found</td></tr>`;
+        });
+
+        function approveDeposit(reqId, uid, amount) {
+            if (!confirm(`Approve ৳${amount} deposit for user?`)) return;
+
+            db.ref('users/' + uid + '/balance').transaction(b => (b || 0) + amount, (err, committed) => {
+                if (committed) {
+                    db.ref('depositRequests/' + reqId).update({ status: 'approved' });
+                    alert("Deposit Approved!");
                 }
             });
+        }
+
+        function rejectDeposit(reqId) {
+            if (confirm("Reject this deposit request?")) {
+                db.ref('depositRequests/' + reqId).update({ status: 'rejected' });
+            }
+        }
+
+        // 4. Withdraw Requests Logic
+        db.ref('withdrawRequests').on('value', snap => {
+            allWithdraws = snap.val() || {};
+            let pendingCount = 0;
+            let listHtml = "";
+
+            let keys = Object.keys(allWithdraws).reverse();
+            keys.forEach(key => {
+                let req = allWithdraws[key];
+                if (req.status === 'pending') pendingCount++;
+
+                let timeStr = new Date(req.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                let badge = `<span class="badge badge-${req.status}">${req.status}</span>`;
+                
+                let actions = "";
+                if (req.status === 'pending') {
+                    actions = `
+                        <button class="btn btn-green" style="padding:4px 8px; font-size:0.75rem;" onclick="approveWithdraw('${key}')">Approve</button>
+                        <button class="btn btn-red" style="padding:4px 8px; font-size:0.75rem;" onclick="rejectWithdraw('${key}', '${req.uid}', ${req.amount})">Reject & Refund</button>
+                    `;
+                }
+
+                listHtml += `
+                    <tr>
+                        <td>${timeStr}</td>
+                        <td>${req.email}</td>
+                        <td style="color:#ff8a80; font-weight:bold;">৳${req.amount}</td>
+                        <td><strong style="color:#29b6f6;">${req.receiver}</strong></td>
+                        <td>${badge}</td>
+                        <td>${actions}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('stat-pending-with').innerText = pendingCount;
+            document.getElementById('withdraw-list').innerHTML = listHtml || `<tr><td colspan="6" style="text-align:center;">No withdraw requests found</td></tr>`;
         });
 
-        // Withdraw Request Manager
-        onValue(ref(db, 'withdrawRequests'), (snapshot) => {
-            const withList = document.getElementById('with-list');
-            withList.innerHTML = '';
-            const data = snapshot.val();
-            if (!data) return withList.innerText = 'কোনো পেন্ডিং উইথড্র নেই';
+        function approveWithdraw(reqId) {
+            if (confirm("Mark this withdraw request as Sent/Approved?")) {
+                db.ref('withdrawRequests/' + reqId).update({ status: 'approved' });
+            }
+        }
 
-            Object.keys(data).forEach(key => {
-                const req = data[key];
-                if (req.status === 'pending') {
-                    const div = document.createElement('div');
-                    div.className = 'req-item';
-                    div.innerHTML = `
-                        <div class="req-info">
-                            <b>User:</b> ${req.email}<br>
-                            <b>Amount:</b> ৳${req.amount} | <b>To:</b> ${req.receiver}
-                        </div>
-                        <div>
-                            <button class="btn btn-approve" onclick="approveWith('${key}')">Approve Paid</button>
-                            <button class="btn btn-reject" onclick="rejectWith('${key}', '${req.uid}', ${req.amount})">Refund & Reject</button>
-                        </div>
-                    `;
-                    withList.appendChild(div);
+        function rejectWithdraw(reqId, uid, amount) {
+            if (!confirm(`Reject & Refund ৳${amount} back to user balance?`)) return;
+
+            db.ref('users/' + uid + '/balance').transaction(b => (b || 0) + amount, (err, committed) => {
+                if (committed) {
+                    db.ref('withdrawRequests/' + reqId).update({ status: 'rejected' });
+                    alert("Withdraw Rejected & Amount Refunded!");
                 }
             });
-        });
+        }
 
-        window.approveDep = async (key, uid, amount) => {
-            await runTransaction(ref(db, `users/${uid}/balance`), (b) => (b || 0) + amount);
-            await remove(ref(db, `depositRequests/${key}`));
-        };
+        // 5. User Management Render & Search
+        function renderUsersTable() {
+            const searchVal = document.getElementById('user-search-input').value.toLowerCase();
+            let html = "";
 
-        window.rejectReq = async (path, key) => {
-            await remove(ref(db, `${path}/${key}`));
-        };
+            for (let uid in allUsers) {
+                let u = allUsers[uid];
+                let email = u.email || "No Email";
 
-        window.approveWith = async (key) => {
-            await remove(ref(db, `withdrawRequests/${key}`));
-        };
+                if (email.toLowerCase().includes(searchVal) || uid.includes(searchVal)) {
+                    html += `
+                        <tr>
+                            <td>${email}</td>
+                            <td><small style="color:var(--text-dim);">${uid}</small></td>
+                            <td style="color:#81c784; font-weight:bold;">৳ ${(u.balance || 0).toFixed(2)}</td>
+                            <td>
+                                <button class="btn btn-green" style="padding:2px 6px; font-size:0.7rem;" onclick="adjustBalance('${uid}', 100)">+৳100</button>
+                                <button class="btn btn-gold" style="padding:2px 6px; font-size:0.7rem;" onclick="adjustBalance('${uid}', 500)">+৳500</button>
+                                <button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="customDeduct('${uid}')">Custom</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
 
-        window.rejectWith = async (key, uid, amount) => {
-            await runTransaction(ref(db, `users/${uid}/balance`), (b) => (b || 0) + amount);
-            await remove(ref(db, `withdrawRequests/${key}`));
-        };
+            document.getElementById('user-list').innerHTML = html || `<tr><td colspan="4" style="text-align:center;">No matching users found</td></tr>`;
+        }
+
+        document.getElementById('user-search-input').addEventListener('input', renderUsersTable);
+
+        function adjustBalance(uid, amt) {
+            db.ref('users/' + uid + '/balance').transaction(b => (b || 0) + amt);
+        }
+
+        function customDeduct(uid) {
+            let val = prompt("Enter Amount to Add (+) or Deduct (-):\nExample: 200 or -200");
+            let num = parseFloat(val);
+            if (!isNaN(num)) {
+                adjustBalance(uid, num);
+            }
+        }
+
+        // Tab Navigation
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('tab-deposits').style.display = tab === 'deposits' ? 'block' : 'none';
+            document.getElementById('tab-withdraws').style.display = tab === 'withdraws' ? 'block' : 'none';
+            document.getElementById('tab-users').style.display = tab === 'users' ? 'block' : 'none';
+        }
     </script>
 </body>
 </html>
