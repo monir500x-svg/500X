@@ -1556,12 +1556,12 @@
             return Number.isFinite(n) ? Math.round(n * 100) / 100 : NaN;
         }
 
-        async function findAndReserveMatchingWithdrawal(amount, method) {
+        async function findAndReserveMatchingWithdrawal(amount, method, reserveForSubmit = false) {
             const requestedAmount = normalizeMoney(amount);
             const requestedMethod = normalizePaymentMethod(method);
             if (!(requestedAmount >= 50) || !['bkash','nagad'].includes(requestedMethod)) return null;
-            if (activeMatchedWithdrawal && activeMatchedWithdrawal.amount === requestedAmount && activeMatchedWithdrawal.method === requestedMethod) return activeMatchedWithdrawal;
-            if (activeMatchedWithdrawal) await releaseActiveDepositMatch();
+            if (activeMatchedWithdrawal && activeMatchedWithdrawal.amount === requestedAmount && activeMatchedWithdrawal.method === requestedMethod && !reserveForSubmit) return activeMatchedWithdrawal;
+            if (!reserveForSubmit && activeMatchedWithdrawal) activeMatchedWithdrawal = null;
             const seq = ++depositMatchSeq;
             try {
                 const snap = await db.ref('adminRequests/withdrawals').once('value');
@@ -1573,9 +1573,22 @@
                         const wMethod = normalizePaymentMethod(w.method || w.paymentMethod || w.withdrawMethod);
                         const wAmount = normalizeMoney(w.amount ?? w.withdrawAmount ?? w.requestedAmount);
                         const account = String(w.accountNo ?? w.accountNumber ?? w.mobile ?? w.phone ?? '').trim();
-                        return status === 'pending' && wMethod === requestedMethod && wAmount === requestedAmount && !!account && !w.matchedDepositId;
+                        const linkedDeposit = String(w.matchedDepositId || '').trim();
+                        const staleReservation = linkedDeposit.startsWith('reserved-');
+                        return status === 'pending' && wMethod === requestedMethod && wAmount === requestedAmount && !!account && (!linkedDeposit || staleReservation);
                     })
                     .sort((a,b) => Number(a[1]?.timestamp || a[1]?.createdAt || 0) - Number(b[1]?.timestamp || b[1]?.createdAt || 0));
+                if (!rows.length) return null;
+
+                // Merely opening the payment portal MUST NOT reserve a withdrawal.
+                // Reservation happens only when the user actually submits the TrxID.
+                if (!reserveForSubmit) {
+                    const [id,w] = rows[0];
+                    const account = String(w.accountNo ?? w.accountNumber ?? w.mobile ?? w.phone ?? '').trim();
+                    activeMatchedWithdrawal = { id, amount:requestedAmount, method:requestedMethod, accountNo:account, reservationId:null };
+                    return activeMatchedWithdrawal;
+                }
+
                 for (const [id,w] of rows) {
                     const ref = db.ref('adminRequests/withdrawals/' + id);
                     const claim = await ref.transaction(current => {
@@ -1584,8 +1597,10 @@
                         const currentAmount = normalizeMoney(current.amount ?? current.withdrawAmount ?? current.requestedAmount);
                         const currentStatus = String(current.status || 'pending').trim().toLowerCase();
                         const currentAccount = String(current.accountNo ?? current.accountNumber ?? current.mobile ?? current.phone ?? '').trim();
-                        if (currentStatus !== 'pending' || currentMethod !== requestedMethod || currentAmount !== requestedAmount || !currentAccount || current.matchedDepositId) return;
-                        return Object.assign({}, current, { matchedDepositId:'reserved-' + (currentUser?.uid||'user') + '-' + Date.now(), matchedAt:firebase.database.ServerValue.TIMESTAMP });
+                        const existingLink = String(current.matchedDepositId || '').trim();
+                        const reclaimableStaleReservation = existingLink.startsWith('reserved-');
+                        if (currentStatus !== 'pending' || currentMethod !== requestedMethod || currentAmount !== requestedAmount || !currentAccount || (existingLink && !reclaimableStaleReservation)) return;
+                        return Object.assign({}, current, { matchedDepositId:'submitting-' + (currentUser?.uid||'user') + '-' + Date.now(), matchedAt:firebase.database.ServerValue.TIMESTAMP });
                     });
                     if (claim.committed) {
                         const c = claim.snapshot.val() || {};
@@ -1629,7 +1644,7 @@
 
             // Give the portal a short loading/checking state before showing the destination number.
             await new Promise(resolve => setTimeout(resolve, 900));
-            const match = await findAndReserveMatchingWithdrawal(amt, method);
+            const match = await findAndReserveMatchingWithdrawal(amt, method, false);
             const number = String(match?.accountNo || depositPaymentNumbers[method] || '').trim();
             depositPortalChecking = false;
 
@@ -1676,7 +1691,7 @@
             const amt = parseFloat(depositAmountEl.value);
             const method = depositMethodEl.value;
             const trxId = document.getElementById('deposit-trxid').value.trim();
-            const match = await findAndReserveMatchingWithdrawal(amt, method);
+            const match = await findAndReserveMatchingWithdrawal(amt, method, true);
             const paymentNumber = String(match?.accountNo || depositPaymentNumbers[method] || '').trim();
             depositSubmitMsg.innerText = '';
             if (!paymentNumber) { depositSubmitMsg.style.color='#ef9a9a'; depositSubmitMsg.innerText='এই পেমেন্ট মাধ্যমের নম্বর এখনো সেট করা হয়নি।'; return; }
@@ -2289,127 +2304,17 @@
             });
         }
 
-        // Aviator rounds: the next round starts 3 seconds after the previous
-        // crash instead of waiting for a fixed 100-second clock slot.
-        // Round state is synchronized through Firebase so all users see the
-        // same round/crash timing.
-        const AVIATOR_STATE_PATH = 'gameState/aviator';
-        const AVIATOR_ROUND_MIN_GAP = 3000;
-        let aviatorRoundState = null;
-        let aviatorStateReady = false;
-        let aviatorStateAdvancing = false;
-        let aviatorStateListenerStarted = false;
-
-        function getAviatorFlightDurationMsForRound(roundIndex, crashPoint) {
-            const point = Number(crashPoint);
-            const sec = calculateTimeFromMultiplier(point);
-            return Math.max(0, sec * 1000);
-        }
-
-        function normalizeAviatorState(raw) {
-            if (!raw || typeof raw !== 'object') return null;
-            const idx = Number(raw.roundIndex);
-            const started = Number(raw.startedAt);
-            const crash = Number(raw.crashPoint);
-            const crashAt = Number(raw.crashAt);
-            if (!Number.isFinite(idx) || !Number.isFinite(started) || !Number.isFinite(crash) || !Number.isFinite(crashAt)) return null;
-            return {
-                roundIndex: Math.floor(idx),
-                startedAt: started,
-                crashPoint: crash,
-                crashAt: crashAt
-            };
-        }
-
-        function buildAviatorRoundState(roundIndex, startedAt) {
-            const crashPoint = getDeterministicCrashPoint(roundIndex);
-            const flightMs = getAviatorFlightDurationMsForRound(roundIndex, crashPoint);
-            return {
-                roundIndex: Math.floor(roundIndex),
-                startedAt: Number(startedAt),
-                crashPoint: Number(crashPoint.toFixed(2)),
-                crashAt: Number(startedAt) + flightMs
-            };
-        }
-
-        async function ensureAviatorRoundState(now) {
-            if (aviatorStateAdvancing) return;
-            aviatorStateAdvancing = true;
-            try {
-                const ref = db.ref(AVIATOR_STATE_PATH);
-                const result = await ref.transaction(function(raw) {
-                    const state = normalizeAviatorState(raw);
-                    if (!state) {
-                        // The first round starts immediately from the current
-                        // server time. There is no artificial 100-second wait.
-                        return buildAviatorRoundState(0, now);
-                    }
-                    if (now < state.crashAt + AVIATOR_ROUND_MIN_GAP) return;
-
-                    // Advance by exactly crash + 3 seconds. If a client was
-                    // backgrounded for a while, catch up in one transaction.
-                    let next = state;
-                    let guard = 0;
-                    while (now >= next.crashAt + AVIATOR_ROUND_MIN_GAP && guard < 20) {
-                        next = buildAviatorRoundState(next.roundIndex + 1, next.crashAt + AVIATOR_ROUND_MIN_GAP);
-                        guard++;
-                    }
-                    return next;
-                });
-                if (result && result.committed) {
-                    aviatorRoundState = normalizeAviatorState(result.snapshot.val());
-                    aviatorStateReady = !!aviatorRoundState;
-                } else if (result && result.snapshot) {
-                    aviatorRoundState = normalizeAviatorState(result.snapshot.val());
-                    aviatorStateReady = !!aviatorRoundState;
-                }
-            } catch (err) {
-                console.warn('Aviator round state sync failed:', err);
-            } finally {
-                aviatorStateAdvancing = false;
-            }
-        }
-
-        function startAviatorStateListener() {
-            if (aviatorStateListenerStarted) return;
-            aviatorStateListenerStarted = true;
-            db.ref(AVIATOR_STATE_PATH).on('value', function(snapshot) {
-                const next = normalizeAviatorState(snapshot.val());
-                if (next) {
-                    aviatorRoundState = next;
-                    aviatorStateReady = true;
-                }
-            });
-        }
-
-        startAviatorStateListener();
-
-        async function masterGameLoop() {
+        function masterGameLoop() {
             if (!isAviatorOnline()) { stopAviatorLoopForOffline(); return; }
+            const CYCLE_DURATION = 100000;
+            const WAIT_DURATION = 3000;
 
             const now = getAviatorServerNow();
-            if (!aviatorStateReady) {
-                await ensureAviatorRoundState(now);
-            }
-            if (!aviatorRoundState) {
-                if (isAviatorOnline()) requestAnimationFrame(masterGameLoop);
-                return;
-            }
+            const currentRoundIndex = Math.floor(now / CYCLE_DURATION);
+            const cycleElapsed = now % CYCLE_DURATION;
 
-            // If the current round has crashed and its 3-second gap has passed,
-            // create the next round immediately. This removes the old 100s idle
-            // period while keeping the crash point deterministic per round.
-            if (now >= aviatorRoundState.crashAt + AVIATOR_ROUND_MIN_GAP) {
-                await ensureAviatorRoundState(now);
-                if (!aviatorRoundState) return;
-            }
-
-            const currentRoundIndex = aviatorRoundState.roundIndex;
-            const targetCrashPoint = Number(aviatorRoundState.crashPoint);
-            const roundStartMs = Number(aviatorRoundState.startedAt);
-            const crashAtMs = Number(aviatorRoundState.crashAt);
-            const totalFlightTimeNeeded = Math.max(0, (crashAtMs - roundStartMs) / 1000);
-            const cycleElapsed = now - roundStartMs;
+            const targetCrashPoint = getDeterministicCrashPoint(currentRoundIndex);
+            const totalFlightTimeNeeded = calculateTimeFromMultiplier(targetCrashPoint);
 
             if (currentRoundIndex !== lastProcessedRound) {
                 if (lastProcessedRound !== -1) {
@@ -2417,8 +2322,8 @@
                     if (historyArray.length > 15) historyArray.pop();
                     renderHistoryUI();
                 } else {
-                    for (let k = 3; k >= 1; k--) {
-                        historyArray.push(getDeterministicCrashPoint(Math.max(0, currentRoundIndex - k)));
+                    for(let k = 3; k >= 1; k--) {
+                        historyArray.push(getDeterministicCrashPoint(currentRoundIndex - k));
                     }
                     renderHistoryUI();
                 }
@@ -2428,7 +2333,7 @@
                 cashedMultiplier = 0;
                 cashedAmount = 0;
                 cashoutBannerContainer.innerHTML = '';
-
+                
                 if (betRoundIndex < currentRoundIndex) {
                     betRoundIndex = -1;
                     activeBet = 0;
@@ -2437,65 +2342,70 @@
 
             const isBetActiveForCurrentRound = (betRoundIndex === currentRoundIndex);
 
-            if (cycleElapsed < AVIATOR_ROUND_MIN_GAP / 1000) {
-                multiplierDisplay.innerText = 'NEXT ROUND IN 0s';
+            if (cycleElapsed < WAIT_DURATION) {
+                let waitLeft = Math.ceil((WAIT_DURATION - cycleElapsed) / 1000);
+                multiplierDisplay.innerText = "NEXT ROUND IN " + waitLeft + "s";
                 multiplierDisplay.classList.remove('crashed');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                betBtn.innerText = 'অপেক্ষমাণ...';
-                betBtn.className = 'av-btn av-btn-action av-btn-waiting';
-                betBtn.disabled = true;
-            } else if (now >= crashAtMs) {
-                currentLocalMult = targetCrashPoint;
-                lastCrashedDisplayValue = currentLocalMult;
-
-                const secondsAfterCrash = Math.max(0, (now - crashAtMs) / 1000);
-                const countdownLeft = Math.max(0, Math.ceil((AVIATOR_ROUND_MIN_GAP - (now - crashAtMs)) / 1000));
-                multiplierDisplay.innerText = 'FLEW AWAY!\n' + targetCrashPoint.toFixed(2) + 'x';
-                multiplierDisplay.classList.add('crashed');
-
-                if (isBetActiveForCurrentRound && !hasCashedOut && currentUser && lastCrashSettlementAttempt !== currentRoundIndex) {
-                    lastCrashSettlementAttempt = currentRoundIndex;
-                    settleAviatorCrash(currentRoundIndex, targetCrashPoint);
-                }
-
-                renderMyLiveBetUI(currentRoundIndex, true);
-                drawAviatorFlight(targetCrashPoint, totalFlightTimeNeeded + secondsAfterCrash, totalFlightTimeNeeded);
-
-                if (now < crashAtMs + AVIATOR_ROUND_MIN_GAP) {
-                    betBtn.innerText = 'NEXT ROUND IN ' + countdownLeft + 's';
-                    betBtn.className = 'av-btn av-btn-action av-btn-waiting';
-                    betBtn.disabled = true;
-                } else {
-                    // The next round is created on the next loop tick, so the
-                    // player is never forced to wait another 100 seconds.
-                    betBtn.innerText = 'পরবর্তী রাউন্ড...';
-                    betBtn.className = 'av-btn av-btn-action av-btn-waiting';
-                    betBtn.disabled = true;
-                }
-            } else {
-                const flyElapsed = Math.max(0, (now - roundStartMs) / 1000);
-                const calculatedMult = calculateMultiplierFromTime(flyElapsed);
-                currentLocalMult = Math.min(calculatedMult, targetCrashPoint);
-
-                multiplierDisplay.innerText = currentLocalMult.toFixed(2) + 'x';
-                multiplierDisplay.classList.remove('crashed');
 
                 renderMyLiveBetUI(currentRoundIndex, false);
-                drawAviatorFlight(currentLocalMult, flyElapsed, totalFlightTimeNeeded);
 
-                if (isBetActiveForCurrentRound && !hasCashedOut) {
-                    const liveWin = (activeBet * currentLocalMult).toFixed(2);
-                    betBtn.innerText = 'CASH OUT\n(' + liveWin + ' কয়েন)';
-                    betBtn.className = 'av-btn av-btn-action av-btn-cashout';
-                    betBtn.disabled = false;
-                } else if (hasCashedOut) {
-                    betBtn.innerText = 'CASHED OUT\n(' + cashedAmount.toFixed(2) + ' কয়েন)';
-                    betBtn.className = 'av-btn av-btn-action av-btn-waiting';
+                if (isBetActiveForCurrentRound) {
+                    betBtn.innerText = "বেট প্লেসড";
+                    betBtn.className = "av-btn av-btn-action av-btn-waiting";
                     betBtn.disabled = true;
                 } else {
-                    betBtn.innerText = 'পরবর্তী রাউন্ডে বেট দিন';
-                    betBtn.className = 'av-btn av-btn-action av-btn-bet';
-                    betBtn.disabled = false;
+                    betBtn.innerText = isProcessingBet ? "প্রসেসিং..." : "পরবর্তী রাউন্ডে বেট দিন";
+                    betBtn.className = "av-btn av-btn-action av-btn-bet";
+                    betBtn.disabled = isProcessingBet;
+                }
+            } 
+            else {
+                let flyElapsed = (cycleElapsed - WAIT_DURATION) / 1000;
+
+                if (flyElapsed >= totalFlightTimeNeeded) {
+                    currentLocalMult = targetCrashPoint; 
+                    lastCrashedDisplayValue = currentLocalMult;
+
+                    multiplierDisplay.innerText = "FLEW AWAY!\n" + targetCrashPoint.toFixed(2) + "x";
+                    multiplierDisplay.classList.add('crashed');
+
+                    if (isBetActiveForCurrentRound && !hasCashedOut && currentUser && lastCrashSettlementAttempt !== currentRoundIndex) {
+                        lastCrashSettlementAttempt = currentRoundIndex;
+                        settleAviatorCrash(currentRoundIndex, targetCrashPoint);
+                    }
+
+                    renderMyLiveBetUI(currentRoundIndex, true);
+                    drawAviatorFlight(targetCrashPoint, flyElapsed, totalFlightTimeNeeded);
+
+                    betBtn.innerText = "অপেক্ষমাণ...";
+                    betBtn.className = "av-btn av-btn-action av-btn-waiting";
+                    betBtn.disabled = true;
+                } 
+                else {
+                    let calculatedMult = calculateMultiplierFromTime(flyElapsed);
+                    currentLocalMult = Math.min(calculatedMult, targetCrashPoint);
+
+                    multiplierDisplay.innerText = currentLocalMult.toFixed(2) + "x";
+                    multiplierDisplay.classList.remove('crashed');
+
+                    renderMyLiveBetUI(currentRoundIndex, false);
+                    drawAviatorFlight(currentLocalMult, flyElapsed, totalFlightTimeNeeded);
+
+                    if (isBetActiveForCurrentRound && !hasCashedOut) {
+                        const liveWin = (activeBet * currentLocalMult).toFixed(2);
+                        betBtn.innerText = "CASH OUT\n(" + liveWin + " কয়েন)";
+                        betBtn.className = "av-btn av-btn-action av-btn-cashout";
+                        betBtn.disabled = false;
+                    } else if (hasCashedOut) {
+                        betBtn.innerText = "CASHED OUT\n(" + cashedAmount.toFixed(2) + " কয়েন)";
+                        betBtn.className = "av-btn av-btn-action av-btn-waiting";
+                        betBtn.disabled = true;
+                    } else {
+                        betBtn.innerText = "পরবর্তী রাউন্ডে বেট দিন";
+                        betBtn.className = "av-btn av-btn-action av-btn-bet";
+                        betBtn.disabled = false;
+                    }
                 }
             }
 
@@ -2507,16 +2417,14 @@
             if (!isAviatorOnline()) return alert("ইন্টারনেট সংযোগ নেই। সংযোগ ফিরে এলে আবার চেষ্টা করুন।");
             if (!currentUser) return alert("প্রথমে Login করুন!");
 
+            const CYCLE_DURATION = 100000;
+            const WAIT_DURATION = 3000;
             const now = getAviatorServerNow();
-            if (!aviatorRoundState) return alert('রাউন্ড প্রস্তুত হচ্ছে, একটু পর আবার চেষ্টা করুন।');
-            const currentRoundIndex = Number(aviatorRoundState.roundIndex);
+            const cycleElapsed = now % CYCLE_DURATION;
+            const currentRoundIndex = Math.floor(now / CYCLE_DURATION);
             const roundKey = getAviatorRoundKey(currentRoundIndex);
-            const crashAtMs = Number(aviatorRoundState.crashAt);
-            const roundStartMs = Number(aviatorRoundState.startedAt);
-            const roundElapsed = now - roundStartMs;
-            const isBeforeCrash = now < crashAtMs;
 
-            if (isBeforeCrash && roundElapsed < AVIATOR_ROUND_MIN_GAP) {
+            if (cycleElapsed < WAIT_DURATION) {
                 const targetRoundIndex = currentRoundIndex;
                 if (betRoundIndex === targetRoundIndex || isProcessingBet) return;
 
@@ -2570,10 +2478,11 @@
                     alert("লেনদেন ব্যর্থ হয়েছে: " + error.message);
                 });
             }
-            else if (isBeforeCrash && betRoundIndex === currentRoundIndex && !hasCashedOut) {
-                const targetCrashPoint = Number(aviatorRoundState.crashPoint);
+            else if (cycleElapsed >= WAIT_DURATION && betRoundIndex === currentRoundIndex && !hasCashedOut) {
+                const targetCrashPoint = getDeterministicCrashPoint(currentRoundIndex);
+                const totalFlightTimeNeeded = calculateTimeFromMultiplier(targetCrashPoint);
                 const serverNowAtClick = getAviatorServerNow();
-                const flyElapsed = (serverNowAtClick - roundStartMs) / 1000;
+                const flyElapsed = (serverNowAtClick - (currentRoundIndex * CYCLE_DURATION + WAIT_DURATION)) / 1000;
 
                 if (flyElapsed >= totalFlightTimeNeeded) return;
                 if (isProcessingBet) return;
@@ -2604,7 +2513,7 @@
                         return data;
                     }
 
-                    const roundStartMs = Number(aviatorRoundState.startedAt);
+                    const roundStartMs = currentRoundIndex * CYCLE_DURATION + WAIT_DURATION;
                     const elapsedSec = Math.max(0, (authoritativeNow - roundStartMs) / 1000);
                     const liveMultiplier = Math.min(calculateMultiplierFromTime(elapsedSec), targetCrashPoint);
                     const payout = Number(((Number(bet.amount) || 0) * liveMultiplier).toFixed(2));
