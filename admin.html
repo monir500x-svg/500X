@@ -275,6 +275,13 @@ async function loadAll(){
  withdrawals=wd.val()||{};
  boxingConfig=c.val()||{};
  colorGemsConfig=cg.val()||{};
+ gameLogs=[];
+ Object.entries(users).forEach(([uid,u])=>{
+   Object.entries(u?.gameLogs||{}).forEach(([logId,l])=>{
+     if(l && typeof l === 'object') gameLogs.push(Object.assign({id:logId,uid:uid,email:u.email||''},l));
+   });
+ });
+ gameLogs.sort((x,y)=>Number(y.timestamp||0)-Number(x.timestamp||0));
  render();
  renderConfig();
  renderAudit(a.val()||{});
