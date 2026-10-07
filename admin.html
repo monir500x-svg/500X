@@ -1,465 +1,664 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="bn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Pro - Admin Dashboard</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Gaming Zone — Admin Dashboard</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root{--bg:#071018;--panel:#0d1a24;--panel2:#102331;--line:#1e3949;--text:#edf6fb;--muted:#91a8b6;--accent:#54e0a7;--warn:#ffbd5a;--danger:#ff6f7d;--blue:#67a8ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#102a39 0,#071018 48%,#050b10 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans Bengali,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}.app{min-height:100vh;display:grid;grid-template-columns:250px 1fr}.side{padding:22px 16px;border-right:1px solid var(--line);background:rgba(5,12,17,.86);backdrop-filter:blur(14px);position:sticky;top:0;height:100vh}.brand{font-weight:900;font-size:20px}.brand small{display:block;color:var(--muted);font-size:11px;margin-top:4px}.nav{margin-top:28px;display:grid;gap:8px}.nav button{border:1px solid transparent;background:transparent;color:var(--muted);padding:12px 13px;border-radius:12px;text-align:left}.nav button.active,.nav button:hover{background:var(--panel2);border-color:var(--line);color:var(--text)}.main{padding:24px;min-width:0}.top{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:22px}.top h1{margin:0;font-size:25px}.pill{padding:7px 10px;border-radius:999px;background:#10261f;color:var(--accent);font-size:12px}.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:10px 13px;border-radius:10px}.btn.primary{background:var(--accent);color:#062016;border-color:var(--accent);font-weight:800}.btn.danger{background:#32151a;color:#ff9aa4;border-color:#64232b}.btn:disabled{opacity:.45;cursor:not-allowed}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.card{background:linear-gradient(145deg,rgba(16,35,49,.92),rgba(10,22,31,.92));border:1px solid var(--line);border-radius:16px;padding:17px;box-shadow:0 12px 30px rgba(0,0,0,.16)}.stat .label{color:var(--muted);font-size:12px}.stat .num{font-size:26px;font-weight:900;margin-top:7px}.section{margin-top:18px}.section h2{font-size:16px;margin:0 0 11px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}.table{width:100%;border-collapse:collapse;min-width:720px}.table th,.table td{padding:12px 11px;border-bottom:1px solid rgba(30,57,73,.65);text-align:left;font-size:13px}.table th{color:var(--muted);font-weight:600;background:#0b1821}.table tr:last-child td{border-bottom:0}.badge{font-size:11px;border-radius:999px;padding:5px 8px;background:#162b38;color:#b9d1df}.badge.ok{background:#102b22;color:var(--accent)}.badge.warn{background:#302515;color:var(--warn)}.badge.bad{background:#35171c;color:#ff9aa4}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:#08141d;color:var(--text);border-radius:10px;padding:10px}.field textarea{min-height:90px;resize:vertical}.full{grid-column:1/-1}.notice{padding:11px 12px;border-radius:11px;background:#0d202b;color:var(--muted);font-size:12px;line-height:1.55}.search{width:100%;border:1px solid var(--line);background:#08141d;color:var(--text);padding:11px;border-radius:10px;margin-bottom:11px}.page{display:none}.page.active{display:block}.toast{position:fixed;right:18px;bottom:18px;background:#102431;border:1px solid var(--line);padding:12px 14px;border-radius:12px;max-width:340px;z-index:20}.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:18px;z-index:10}.modal .card{width:min(520px,100%)}
 
-    <!-- Firebase v9 Compat SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+/* Boxing King control panel */
+.bk-control-card{background:linear-gradient(180deg,#0d111a,#0a0e15);border:1px solid #5b4b0d;border-radius:18px;padding:18px;box-shadow:0 16px 40px rgba(0,0,0,.24)}
+.bk-title{display:flex;align-items:center;gap:10px;color:#ffd21a;font-size:21px;font-weight:900;margin:0 0 16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.bk-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 8px;border-bottom:1px solid rgba(255,255,255,.07)}
+.bk-row:last-of-type{border-bottom:0}
+.bk-label{font-size:16px;font-weight:800}
+.bk-help{font-size:12px;color:#8f9baa;margin-top:4px}
+.bk-switch{position:relative;width:72px;height:38px;flex:0 0 auto}
+.bk-switch input{opacity:0;width:0;height:0}
+.bk-slider{position:absolute;inset:0;background:#3a3d42;border-radius:999px;transition:.2s;cursor:pointer}
+.bk-slider:before{content:"";position:absolute;width:30px;height:30px;left:4px;top:4px;background:#fff;border-radius:50%;transition:.2s}
+.bk-switch input:checked + .bk-slider{background:#43a047}
+.bk-switch input:checked + .bk-slider:before{transform:translateX(34px)}
+.bk-select,.bk-input{width:100%;background:#090d14;color:#f2f5f7;border:1px solid #5b4b0d;border-radius:12px;padding:13px;font-size:15px;outline:none}
+.bk-select:focus,.bk-input:focus{border-color:#b99619;box-shadow:0 0 0 3px rgba(185,150,25,.12)}
+.bk-preset-wrap{padding:15px 0}
+.bk-preset-title{color:#aab4c1;font-size:14px;margin-bottom:10px}
+.bk-preset-list{display:grid;gap:8px}
+.bk-preset{display:flex;align-items:center;gap:12px;padding:12px 13px;border:1px solid rgba(255,255,255,.08);border-radius:12px;cursor:pointer;background:#0b1018}
+.bk-preset:hover{border-color:#76620f}
+.bk-preset input{accent-color:#43a047;width:18px;height:18px}
+.bk-save{width:100%;margin-top:14px;padding:14px 18px;border:0;border-radius:14px;background:#43a047;color:#fff;font-weight:900;font-size:16px}
+.bk-status{min-height:20px;margin-top:10px;text-align:center;color:#9bb0bd;font-size:12px}
+@media(max-width:900px){.app{grid-template-columns:1fr}.side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:14px}.nav{display:flex;overflow:auto;margin-top:12px}.nav button{white-space:nowrap}.main{padding:16px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.form{grid-template-columns:1fr}}
 
-    <style>
-        :root {
-            --bg-dark: #0a0e17;
-            --card-bg: rgba(18, 26, 41, 0.95);
-            --accent-green: #00c853;
-            --accent-red: #ff1744;
-            --accent-blue: #29b6f6;
-            --accent-gold: #ffd700;
-            --text-main: #ffffff;
-            --text-dim: #90a4ae;
-            --glass-border: rgba(255, 255, 255, 0.08);
-        }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            min-height: 100vh;
-            padding: 16px;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--card-bg);
-            padding: 14px 20px;
-            border-radius: 12px;
-            border: 1px solid var(--glass-border);
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-        }
-
-        .admin-title { font-size: 1.2rem; font-weight: 800; color: var(--accent-gold); letter-spacing: 1px; }
-
-        /* Stat Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 14px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: var(--card-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .stat-card h3 { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; }
-        .stat-card p { font-size: 1.5rem; font-weight: bold; color: var(--text-main); }
-
-        /* Main Section Cards */
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 18px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-
-        .card-header {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: var(--accent-blue);
-            margin-bottom: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* Form Inputs & Buttons */
-        .input-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-        input[type="text"], input[type="number"] {
-            flex: 1; min-width: 180px;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--glass-border);
-            color: white; padding: 10px 14px;
-            border-radius: 8px; font-size: 0.9rem; outline: none;
-        }
-        
-        .btn {
-            background: #1976d2; color: white; border: none; padding: 10px 18px;
-            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85rem;
-            transition: 0.2s;
-        }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-green { background: var(--accent-green); color: #000; }
-        .btn-red { background: var(--accent-red); }
-        .btn-gold { background: var(--accent-gold); color: #000; }
-
-        /* Data Tables */
-        .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
-        th { background: rgba(255, 255, 255, 0.04); color: var(--text-dim); padding: 10px; font-weight: 600; }
-        td { padding: 12px 10px; border-bottom: 1px solid var(--glass-border); }
-        tr:hover { background: rgba(255,255,255,0.02); }
-
-        .badge {
-            padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase;
-        }
-        .badge-pending { background: rgba(255, 215, 0, 0.2); color: var(--accent-gold); }
-        .badge-approved { background: rgba(0, 200, 83, 0.2); color: var(--accent-green); }
-        .badge-rejected { background: rgba(255, 23, 68, 0.2); color: var(--accent-red); }
-
-        /* Tabs */
-        .tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px; }
-        .tab-btn { background: transparent; border: none; color: var(--text-dim); padding: 8px 16px; font-size: 0.9rem; font-weight: bold; cursor: pointer; border-radius: 6px; }
-        .tab-btn.active { background: rgba(41, 182, 246, 0.15); color: var(--accent-blue); }
-    </style>
+    .bk-grid-2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .bk-input, #bkRtpFactor { width:100%; padding:10px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid var(--line); border-radius:8px; }
+    @media (max-width:600px){ .bk-grid-2{grid-template-columns:1fr;} }
+.danger-zone-card{border-color:rgba(255,111,125,.32);background:linear-gradient(145deg,rgba(50,21,26,.55),rgba(16,35,49,.92))}.danger-zone-card h3{color:#ff9aa4}.danger-zone-card .btn.danger{font-weight:800}
+/* Clean admin presentation — visual only */
+.side{box-shadow:18px 0 50px rgba(0,0,0,.18)}
+.brand{letter-spacing:.3px}.brand:before{content:"🛡️ ";font-size:18px}
+.top{padding:16px 18px;border:1px solid rgba(84,224,167,.12);border-radius:18px;background:rgba(13,26,36,.55);box-shadow:0 14px 35px rgba(0,0,0,.12)}
+.top h1{letter-spacing:.2px}.nav button{font-weight:700}.nav button.active{box-shadow:inset 3px 0 0 var(--accent)}
+.card{transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}.card:hover{border-color:rgba(84,224,167,.20);box-shadow:0 16px 36px rgba(0,0,0,.20)}
+@media(max-width:600px){.top{padding:13px 14px}.top h1{font-size:20px}.grid{grid-template-columns:1fr}.stat .num{font-size:22px}}
+</style>
 </head>
 <body>
 
-    <header>
-        <div class="admin-title">⚡ AVIATOR ADMIN CONTROL</div>
-        <div style="font-size: 0.8rem; color: var(--text-dim);" id="admin-status">Connected to Firebase</div>
-    </header>
+<div id="app" class="app">
+<aside class="side">
+  <div class="brand">GAMING ZONE <small>ADMIN CONTROL CENTER</small></div>
+  <div class="nav">
+    <button class="active" data-page="overview">📊 Overview</button>
+    <button data-page="users">👥 Users</button>
+    <button data-page="requests">💳 Requests</button>
+    <button data-page="support">🆘 Help Center</button>
+    <button data-page="games">🎮 Games & Config</button><button data-page="gameLogs">📋 Game Logs</button>
+    <button data-page="announcement">📢 Announcement</button>
+    <button data-page="audit">🛡️ Audit Log</button>
+  </div>
+  
+</aside>
+<main class="main">
 
-    <!-- Stat Dashboard -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>Total Registered Users</h3>
-            <p id="stat-total-users">0</p>
-        </div>
-        <div class="stat-card">
-            <h3>Total User Balance</h3>
-            <p style="color: var(--accent-green);" id="stat-total-bal">৳ 0.00</p>
-        </div>
-        <div class="stat-card">
-            <h3>Pending Deposits</h3>
-            <p style="color: var(--accent-gold);" id="stat-pending-dep">0</p>
-        </div>
-        <div class="stat-card">
-            <h3>Pending Withdraws</h3>
-            <p style="color: var(--accent-blue);" id="stat-pending-with">0</p>
-        </div>
+
+
+
+  <div class="top"><div><h1 id="pageTitle">Overview</h1>
+
+
+<div id="adminEmail" style="color:var(--muted);font-size:12px;margin-top:4px"></div></div><span class="pill">● ADMIN SESSION</span></div>
+
+  <section id="overview" class="page active">
+    <div class="card danger-zone-card" style="margin:0 0 18px;">
+      <h3 style="margin:0 0 6px;">⚠️ Danger Zone — Reset Data</h3>
+      <p style="margin:0 0 10px;opacity:.82;">Admin/request/config/statistics data reset করা যাবে। <b>User Balance কোনোভাবেই কাটবে বা পরিবর্তন হবে না।</b> এই কাজ Undo করা যাবে না।</p>
+      <button id="resetAllBtn" type="button" class="btn danger">♻️ Reset Everything — Keep User Balance</button>
+      <div id="resetAllStatus" style="margin-top:8px;"></div>
     </div>
+    <div class="grid">
+      <div class="card stat"><div class="label">Total users</div><div id="sUsers" class="num">—</div></div>
+      <div class="card stat"><div class="label">Total balance</div><div id="sBalance" class="num">—</div></div>
+      <div class="card stat"><div class="label">Deposit requests</div><div id="sDeposits" class="num">—</div></div>
+      <div class="card stat"><div class="label">Withdrawal requests</div><div id="sWithdrawals" class="num">—</div></div>
+    </div>
+    <div class="section grid" style="grid-template-columns:1.2fr .8fr">
+      <div class="card"><h2>Game activity</h2><div id="gameStats" class="notice">Loading…</div></div>
+      <div class="card"><h2>Security</h2><div class="notice">Outcome manipulation controls are intentionally not included. Use this console for transparent account management, configuration, requests and auditing.</div></div>
+    </div>
+  </section>
 
-    <!-- Send Money Controller -->
+  <section id="users" class="page">
     <div class="card">
-        <div class="card-header">
-            <span>💳 Deposit Send Money Number Settings</span>
-            <span id="current-send-num-display" style="font-size: 0.85rem; color: var(--accent-gold);">Current: Loading...</span>
-        </div>
-        <div class="input-group">
-            <input type="text" id="send-money-input" placeholder="Enter Send Money Number (e.g. 01700000000)">
-            <button class="btn btn-green" id="save-num-btn">Save Number</button>
-            <button class="btn btn-red" id="remove-num-btn">Turn Deposit OFF</button>
-        </div>
+      <h2>Extra Bonus Coins</h2>
+      <div class="notice" style="margin-bottom:12px">নির্দিষ্ট user-কে transparent bonus হিসেবে coins যোগ করা যাবে। এটি Boxing King-এর winning probability বা game outcome পরিবর্তন করে না।</div>
+      <div class="form">
+        <div class="field"><label>Select user</label><select id="bonusUser"><option value="">Select a user…</option></select></div>
+        <div class="field"><label>Bonus Name / Type</label><input id="bonusTitle" type="text" maxlength="80" placeholder="e.g. Free Bonus / Login Bonus"></div>
+        <div class="field"><label>Bonus coins</label><input id="bonusAmount" type="number" min="1" step="1" placeholder="e.g. 500"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button id="giveBonusBtn" class="btn primary">Give Bonus</button>
+        <button id="giveAllBonusBtn" class="btn">Give Same Bonus to All Users</button>
+      </div>
     </div>
+    <div class="card section"><input id="userSearch" class="search" placeholder="Search by email or UID…"><div class="table-wrap"><table class="table"><thead><tr><th>User</th><th>Balance</th><th>Games</th><th>Wins</th><th>Boxing</th><th>Last activity</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div></div>
+  </section>
 
-    <!-- Requests Tabs & Tables -->
+  <section id="requests" class="page">
+    <div class="card"><h2>Deposit requests</h2>
+
+<!-- Payment Number: ONLY in Deposit Requests -->
+<div id="depositPaymentNumberCard" class="card" style="margin:14px 0;">
+  <h3 style="margin:0 0 6px;">📱 Deposit Payment Numbers</h3>
+  <div class="form" style="margin-top:10px;">
+    <div class="field">
+      <label>বিকাশ (Bkash) নাম্বার</label>
+      <input id="depositBkashNumberInput" type="text" inputmode="numeric" placeholder="বিকাশ ডিপোজিট নাম্বার">
+    </div>
+    <div class="field">
+      <label>নগদ (Nagad) নাম্বার</label>
+      <input id="depositNagadNumberInput" type="text" inputmode="numeric" placeholder="নগদ ডিপোজিট নাম্বার">
+    </div>
+  </div>
+  <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <button id="saveDepositPaymentNumberBtn" type="button" class="btn primary">💾 Save Numbers</button>
+  </div>
+  <div style="font-size:12px;color:var(--muted);margin-top:8px;">যে method-এর নাম্বার খালি থাকবে, User-এর Deposit-এ সেই method সাময়িকভাবে বন্ধ থাকবে।</div>
+  <div id="depositPaymentNumberStatus" style="margin-top:8px;"></div>
+</div>
+
+
+
+
+
+<div class="table-wrap"><table class="table"><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Trx/Account</th><th>Status</th><th>Action</th></tr></thead><tbody id="depositsBody"></tbody></table></div></div>
+    <div class="card section"><h2>Withdrawal requests</h2><div class="table-wrap"><table class="table"><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Account</th><th>Status</th><th>Action</th></tr></thead><tbody id="withdrawalsBody"></tbody></table></div></div>
+  </section>
+
+
+
+  <section id="support" class="page">
     <div class="card">
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('deposits')">Deposit Requests</button>
-            <button class="tab-btn" onclick="switchTab('withdraws')">Withdraw Requests</button>
-            <button class="tab-btn" onclick="switchTab('users')">User Balance Management</button>
+      <h3 style="margin-top:0;">🆘 Private Help Center</h3>
+      <p style="opacity:.78;font-size:13px;">প্রতিটি user-এর conversation আলাদা। Admin এখানে user-এর message দেখে reply দিতে পারবেন।</p>
+      <div style="display:grid;grid-template-columns:minmax(170px,.8fr) minmax(0,1.5fr);gap:12px;">
+        <div id="supportUserList" style="border:1px solid var(--line);border-radius:12px;padding:8px;max-height:520px;overflow:auto;"></div>
+        <div>
+          <div id="supportSelectedUser" style="font-weight:800;margin-bottom:8px;">কোনো user নির্বাচন করুন</div>
+          <div id="supportMessages" style="height:380px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(0,0,0,.12);"></div>
+          <div style="display:flex;gap:7px;margin-top:8px;"><input id="supportReply" maxlength="500" placeholder="Reply লিখুন..." style="flex:1;min-width:0;"><button id="supportSend" class="btn primary" type="button">Send</button></div>
+          <div id="supportStatus" style="font-size:12px;margin-top:6px;"></div>
         </div>
-
-        <!-- Deposit Section -->
-        <div id="tab-deposits">
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>User Email</th>
-                            <th>Amount</th>
-                            <th>TrxID</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="deposit-list">
-                        <tr><td colspan="6" style="text-align: center;">Loading requests...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Withdraw Section -->
-        <div id="tab-withdraws" style="display: none;">
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>User Email</th>
-                            <th>Amount</th>
-                            <th>Receiver Phone</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="withdraw-list">
-                        <tr><td colspan="6" style="text-align: center;">Loading requests...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- User Balance Control Section -->
-        <div id="tab-users" style="display: none;">
-            <div class="input-group" style="margin-bottom: 16px;">
-                <input type="text" id="user-search-input" placeholder="Search User by Email...">
-            </div>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>User Email</th>
-                            <th>UID</th>
-                            <th>Current Balance</th>
-                            <th>Direct Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="user-list">
-                        <tr><td colspan="4" style="text-align: center;">Loading users...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+      </div>
     </div>
+  </section>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAyTOnCm5IuPcB-yvGjFl3KbwRVxNrcNSY",
-            authDomain: "ff-to-gaming-4ea1b.firebaseapp.com",
-            databaseURL: "https://ff-to-gaming-4ea1b-default-rtdb.firebaseio.com",
-            projectId: "ff-to-gaming-4ea1b",
-            storageBucket: "ff-to-gaming-4ea1b.appspot.com",
-            messagingSenderId: "816776130875",
-            appId: "1:816776130875:web:c3e7984e0de53cbd89871e"
-        };
+  <section id="games" class="page">
+    <div class="bk-control-card">
+      <h2 class="bk-title">🥊 বক্সিং কিং কন্ট্রোল <span style="font-size:14px;color:#aab4c1">(Settings)</span></h2>
+      <div class="notice" style="margin-bottom:6px">এই কন্ট্রোলগুলো সরাসরি <code>config/boxingKing</code>-এ সেভ হবে। Win-rate/RTP দিয়ে খেলোয়াড়ের ফলাফল গোপনে নিয়ন্ত্রণ করার অপশন রাখা হয়নি।</div>
 
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+      <div class="bk-row">
+        <div><div class="bk-label">গেম চালু/বন্ধ (Enable/Disable)</div><div class="bk-help">বন্ধ করলে Boxing King-এর spin শুরু করা যাবে না।</div></div>
+        <label class="bk-switch"><input id="bkEnabled" type="checkbox"><span class="bk-slider"></span></label>
+      </div>
 
-        let allUsers = {};
-        let allDeposits = {};
-        let allWithdraws = {};
+      <div class="bk-row" style="display:block">
+        <div class="bk-label" style="margin-bottom:8px">বেট অপশনসমূহ (কোমা দিয়ে লিখুন)</div>
+        <input id="bkBetOptions" class="bk-input" type="text" placeholder="1.00, 2.00, 3.00, 5.00, 10.00">
+      </div>
 
-        // 1. Send Money Number Logic
-        const sendNumInput = document.getElementById('send-money-input');
-        const currentSendNumDisplay = document.getElementById('current-send-num-display');
+      <div class="bk-preset-wrap">
+        <div class="bk-preset-title">RTP / Reference Factor (transparent setting)</div>
+        <div class="bk-help" style="margin-bottom:8px">এটি configuration/reference value হিসেবে সেভ হবে; এটি player-এর win/lose outcome গোপনে নিয়ন্ত্রণ করে না।</div>
+        <select id="bkRtpFactor" class="bk-input">
+          <option value="0.4">0.4x</option>
+          <option value="0.7">0.7x</option>
+          <option value="1.0" selected>1.0x</option>
+          <option value="1.5">1.5x</option>
+          <option value="2.0">2.0x</option>
+        </select>
+      </div>
 
-        db.ref('adminSettings/sendMoneyNumber').on('value', snap => {
-            const num = snap.val();
-            if (num && num.trim() !== '') {
-                currentSendNumDisplay.innerText = "Current Active: " + num;
-                sendNumInput.value = num;
-            } else {
-                currentSendNumDisplay.innerText = "Status: Deposit OFF (No Active Number)";
-                sendNumInput.value = "";
-            }
-        });
+      <button id="saveConfig" class="bk-save" type="button">বক্সিং কিং সেটিংস সেভ করুন</button>
+      <div id="configMsg" class="bk-status"></div>
 
-        document.getElementById('save-num-btn').onclick = () => {
-            const val = sendNumInput.value.trim();
-            if (!val) return alert("Please enter a valid phone number!");
-            db.ref('adminSettings/sendMoneyNumber').set(val).then(() => alert("Send Money Number Saved Successfully!"));
-        };
+      <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(116,180,255,.25);">
+        <h3 class="bk-title" style="font-size:17px;">💎 Color Gems — আলাদা RTP Factor</h3>
+        <div class="notice" style="margin-bottom:10px">Color Gems-এর RTP Factor আলাদা। এটি <code>config/colorGems/rtpFactor</code>-এ সেভ হবে এবং Boxing King/Flag King-এর RTP Factor পরিবর্তন করবে না।</div>
+        <div class="bk-preset-wrap">
+          <div class="bk-preset-title">Color Gems RTP / Reference Factor</div>
+          <select id="cgRtpFactor" class="bk-input">
+            <option value="0.4">0.4x</option>
+            <option value="0.7">0.7x</option>
+            <option value="1.0" selected>1.0x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2.0">2.0x</option>
+          </select>
+        </div>
+        <button id="saveCgConfig" class="bk-save" type="button" style="margin-top:10px;">Color Gems RTP সেভ করুন</button>
+        <div id="cgConfigMsg" class="bk-status"></div>
+      </div>
+    </div>
+  </section>
 
-        document.getElementById('remove-num-btn').onclick = () => {
-            if (confirm("Are you sure you want to TURN OFF Deposits?")) {
-                db.ref('adminSettings/sendMoneyNumber').remove().then(() => alert("Deposits Disabled!"));
-            }
-        };
+  <section id="gameLogs" class="page"><div class="card"><h2>📋 Game Activity Logs</h2><div class="notice">User কোন game খেলেছে, কত bet করেছে, win/loss ও payout এখানে দেখা যাবে।</div><div class="row" style="margin:12px 0"><input id="gameLogSearch" class="search" placeholder="Search email, UID or game…"><button class="btn primary" id="refreshGameLogs">Refresh Logs</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Time</th><th>User</th><th>Game</th><th>Bet</th><th>Result</th><th>Payout</th><th>Details</th></tr></thead><tbody id="gameLogsBody"></tbody></table></div></div></section>
+  <section id="announcement" class="page"><div class="card"><h2>Global announcement</h2><div class="field"><label>Message</label><textarea id="announcementText" placeholder="Announcement shown in the main app…"></textarea></div><div class="row" style="margin-top:12px"><button class="btn primary" id="saveAnnouncement">Publish</button><button class="btn" id="clearAnnouncement">Clear</button></div></div></section>
 
-        // 2. Fetch Users & Stats
-        db.ref('users').on('value', snap => {
-            allUsers = snap.val() || {};
-            let totalUsers = 0;
-            let totalBal = 0;
+  <section id="audit" class="page"><div class="card"><h2>Admin audit log</h2><div class="notice">Every dashboard action made by this console is recorded under <code>adminAudit</code>.</div><div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody id="auditBody"></tbody></table></div></div></section>
+</main></div>
+<div id="toast" class="toast hidden"></div>
+<div id="userModal" class="modal hidden"><div class="card"><h2>User details</h2><div id="userDetails"></div><div class="row" style="margin-top:14px"><button class="btn" id="closeModal">Close</button></div></div></div>
 
-            for (let uid in allUsers) {
-                totalUsers++;
-                totalBal += (allUsers[uid].balance || 0);
-            }
+<script>
+const firebaseConfig={apiKey:"AIzaSyAyTOnCm5IuPcB-yvGjFl3KbwRVxNrcNSY",authDomain:"ff-to-gaming-4ea1b.firebaseapp.com",databaseURL:"https://ff-to-gaming-4ea1b-default-rtdb.firebaseio.com",projectId:"ff-to-gaming-4ea1b",storageBucket:"ff-to-gaming-4ea1b.appspot.com",messagingSenderId:"816776130875",appId:"1:816776130875:web:c3e7984e0de53cbd89871e"};
+firebase.initializeApp(firebaseConfig);const auth=firebase.auth(),db=firebase.database();
+let users={},deposits={},withdrawals={},boxingConfig={},colorGemsConfig={},gameLogs=[];
+const $=id=>document.getElementById(id);
+function toast(m){$("toast").textContent=m;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),2800)}
+function esc(v){return String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function money(n){return Number(n||0).toFixed(2)}
+async function audit(action,target,details){if(!auth.currentUser)return;await db.ref("adminAudit").push({adminUid:auth.currentUser.uid,adminEmail:auth.currentUser.email||"",action,target:target||"",details:details||"",timestamp:firebase.database.ServerValue.TIMESTAMP})}
+function setPage(p){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(p).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===p));$("pageTitle").textContent=p[0].toUpperCase()+p.slice(1)}
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>setPage(b.dataset.page));
+$("closeModal").onclick=()=>$("userModal").classList.add("hidden");
+async function resetEverythingKeepBalance(){
+  const btn=$("resetAllBtn");
+  const typed=prompt("নিশ্চিত করতে RESET লিখুন। User Balance পরিবর্তন হবে না:");
+  if(typed!=="RESET"){ if(typed!==null) toast("Reset বাতিল করা হয়েছে"); return; }
+  if(!confirm("শেষবার নিশ্চিত করুন: User Balance একদম অপরিবর্তিত থাকবে। Reset চালাবেন?")) return;
+  if(btn) btn.disabled=true;
+  const status=$("resetAllStatus");
+  if(status) status.textContent="Resetting...";
+  try{
+    const snap=await db.ref().once("value");
+    const root=snap.val()||{};
+    const updates={};
+    ["adminRequests","adminSettings","adminAudit","auditLogs","config"].forEach(path=>{if(root[path]!==undefined) updates[path]=null});
+    const userRoot=root.users||{};
+    Object.keys(userRoot).forEach(uid=>{
+      const u=userRoot[uid]||{};
+      ["games","wins","boxingKingGames","boxingKingWins","extraBonusCoins"].forEach(field=>{
+        if(u[field]!==undefined) updates["users/"+uid+"/"+field]=null;
+      });
+    });
+    await db.ref().update(updates);
+    if(status) status.textContent="✅ Reset সম্পন্ন হয়েছে। User Balance অপরিবর্তিত আছে।";
+    await audit("reset_everything_keep_user_balance","root","User balances were intentionally preserved");
+    await loadAll();
+    toast("Reset complete — User Balance unchanged");
+  }catch(e){
+    if(status) status.textContent="❌ Reset করা যায়নি: "+(e.message||e);
+    toast(e.message||String(e));
+  }finally{ if(btn) btn.disabled=false; }
+}
+$("resetAllBtn").onclick=resetEverythingKeepBalance;
 
-            document.getElementById('stat-total-users').innerText = totalUsers;
-            document.getElementById('stat-total-bal').innerText = "৳ " + totalBal.toFixed(2);
-            renderUsersTable();
-        });
+async function loadAll(){
+ const [u,dep,wd,c,cg,a]=await Promise.all([
+   db.ref("users").once("value"),
+   db.ref("adminRequests/deposits").once("value"),
+   db.ref("adminRequests/withdrawals").once("value"),
+   db.ref("config/boxingKing").once("value"),
+   db.ref("config/colorGems").once("value"),
+   db.ref("adminAudit").limitToLast(100).once("value")
+ ]);
+ users=u.val()||{};
+ deposits=dep.val()||{};
+ withdrawals=wd.val()||{};
+ boxingConfig=c.val()||{};
+ colorGemsConfig=cg.val()||{};
+ render();
+ renderConfig();
+ renderAudit(a.val()||{});
+}
 
-        // 3. Deposit Requests Logic
-        db.ref('depositRequests').on('value', snap => {
-            allDeposits = snap.val() || {};
-            let pendingCount = 0;
-            let listHtml = "";
+function populateBonusUsers(){
+  const sel=$("bonusUser");
+  if(!sel)return;
+  const current=sel.value;
+  sel.innerHTML='<option value="">Select a user…</option>'+Object.entries(users)
+    .sort((a,b)=>String(a[1].email||"").localeCompare(String(b[1].email||"")))
+    .map(([uid,u])=>`<option value="${esc(uid)}">${esc(u.email||uid)} — ${money(u.balance)} coins</option>`).join("");
+  if(users[current])sel.value=current;
+}
+async function giveBonus(uid, amount, title){
+  const n=Number(amount);
+  const bonusTitle=String(title||"").trim();
+  if(!bonusTitle){toast("Bonus Name / Type লিখুন");return}
+  if(!uid||!Number.isFinite(n)||n<=0){toast("Valid user and positive bonus amount required");return}
+  const bonusId=db.ref("users/"+uid+"/bonuses").push().key;
+  const now=Date.now();
+  const bonus={title:bonusTitle,amount:n,createdAt:now,expiresAt:now+(5*60*60*1000),status:"pending",grantedBy:auth.currentUser?.email||"admin"};
+  await db.ref("users/"+uid+"/bonuses/"+bonusId).set(bonus);
+  await audit("grant_bonus",uid,JSON.stringify({title:bonusTitle,amount:n,bonusId,expiresAt:bonus.expiresAt}));
+  await loadAll();
+  toast("Bonus added to Bonus Box");
+}
+$("giveBonusBtn").onclick=async()=>{
+  try{await giveBonus($("bonusUser").value,$("bonusAmount").value,$("bonusTitle").value)}
+  catch(e){toast(e.message)}
+};
+$("giveAllBonusBtn").onclick=async()=>{
+  const n=Number($("bonusAmount").value);
+  const bonusTitle=String($("bonusTitle").value||"").trim();
+  if(!bonusTitle){toast("Bonus Name / Type লিখুন");return}
+  if(!Number.isFinite(n)||n<=0){toast("Enter a positive bonus amount");return}
+  const entries=Object.keys(users);
+  if(!entries.length){toast("No users found");return}
+  if(!confirm(`Give ${n} bonus coins to all ${entries.length} users?`))return;
+  const now=Date.now(), updates={};
+  entries.forEach(uid=>{
+    const bonusId=db.ref("users/"+uid+"/bonuses").push().key;
+    updates["users/"+uid+"/bonuses/"+bonusId]={title:bonusTitle,amount:n,createdAt:now,expiresAt:now+(5*60*60*1000),status:"pending",grantedBy:auth.currentUser?.email||"admin"};
+  });
+  await db.ref().update(updates);
+  await audit("grant_bonus_all","all_users",JSON.stringify({title:bonusTitle,amount:n,userCount:entries.length,expiresInHours:5}));
+  await loadAll();
+  toast("Bonus added to all users' Bonus sections");
+};
 
-            let keys = Object.keys(allDeposits).reverse();
-            keys.forEach(key => {
-                let req = allDeposits[key];
-                if (req.status === 'pending') pendingCount++;
+function render(){
+ populateBonusUsers();
+ const arr=Object.entries(users);$("sUsers").textContent=arr.length;$("sBalance").textContent=arr.reduce((s,[,u])=>s+Number(u.balance||0),0).toFixed(2);$("sDeposits").textContent=Object.keys(deposits).length;$("sWithdrawals").textContent=Object.keys(withdrawals).length;
+ const games=arr.reduce((s,[,u])=>s+Number(u.games||0),0),wins=arr.reduce((s,[,u])=>s+Number(u.wins||0),0),bg=arr.reduce((s,[,u])=>s+Number(u.boxingKingGames||0),0),bw=arr.reduce((s,[,u])=>s+Number(u.boxingKingWins||0),0);$("gameStats").innerHTML=`Aviator games: <b>${games}</b> · wins: <b>${wins}</b><br>Boxing King games: <b>${bg}</b> · wins: <b>${bw}</b>`;
+ const q=$("userSearch").value.toLowerCase();$("usersBody").innerHTML=arr.filter(([uid,u])=>(uid+" "+(u.email||"")).toLowerCase().includes(q)).map(([uid,u])=>{const ts=getLastActivity(u);return `<tr><td><b>${esc(u.email||"—")}</b><br><small>${esc(uid)}</small></td><td>${money(u.balance)}</td><td>${u.games||0}</td><td>${u.wins||0}</td><td>${u.boxingKingWins||0}/${u.boxingKingGames||0}</td><td>${ts?esc(new Date(ts).toLocaleString()):"—"}</td><td><button class="btn" onclick="viewUser('${esc(uid)}')">View</button> <button class="btn danger" onclick="removeUser('${esc(uid)}')">Remove</button></td></tr>`}).join("")||`<tr><td colspan="7">No users found.</td></tr>`;
+ renderRequests();
+ renderGameLogs();
+}
+$("userSearch").oninput=render;
+function getLastActivity(u){
+  const candidates=[u.lastActiveAt,u.lastLoginAt,u.updatedAt,u.lastPlayedAt];
+  const valid=candidates.map(Number).filter(v=>Number.isFinite(v)&&v>0);
+  return valid.length?Math.max(...valid):null;
+}
+window.removeUser=async uid=>{
+  const u=users[uid]||{};
+  if(!uid){toast("Invalid user");return}
+  if(!confirm(`Remove ${u.email||uid}? This deletes the user's Realtime Database profile, including balance and game data.`))return;
+  const btns=[...document.querySelectorAll(`button[onclick*="removeUser(\'${uid.replace("\'","\\\'")}\')"]`)];
+  btns.forEach(b=>b.disabled=true);
+  try{
+    const ref=db.ref("users/"+uid);
+    const snap=await ref.once("value");
+    if(!snap.exists()){toast("User already removed");await loadAll();return}
+    await ref.set(null);
+    const verify=await ref.once("value");
+    if(verify.exists()) throw new Error("User was not removed. Check Firebase Database Rules/permissions.");
+    delete users[uid];
+    render();
+    try{await audit("remove_user",uid,JSON.stringify({email:u.email||"",balance:Number(u.balance||0)}))}catch(auditError){console.warn("Remove audit failed:",auditError)}
+    toast("User removed successfully");
+  }catch(e){
+    console.error("removeUser failed",e);
+    const msg=e?.message||String(e);
+    toast(/permission_denied|permission denied|PERMISSION_DENIED/i.test(msg)?"Firebase Permission Denied — Database Rules/ Admin access check করুন":"User remove failed: "+msg);
+  }finally{btns.forEach(b=>b.disabled=false)}
+};
 
-                let timeStr = new Date(req.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                let badge = `<span class="badge badge-${req.status}">${req.status}</span>`;
-                
-                let actions = "";
-                if (req.status === 'pending') {
-                    actions = `
-                        <button class="btn btn-green" style="padding:4px 8px; font-size:0.75rem;" onclick="approveDeposit('${key}', '${req.uid}', ${req.amount})">Approve</button>
-                        <button class="btn btn-red" style="padding:4px 8px; font-size:0.75rem;" onclick="rejectDeposit('${key}')">Reject</button>
-                    `;
-                }
+window.viewUser=uid=>{const u=users[uid]||{};$("userDetails").innerHTML=`<div class="notice"><b>${esc(u.email||"—")}</b><br>UID: ${esc(uid)}<br>Balance: ${money(u.balance)}<br>Aviator: ${u.wins||0} wins / ${u.games||0} games<br>Boxing King: ${u.boxingKingWins||0} wins / ${u.boxingKingGames||0} games</div>`;$("userModal").classList.remove("hidden")};
+function renderGameLogs(){const q=String($("gameLogSearch")?.value||'').toLowerCase();const rows=gameLogs.filter(l=>(String(l.email||'')+' '+String(l.uid||'')+' '+String(l.game||'')).toLowerCase().includes(q)).slice(0,300);$("gameLogsBody").innerHTML=rows.map(l=>{const r=String(l.result||'');const rh=r==='win'?'<span class="badge ok">WIN</span>':r==='loss'?'<span class="badge bad">LOSS</span>':'<span class="badge warn">'+esc(r||'—')+'</span>';const d=[];if(l.multiplier)d.push(esc(l.multiplier)+'x');if(l.crashPoint)d.push('Crash '+esc(l.crashPoint)+'x');if(l.selectedColor)d.push('Picked '+esc(l.selectedColor));if(l.winningColor)d.push('Result '+esc(l.winningColor));if(l.roundIndex!==undefined)d.push('Round '+esc(l.roundIndex));if(l.testMode)d.push('TEST');return `<tr><td>${l.timestamp?esc(new Date(Number(l.timestamp)).toLocaleString()):'—'}</td><td><b>${esc(l.email||'—')}</b><br><small>${esc(l.uid||'')}</small></td><td>${esc(l.game||'—')}</td><td>${money(l.betAmount)}</td><td>${rh}</td><td>${money(l.payout)}</td><td>${d.join(' · ')||'—'}</td></tr>`}).join('')||'<tr><td colspan="7">কোনো game log পাওয়া যায়নি।</td></tr>';}
+$("gameLogSearch").oninput=renderGameLogs;$("refreshGameLogs").onclick=loadAll;
+function renderRequests(){
+ const dep=Object.entries(deposits).reverse();
+ $("depositsBody").innerHTML=dep.map(([id,r])=>{
+   const matched=r.matchedWithdrawalId ? (withdrawals[r.matchedWithdrawalId]||{}) : null;
+   const matchLabel=r.paymentSource==='matched_withdrawal'
+     ? `<div style="margin-top:4px;font-size:11px;color:#81c784;">🔗 Matched Withdrawal: ${esc(matched.email||matched.uid||r.matchedWithdrawalId)} · ${money(r.matchedWithdrawalAmount||r.amount)} · ${esc(r.matchedWithdrawalMethod||r.method)}<br>📱 ${esc(matched.accountNo||"—")}</div>`
+     : `<div style="margin-top:4px;font-size:11px;color:#a0aec0;">🏦 Admin Number</div>`;
+   return `<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.trxId||"—")} ${matchLabel}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','rejected')">Reject</button>`}</td></tr>`;
+ }).join("")||`<tr><td colspan="6">No deposit requests.</td></tr>`;
+ const wd=Object.entries(withdrawals).reverse();
+ $("withdrawalsBody").innerHTML=wd.map(([id,r])=>{
+   const linked=Object.entries(deposits).find(([,d])=>d && d.matchedWithdrawalId===id);
+   const linkLabel=linked ? `<div style="margin-top:4px;font-size:11px;color:#81c784;">🔗 Matched Deposit: ${esc(linked[1].email||linked[1].uid||linked[0])} · ${money(linked[1].amount)} · TrxID: ${esc(linked[1].trxId||"—")}</div>` : '';
+   return `<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.accountNo||"—")}${linkLabel}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','rejected')">Reject</button>`}</td></tr>`;
+ }).join("")||`<tr><td colspan="6">No withdrawal requests.</td></tr>`;
+}
+window.requestAction=async(type,id,status)=>{
+  if(status!=="approved" && status!=="rejected"){toast("Invalid request action");return}
+  const path=`adminRequests/${type}/${id}`;
+  const actionButtons=document.querySelectorAll(`button[data-request-id="${CSS.escape(id)}"]`);
+  actionButtons.forEach(b=>b.disabled=true);
 
-                listHtml += `
-                    <tr>
-                        <td>${timeStr}</td>
-                        <td>${req.email}</td>
-                        <td style="color:#81c784; font-weight:bold;">৳${req.amount}</td>
-                        <td><code style="color:#ffd700;">${req.trxId}</code></td>
-                        <td>${badge}</td>
-                        <td>${actions}</td>
-                    </tr>
-                `;
-            });
+  try{
+    // Read the current request once. We intentionally do NOT change the
+    // request to "processing" first; that intermediate write can be rejected
+    // by Firebase validation/rules and can leave the request stuck.
+    const snap=await db.ref(path).once("value");
+    const processed=snap.val();
+    if(!processed){
+      toast("Request already removed or missing");
+      await loadAll();
+      return;
+    }
+    if(processed.status && processed.status!=="pending"){
+      toast("Request already processed");
+      await loadAll();
+      return;
+    }
 
-            document.getElementById('stat-pending-dep').innerText = pendingCount;
-            document.getElementById('deposit-list').innerHTML = listHtml || `<tr><td colspan="6" style="text-align:center;">No deposit requests found</td></tr>`;
-        });
+    // Deposit approval: credit balance first, then remove the request.
+    if(status==="approved" && type==="deposits"){
+      const uid=String(processed.uid||"");
+      const amount=Number(processed.amount);
+      if(!uid || !Number.isFinite(amount) || amount<=0){
+        throw new Error("Invalid deposit request");
+      }
 
-        function approveDeposit(reqId, uid, amount) {
-            if (!confirm(`Approve ৳${amount} deposit for user?`)) return;
+      // Credit the balance and stamp the cooldown in ONE user transaction so the
+      // deposit cannot be credited successfully while lastDepositAt fails to save.
+      // Use Firebase's server-time offset so the stored timestamp is aligned with
+      // the same clock used by the user-side countdown.
+      let serverOffset=0;
+      try{
+        const offsetSnap=await db.ref('.info/serverTimeOffset').once('value');
+        serverOffset=Number(offsetSnap.val()||0);
+        if(!Number.isFinite(serverOffset)) serverOffset=0;
+      }catch(_){ serverOffset=0; }
+      const approvedAt=Date.now()+serverOffset;
+      const balanceResult=await db.ref(`users/${uid}`).transaction(u=>{
+        const user=Object.assign({},u||{});
+        const currentBalance=Number(user.balance||0);
+        if(!Number.isFinite(currentBalance)){ return; }
+        user.balance=currentBalance+amount;
+        user.lastDepositAt=approvedAt;
+        return user;
+      });
+      if(!balanceResult.committed){
+        throw new Error("Balance/cooldown update was not committed");
+      }
+      await db.ref(path+"/balanceCredited").set(true);
+    }
 
-            db.ref('users/' + uid + '/balance').transaction(b => (b || 0) + amount, (err, committed) => {
-                if (committed) {
-                    db.ref('depositRequests/' + reqId).update({ status: 'approved' });
-                    alert("Deposit Approved!");
-                }
-            });
-        }
+    // If a deposit was rejected, release the linked withdrawal so it can be matched again.
+    // On approval, keep the withdrawal link visible for the admin to settle separately.
+    if(type==="deposits" && status==="rejected" && processed.matchedWithdrawalId){
+      const wr=db.ref(`adminRequests/withdrawals/${processed.matchedWithdrawalId}`);
+      const ws=await wr.once("value");
+      const w=ws.val();
+      if(w && w.status==="pending" && w.matchedDepositId===id){
+        await wr.update({matchedDepositId:null,matchedAt:null,matchedDepositAt:null});
+      }
+    }
 
-        function rejectDeposit(reqId) {
-            if (confirm("Reject this deposit request?")) {
-                db.ref('depositRequests/' + reqId).update({ status: 'rejected' });
-            }
-        }
+    // IMPORTANT: remove the actual request node directly.
+    // This is the operation that makes it disappear from the admin queue.
+    await db.ref(path).remove();
 
-        // 4. Withdraw Requests Logic
-        db.ref('withdrawRequests').on('value', snap => {
-            allWithdraws = snap.val() || {};
-            let pendingCount = 0;
-            let listHtml = "";
+    // Verify removal from Firebase. Retry once for transient client/network issues.
+    let verify=await db.ref(path).once("value");
+    if(verify.exists()){
+      await db.ref(path).remove();
+      verify=await db.ref(path).once("value");
+    }
+    if(verify.exists()){
+      throw new Error("Firebase request node was not removed. Check Firebase Database write rules.");
+    }
 
-            let keys = Object.keys(allWithdraws).reverse();
-            keys.forEach(key => {
-                let req = allWithdraws[key];
-                if (req.status === 'pending') pendingCount++;
+    try{
+      await audit(`${type}_${status}`,id,JSON.stringify({
+        uid:processed.uid||null,
+        amount:Number(processed.amount||0),
+        method:processed.method||null
+      }));
+    }catch(auditError){
+      console.warn("Audit log failed after request removal:",auditError);
+    }
 
-                let timeStr = new Date(req.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                let badge = `<span class="badge badge-${req.status}">${req.status}</span>`;
-                
-                let actions = "";
-                if (req.status === 'pending') {
-                    actions = `
-                        <button class="btn btn-green" style="padding:4px 8px; font-size:0.75rem;" onclick="approveWithdraw('${key}')">Approve</button>
-                        <button class="btn btn-red" style="padding:4px 8px; font-size:0.75rem;" onclick="rejectWithdraw('${key}', '${req.uid}', ${req.amount})">Reject & Refund</button>
-                    `;
-                }
+    await loadAll();
+    toast(status==="approved"?"Approved and removed":"Rejected and removed");
+  }catch(e){
+    console.error("requestAction failed",{type,id,status,error:e});
+    const msg=e?.message||String(e);
+    if(/permission_denied|permission denied|PERMISSION_DENIED/i.test(msg)){
+      toast("Firebase Permission Denied — Database Rules/ Admin access check করুন");
+    }else{
+      toast("Request update failed: "+msg);
+    }
+    await loadAll().catch(()=>{});
+  }finally{
+    actionButtons.forEach(b=>b.disabled=false);
+  }
+};
 
-                listHtml += `
-                    <tr>
-                        <td>${timeStr}</td>
-                        <td>${req.email}</td>
-                        <td style="color:#ff8a80; font-weight:bold;">৳${req.amount}</td>
-                        <td><strong style="color:#29b6f6;">${req.receiver}</strong></td>
-                        <td>${badge}</td>
-                        <td>${actions}</td>
-                    </tr>
-                `;
-            });
+function renderConfig(){
+  const c=boxingConfig||{};
+  $("bkEnabled").checked=c.enabled!==false;
+  const bets=Array.isArray(c.betOptions)?c.betOptions:(typeof c.betOptions==="string"?c.betOptions.split(",").map(Number).filter(Number.isFinite):[1,2,3,5,10]);
+  $("bkBetOptions").value=bets.join(", ");
+  $("bkRtpFactor").value=c.rtpFactor!=null?String(c.rtpFactor):"1.0";
+  const cg=colorGemsConfig||{};
+  $("cgRtpFactor").value=cg.rtpFactor!=null?String(cg.rtpFactor):"1.0";
+}
 
-            document.getElementById('stat-pending-with').innerText = pendingCount;
-            document.getElementById('withdraw-list').innerHTML = listHtml || `<tr><td colspan="6" style="text-align:center;">No withdraw requests found</td></tr>`;
-        });
+$("saveConfig").onclick=async()=>{
+  const bets=$("bkBetOptions").value.split(",").map(x=>Number(x.trim())).filter(x=>Number.isFinite(x)&&x>0);
+  const rtpFactor=Number($("bkRtpFactor").value);
+  if(!bets.length){toast("কমপক্ষে একটি valid bet option দিন");return}
+  if(!Number.isFinite(rtpFactor)||rtpFactor<=0){toast("Valid RTP/reference factor নির্বাচন করুন");return}
+  const out={enabled:$("bkEnabled").checked,betOptions:bets,rtpFactor};
+  try{
+    await db.ref("config/boxingKing").update(out);
+    boxingConfig=Object.assign({},boxingConfig,out);
+    await audit("update_boxing_config","config/boxingKing",JSON.stringify(out));
+    $("configMsg").textContent="Saved successfully";
+    toast("Boxing King settings saved");
+  }catch(e){$("configMsg").textContent="Save failed: "+e.message;toast(e.message)}
+};
 
-        function approveWithdraw(reqId) {
-            if (confirm("Mark this withdraw request as Sent/Approved?")) {
-                db.ref('withdrawRequests/' + reqId).update({ status: 'approved' });
-            }
-        }
+$("saveCgConfig").onclick=async()=>{
+  const rtpFactor=Number($("cgRtpFactor").value);
+  if(!Number.isFinite(rtpFactor)||rtpFactor<=0){toast("Valid Color Gems RTP/reference factor নির্বাচন করুন");return}
+  const out={rtpFactor};
+  try{
+    await db.ref("config/colorGems").update(out);
+    colorGemsConfig=Object.assign({},colorGemsConfig,out);
+    await audit("update_color_gems_config","config/colorGems",JSON.stringify(out));
+    $("cgConfigMsg").textContent="Saved successfully";
+    toast("Color Gems RTP settings saved");
+  }catch(e){$("cgConfigMsg").textContent="Save failed: "+e.message;toast(e.message)}
+};
 
-        function rejectWithdraw(reqId, uid, amount) {
-            if (!confirm(`Reject & Refund ৳${amount} back to user balance?`)) return;
+// ===== Private Help Center =====
+(function(){
+  const CHAT_TTL=60*60*1000;
+  let selectedUid=null, chatData={};
+  const list=$("supportUserList"), msgs=$("supportMessages"), title=$("supportSelectedUser"), input=$("supportReply"), send=$("supportSend"), status=$("supportStatus");
+  function esc(v){return String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));}
+  function expiryOf(m){const ts=Number(m?.timestamp||0),ex=Number(m?.expiresAt||0);return ex>0?ex:(ts>0?ts+CHAT_TTL:0);}
+  async function cleanupAllExpired(){
+    const rootSnap=await db.ref('supportChats').once('value');
+    const root=rootSnap.val()||{}, now=Date.now(), updates={};
+    Object.entries(root).forEach(([uid,chat])=>Object.entries(chat?.messages||{}).forEach(([id,m])=>{if(expiryOf(m)>0&&expiryOf(m)<=now) updates['supportChats/'+uid+'/messages/'+id]=null;}));
+    if(Object.keys(updates).length) await db.ref().update(updates);
+  }
+  function renderUsers(){
+    const now=Date.now();
+    const uids=Object.keys(chatData).filter(uid=>Object.values(chatData[uid]?.messages||{}).some(m=>expiryOf(m)>now)).sort((a,b)=>String(users[a]?.email||a).localeCompare(String(users[b]?.email||b)));
+    list.innerHTML=uids.length?uids.map(uid=>`<button type="button" data-support-uid="${esc(uid)}" style="display:block;width:100%;text-align:left;padding:9px;margin-bottom:6px;border:1px solid var(--line);border-radius:9px;background:${uid===selectedUid?'var(--panel2)':'transparent'};color:var(--text);">${esc(users[uid]?.email||uid)}</button>`).join(''):'<div style="opacity:.65;padding:10px;font-size:12px;">No active conversations.</div>';
+    list.querySelectorAll('[data-support-uid]').forEach(b=>b.onclick=()=>selectUser(b.dataset.supportUid));
+  }
+  function renderMessages(){
+    if(!selectedUid){msgs.innerHTML='';return;}
+    const data=(chatData[selectedUid]||{}).messages||{}, now=Date.now();
+    const rows=Object.values(data).filter(m=>expiryOf(m)>now).sort((a,b)=>Number(a.timestamp||0)-Number(b.timestamp||0));
+    msgs.innerHTML=rows.length?rows.map(m=>`<div style="margin:6px 0;padding:8px 10px;border-radius:10px;background:${m.senderType==='admin'?'rgba(84,224,167,.14)':'rgba(255,255,255,.06)'};"><div style="white-space:pre-wrap;overflow-wrap:anywhere;">${esc(m.text)}</div><small style="opacity:.55;">${m.senderType==='admin'?'Admin':'User'}</small></div>`).join(''):'<div style="opacity:.6;font-size:12px;">No active messages. Messages automatically clear after 1 hour.</div>';
+    msgs.scrollTop=msgs.scrollHeight;
+  }
+  function selectUser(uid){selectedUid=uid;title.textContent=users[uid]?.email||uid;renderUsers();renderMessages();status.textContent='';input.focus();}
+  db.ref('supportChats').on('value',snap=>{chatData=snap.val()||{};renderUsers();if(selectedUid)renderMessages();});
+  cleanupAllExpired().catch(()=>{});
+  setInterval(()=>cleanupAllExpired().catch(()=>{}),30000);
+  send.onclick=async()=>{
+    if(!selectedUid)return; const text=input.value.trim(); if(!text)return;
+    send.disabled=true;
+    try{
+      const now=Date.now();
+      await db.ref('supportChats/'+selectedUid+'/messages').push({text:text.slice(0,500),senderUid:auth.currentUser.uid,senderType:'admin',timestamp:now,expiresAt:now+CHAT_TTL});
+      input.value='';status.textContent='';
+    }catch(e){status.textContent='Reply failed: '+(e.message||e)}finally{send.disabled=false;input.focus()}
+  };
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.click()}});
+})();
 
-            db.ref('users/' + uid + '/balance').transaction(b => (b || 0) + amount, (err, committed) => {
-                if (committed) {
-                    db.ref('withdrawRequests/' + reqId).update({ status: 'rejected' });
-                    alert("Withdraw Rejected & Amount Refunded!");
-                }
-            });
-        }
+async function loadAnnouncement(){const s=await db.ref("adminSettings/announcement").once("value");$("announcementText").value=s.val()||""}$("saveAnnouncement").onclick=async()=>{await db.ref("adminSettings/announcement").set($("announcementText").value);await audit("update_announcement","adminSettings/announcement",$("announcementText").value);toast("Announcement published")};$("clearAnnouncement").onclick=async()=>{await db.ref("adminSettings/announcement").set("");$("announcementText").value="";await audit("clear_announcement","adminSettings/announcement","");toast("Announcement cleared")};
+function renderAudit(data){const rows=Object.values(data).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));$("auditBody").innerHTML=rows.map(x=>`<tr><td>${x.timestamp?new Date(x.timestamp).toLocaleString():"—"}</td><td>${esc(x.adminEmail||x.adminUid)}</td><td>${esc(x.action)}</td><td>${esc(x.target)}</td><td>${esc(x.details)}</td></tr>`).join("")||`<tr><td colspan="5">No audit entries.</td></tr>`}
 
-        // 5. User Management Render & Search
-        function renderUsersTable() {
-            const searchVal = document.getElementById('user-search-input').value.toLowerCase();
-            let html = "";
 
-            for (let uid in allUsers) {
-                let u = allUsers[uid];
-                let email = u.email || "No Email";
+let requestListenersStarted=false;
+function startRequestListeners(){
+  if(requestListenersStarted) return;
+  requestListenersStarted=true;
+  db.ref("adminRequests/deposits").on("value",snap=>{
+    deposits=snap.val()||{};
+    if(typeof render === "function") render();
+  });
+  db.ref("adminRequests/withdrawals").on("value",snap=>{
+    withdrawals=snap.val()||{};
+    if(typeof render === "function") render();
+  });
+}
 
-                if (email.toLowerCase().includes(searchVal) || uid.includes(searchVal)) {
-                    html += `
-                        <tr>
-                            <td>${email}</td>
-                            <td><small style="color:var(--text-dim);">${uid}</small></td>
-                            <td style="color:#81c784; font-weight:bold;">৳ ${(u.balance || 0).toFixed(2)}</td>
-                            <td>
-                                <button class="btn btn-green" style="padding:2px 6px; font-size:0.7rem;" onclick="adjustBalance('${uid}', 100)">+৳100</button>
-                                <button class="btn btn-gold" style="padding:2px 6px; font-size:0.7rem;" onclick="adjustBalance('${uid}', 500)">+৳500</button>
-                                <button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="customDeduct('${uid}')">Custom</button>
-                            </td>
-                        </tr>
-                    `;
-                }
-            }
+auth.onAuthStateChanged(async user=>{
+  $("adminEmail").textContent=user?(user.email||user.uid):"Direct dashboard access";
+  try{await loadAll();startRequestListeners();await loadAnnouncement()}catch(e){toast(e.message)}
+});
 
-            document.getElementById('user-list').innerHTML = html || `<tr><td colspan="4" style="text-align:center;">No matching users found</td></tr>`;
-        }
 
-        document.getElementById('user-search-input').addEventListener('input', renderUsersTable);
 
-        function adjustBalance(uid, amt) {
-            db.ref('users/' + uid + '/balance').transaction(b => (b || 0) + amt);
-        }
 
-        function customDeduct(uid) {
-            let val = prompt("Enter Amount to Add (+) or Deduct (-):\nExample: 200 or -200");
-            let num = parseFloat(val);
-            if (!isNaN(num)) {
-                adjustBalance(uid, num);
-            }
-        }
+// ===== Admin Controls: Payment Number only in Deposit Requests; Reset only in Overview =====
+(function () {
+  const PAYMENT_PATHS = { bkash: "adminSettings/paymentNumberBkash", nagad: "adminSettings/paymentNumberNagad" };
 
-        // Tab Navigation
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+  function setStatus(id, msg, ok) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = ok ? "#16803c" : "#c62828";
+  }
 
-            document.getElementById('tab-deposits').style.display = tab === 'deposits' ? 'block' : 'none';
-            document.getElementById('tab-withdraws').style.display = tab === 'withdraws' ? 'block' : 'none';
-            document.getElementById('tab-users').style.display = tab === 'users' ? 'block' : 'none';
-        }
-    </script>
+  function loadPaymentNumbers() {
+    if (typeof db === "undefined") return;
+    Promise.all([
+      db.ref(PAYMENT_PATHS.bkash).once("value"),
+      db.ref(PAYMENT_PATHS.nagad).once("value")
+    ]).then(function (snaps) {
+      const b = document.getElementById("depositBkashNumberInput");
+      const n = document.getElementById("depositNagadNumberInput");
+      if (b) b.value = snaps[0].val() || "";
+      if (n) n.value = snaps[1].val() || "";
+    }).catch(function (e) {
+      setStatus("depositPaymentNumberStatus", "❌ " + (e.message || e), false);
+    });
+  }
+
+  function savePaymentNumbers() {
+    if (typeof db === "undefined") return;
+    const b = document.getElementById("depositBkashNumberInput");
+    const n = document.getElementById("depositNagadNumberInput");
+    const bkash = (b ? b.value : "").trim();
+    const nagad = (n ? n.value : "").trim();
+    if (!bkash && !nagad) {
+      setStatus("depositPaymentNumberStatus", "কমপক্ষে একটি পেমেন্ট নাম্বার দিন।", false);
+      return;
+    }
+    const btn = document.getElementById("saveDepositPaymentNumberBtn");
+    if (btn) btn.disabled = true;
+    Promise.all([
+      db.ref(PAYMENT_PATHS.bkash).set(bkash),
+      db.ref(PAYMENT_PATHS.nagad).set(nagad)
+    ]).then(function () {
+      setStatus("depositPaymentNumberStatus", "✅ বিকাশ ও নগদ ডিপোজিট নাম্বার আপডেট হয়েছে।", true);
+    }).catch(function (e) {
+      setStatus("depositPaymentNumberStatus", "❌ Save করা যায়নি: " + (e.message || e), false);
+    }).finally(function () {
+      if (btn) btn.disabled = false;
+    });
+  }
+
+  function initAdminControls() {
+    const saveBtn = document.getElementById("saveDepositPaymentNumberBtn");
+    if (saveBtn) saveBtn.addEventListener("click", savePaymentNumbers);
+
+    loadPaymentNumbers();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAdminControls);
+  } else {
+    initAdminControls();
+  }
+})();
+
+</script>
 </body>
 </html>
