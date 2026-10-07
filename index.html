@@ -958,7 +958,7 @@
                 <input type="hidden" id="deposit-method" value="bkash">
                 <div class="form-group">
                     <label style="font-size:.72rem;color:var(--text-dim);">ডিপোজিট Amount</label>
-                    <input type="number" id="deposit-amount" placeholder="যেমন: ৫০০" value="500" min="50" step="1" inputmode="numeric" oninput="if(this.value!=='' && Number(this.value)<50)this.value=50;">
+                    <input type="number" id="deposit-amount" placeholder="যেমন: ৫০০" value="" min="0" step="1" inputmode="numeric">
                 </div>
                 <div class="av-error-msg" id="deposit-msg" style="color:#ef9a9a;min-height:18px;"></div>
                 <div style="display:flex;gap:6px;margin-top:8px;">
@@ -1503,6 +1503,24 @@
         let depositMatchSeq = 0;
         let depositPortalChecking = false;
 
+        // Amount input: allow any numeric amount to be typed. Only the Next
+        // button is blocked when the amount is below ৳50 (or invalid).
+        function validateDepositAmountInput() {
+            const raw = String(depositAmountEl.value || '').trim();
+            const amt = Number(raw);
+            const valid = raw !== '' && Number.isFinite(amt) && amt >= 50;
+            const btn = document.getElementById('deposit-next-btn');
+            btn.disabled = !valid;
+            btn.style.opacity = valid ? '1' : '.55';
+            btn.style.cursor = valid ? 'pointer' : 'not-allowed';
+            if (raw !== '' && Number.isFinite(amt) && amt < 50) {
+                depositMsg.innerText = 'Minimum Deposit ৳50।';
+            } else if (raw === '' || valid) {
+                depositMsg.innerText = '';
+            }
+        }
+        depositAmountEl.addEventListener('input', validateDepositAmountInput);
+
         function setDepositMethod(method) {
             method = method === 'nagad' ? 'nagad' : 'bkash';
             depositMethodEl.value = method;
@@ -1590,6 +1608,7 @@
             document.getElementById('deposit-checking').style.display = '';
             document.getElementById('deposit-payment-panel').style.display = 'none';
             setDepositMethod('bkash');
+            validateDepositAmountInput();
             depositModal.classList.remove('hidden');
         }
 
