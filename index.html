@@ -958,7 +958,7 @@
                 <input type="hidden" id="deposit-method" value="bkash">
                 <div class="form-group">
                     <label style="font-size:.72rem;color:var(--text-dim);">ডিপোজিট Amount</label>
-                    <input type="number" id="deposit-amount" placeholder="যেমন: ৫০০" value="500" min="50" inputmode="numeric">
+                    <input type="number" id="deposit-amount" placeholder="যেমন: ৫০০" value="500" min="50" step="1" inputmode="numeric" oninput="if(this.value!=='' && Number(this.value)<50)this.value=50;">
                 </div>
                 <div class="av-error-msg" id="deposit-msg" style="color:#ef9a9a;min-height:18px;"></div>
                 <div style="display:flex;gap:6px;margin-top:8px;">
@@ -1526,10 +1526,22 @@
             activeMatchedWithdrawal = null;
         }
 
+        function normalizePaymentMethod(value) {
+            const v = String(value || '').trim().toLowerCase();
+            if (v === 'bkash' || v === 'b-kash' || v === 'b_kash' || v === 'বিকাশ') return 'bkash';
+            if (v === 'nagad' || v === 'নগদ') return 'nagad';
+            return v;
+        }
+
+        function normalizeMoney(value) {
+            const n = Number(String(value ?? '').replace(/[৳,\s]/g, ''));
+            return Number.isFinite(n) ? Math.round(n * 100) / 100 : NaN;
+        }
+
         async function findAndReserveMatchingWithdrawal(amount, method) {
-            const requestedAmount = Number(amount);
-            const requestedMethod = String(method || '').toLowerCase();
-            if (!(requestedAmount > 0) || !['bkash','nagad'].includes(requestedMethod)) return null;
+            const requestedAmount = normalizeMoney(amount);
+            const requestedMethod = normalizePaymentMethod(method);
+            if (!(requestedAmount >= 50) || !['bkash','nagad'].includes(requestedMethod)) return null;
             if (activeMatchedWithdrawal && activeMatchedWithdrawal.amount === requestedAmount && activeMatchedWithdrawal.method === requestedMethod) return activeMatchedWithdrawal;
             if (activeMatchedWithdrawal) await releaseActiveDepositMatch();
             const seq = ++depositMatchSeq;
@@ -1537,25 +1549,34 @@
                 const snap = await db.ref('adminRequests/withdrawals').once('value');
                 if (seq !== depositMatchSeq) return null;
                 const rows = Object.entries(snap.val() || {})
-                    .filter(([id,w]) => w && String(w.status||'').toLowerCase() === 'pending'
-                        && String(w.method||'').toLowerCase() === requestedMethod
-                        && Number(w.amount) === requestedAmount
-                        && String(w.accountNo||'').trim()
-                        && !w.matchedDepositId)
-                    .sort((a,b) => Number(a[1].timestamp||0) - Number(b[1].timestamp||0));
+                    .filter(([id,w]) => {
+                        if (!w) return false;
+                        const status = String(w.status || 'pending').trim().toLowerCase();
+                        const wMethod = normalizePaymentMethod(w.method || w.paymentMethod || w.withdrawMethod);
+                        const wAmount = normalizeMoney(w.amount ?? w.withdrawAmount ?? w.requestedAmount);
+                        const account = String(w.accountNo ?? w.accountNumber ?? w.mobile ?? w.phone ?? '').trim();
+                        return status === 'pending' && wMethod === requestedMethod && wAmount === requestedAmount && !!account && !w.matchedDepositId;
+                    })
+                    .sort((a,b) => Number(a[1]?.timestamp || a[1]?.createdAt || 0) - Number(b[1]?.timestamp || b[1]?.createdAt || 0));
                 for (const [id,w] of rows) {
                     const ref = db.ref('adminRequests/withdrawals/' + id);
                     const claim = await ref.transaction(current => {
-                        if (!current || String(current.status||'').toLowerCase() !== 'pending' || String(current.method||'').toLowerCase() !== requestedMethod || Number(current.amount) !== requestedAmount || current.matchedDepositId) return;
+                        if (!current) return;
+                        const currentMethod = normalizePaymentMethod(current.method || current.paymentMethod || current.withdrawMethod);
+                        const currentAmount = normalizeMoney(current.amount ?? current.withdrawAmount ?? current.requestedAmount);
+                        const currentStatus = String(current.status || 'pending').trim().toLowerCase();
+                        const currentAccount = String(current.accountNo ?? current.accountNumber ?? current.mobile ?? current.phone ?? '').trim();
+                        if (currentStatus !== 'pending' || currentMethod !== requestedMethod || currentAmount !== requestedAmount || !currentAccount || current.matchedDepositId) return;
                         return Object.assign({}, current, { matchedDepositId:'reserved-' + (currentUser?.uid||'user') + '-' + Date.now(), matchedAt:firebase.database.ServerValue.TIMESTAMP });
                     });
                     if (claim.committed) {
                         const c = claim.snapshot.val() || {};
-                        activeMatchedWithdrawal = { id, amount:requestedAmount, method:requestedMethod, accountNo:String(c.accountNo||'').trim(), reservationId:c.matchedDepositId };
+                        const account = String(c.accountNo ?? c.accountNumber ?? c.mobile ?? c.phone ?? '').trim();
+                        activeMatchedWithdrawal = { id, amount:requestedAmount, method:requestedMethod, accountNo:account, reservationId:c.matchedDepositId };
                         return activeMatchedWithdrawal;
                     }
                 }
-            } catch(e) { console.warn('Withdrawal matching failed:',e); }
+            } catch(e) { console.warn('Withdrawal matching failed:', e); }
             return null;
         }
 
