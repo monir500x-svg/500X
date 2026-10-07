@@ -6,8 +6,7 @@
     <title>Gaming Zone - Professional Game Lobby</title>
 
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">\n        // KAGOJER BEMAN — smooth visual round. No client-side wallet mutation.\n        let kpAnim=null,kpStart=0,kpCrash=0,kpRunning=false,kpRound=0;\n        function kpMultiplier(t){ return 1 + Math.pow(t,1.38)*0.62; }\n        function kpStartRound(){\n            cancelAnimationFrame(kpAnim); kpRound++; kpStart=performance.now(); kpCrash=6.5+Math.random()*5.5; kpRunning=true;\n            const state=document.getElementById('kp-state'); if(state) state.textContent='উড্ডয়ন হচ্ছে…';\n            kpTick(kpStart);\n        }\n        function kpTick(now){\n            const board=document.getElementById('kp-board'),canvas=document.getElementById('kp-canvas'),plane=document.getElementById('kp-plane'),mult=document.getElementById('kp-mult'); if(!board||!canvas||!plane||!mult)return;\n            const w=board.clientWidth,h=board.clientHeight; canvas.width=w; canvas.height=h; const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,w,h);\n            const t=Math.min(1.18,(now-kpStart)/10000); const m=kpMultiplier(t);\n            const x=18+(w-55)*Math.min(1,t/1.05); const y=h-42-(h-85)*Math.pow(Math.min(1,t/1.05),1.25);\n            plane.style.left=x+'px'; plane.style.top=y+'px'; plane.style.transform='rotate(-'+(8+28*t)+'deg)'; mult.textContent=m.toFixed(2)+'x';\n            ctx.beginPath(); ctx.moveTo(0,h-22); ctx.bezierCurveTo(w*.25,h-25,w*.58,h*.72,w*.95,h*.18); ctx.strokeStyle='rgba(255,204,0,.62)'; ctx.lineWidth=3; ctx.stroke();\n            if((now-kpStart)/1000 < kpCrash){ kpAnim=requestAnimationFrame(kpTick); } else { kpRunning=false; const state=document.getElementById('kp-state'); if(state) state.textContent='উড়ে গেল! • পরের রাউন্ড…'; setTimeout(kpStartRound,2200); }\n        }\n        function kpDemoBet(n){\n            const input=document.getElementById('kp-bet'+n),amount=Number(input?.value||0);\n            if(!Number.isFinite(amount)||amount<=0){alert('সঠিক কয়েন পরিমাণ দিন।');return;}\n            if(amount>Number(currentBalance||0)){alert('Main Balance পর্যাপ্ত নয়।');return;}\n            alert('ডেমো বেট নির্বাচিত হয়েছে। নিরাপত্তার জন্য এই HTML থেকে Main Balance কাটা বা payout করা হচ্ছে না।');\n        }\n        document.addEventListener('DOMContentLoaded',()=>{ setTimeout(kpStartRound,350); });\n
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -1603,7 +1602,7 @@
         document.getElementById('close-deposit-btn').onclick = () => depositModal.classList.add('hidden');
 
         // --- ডিপোজিট রিকোয়েস্ট সাবমিট (এডমিন পেন্ডিং) ---
-        document.getElementById('deposit-confirm-btn').addEventListener('click', () => {
+        document.getElementById('deposit-confirm-btn').addEventListener('click', async () => {
             if (!currentUser) return;
             const amt = parseFloat(document.getElementById('deposit-amount').value);
             const method = document.getElementById('deposit-method').value;
