@@ -941,31 +941,58 @@
         </div>
     </div>
 
-    <!-- DEPOSIT MODAL -->
+    <!-- DEPOSIT MODAL / 2-STEP DEPOSIT PORTAL -->
     <div class="av-modal-overlay hidden" id="deposit-modal">
-        <div class="av-glass-card av-modal">
-            <h2>➕ কয়েন ডিপোজিট</h2>
-            <div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:10px;" id="admin-deposit-instruction">
-                <span id="deposit-payment-label">বিকাশ নম্বর:</span> <strong id="admin-bkash-num" style="color:#ffcc00;">লোড হচ্ছে...</strong><br>
-                টাকা পাঠিয়ে নিচের তথ্যগুলো দিন:
-                <div id="deposit-match-note" style="margin-top:5px;color:#a0aec0;">ℹ️ Amount ও method অনুযায়ী payment number যাচাই হচ্ছে...</div>
+        <div class="av-glass-card av-modal" style="max-width:430px;">
+            <div id="deposit-step-1">
+                <h2>➕ ডিপোজিট</h2>
+                <div style="font-size:.75rem;color:var(--text-dim);margin:4px 0 14px;text-align:center;">প্রথমে পেমেন্ট মাধ্যম ও Amount নির্বাচন করুন</div>
+                <div style="display:flex;gap:10px;margin-bottom:14px;">
+                    <button type="button" class="deposit-method-card active" data-method="bkash" id="deposit-bkash-card" style="flex:1;border:1px solid #e2136e;border-radius:12px;background:rgba(226,19,110,.12);padding:14px 8px;color:#fff;font-weight:700;cursor:pointer;">
+                        <div style="font-size:28px;">bK</div><div>bKash</div>
+                    </button>
+                    <button type="button" class="deposit-method-card" data-method="nagad" id="deposit-nagad-card" style="flex:1;border:1px solid #555;border-radius:12px;background:rgba(255,255,255,.04);padding:14px 8px;color:#fff;font-weight:700;cursor:pointer;">
+                        <div style="font-size:28px;">৳</div><div>Nagad</div>
+                    </button>
+                </div>
+                <input type="hidden" id="deposit-method" value="bkash">
+                <div class="form-group">
+                    <label style="font-size:.72rem;color:var(--text-dim);">ডিপোজিট Amount</label>
+                    <input type="number" id="deposit-amount" placeholder="যেমন: ৫০০" value="500" min="50" inputmode="numeric">
+                </div>
+                <div class="av-error-msg" id="deposit-msg" style="color:#ef9a9a;min-height:18px;"></div>
+                <div style="display:flex;gap:6px;margin-top:8px;">
+                    <button type="button" class="av-btn av-btn-deposit" id="deposit-next-btn" style="flex:1;padding:10px;">Next ➜</button>
+                    <button type="button" class="av-btn av-btn-logout" id="close-deposit-btn" style="padding:10px;">বন্ধ</button>
+                </div>
             </div>
-            <div class="form-group">
-                <select id="deposit-method">
-                    <option value="bkash">বিকাশ (Bkash)</option>
-                    <option value="nagad">নগদ (Nagad)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <input type="number" id="deposit-amount" placeholder="কয়েন পরিমাণ (যেমন: ৫০০)" value="500" min="50">
-            </div>
-            <div class="form-group">
-                <input type="text" id="deposit-trxid" placeholder="ট্রানজেকশন আইডি (TrxID) দিন" required>
-            </div>
-            <div class="av-error-msg" id="deposit-msg" style="color:#81c784;"></div>
-            <div style="display:flex; gap:6px; margin-top:8px;">
-                <button type="button" class="av-btn av-btn-deposit" id="deposit-confirm-btn" style="flex:1; padding:8px;">রিকোয়েস্ট পাঠান</button>
-                <button type="button" class="av-btn av-btn-logout" id="close-deposit-btn" style="padding:8px;">বন্ধ</button>
+
+            <div id="deposit-step-2" style="display:none;">
+                <h2>💳 পেমেন্ট পোর্টাল</h2>
+                <div id="deposit-checking" style="text-align:center;padding:24px 8px;">
+                    <div style="font-size:30px;margin-bottom:8px;">⏳</div>
+                    <div style="font-weight:700;">চেক করা হচ্ছে...</div>
+                    <div style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">এই Amount-এর কোনো pending withdrawal আছে কিনা যাচাই করা হচ্ছে।</div>
+                </div>
+                <div id="deposit-payment-panel" style="display:none;">
+                    <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;text-align:center;">
+                        <div style="font-size:.72rem;color:var(--text-dim);">পেমেন্ট করুন</div>
+                        <div id="deposit-payment-method-title" style="font-weight:700;margin-top:3px;">bKash</div>
+                        <div style="font-size:.7rem;color:var(--text-dim);margin-top:10px;">পাঠানোর Amount</div>
+                        <div id="deposit-selected-amount" style="font-size:25px;font-weight:800;color:#ffcc00;">৳500</div>
+                        <div style="font-size:.7rem;color:var(--text-dim);margin-top:10px;">এই নম্বরে টাকা পাঠান</div>
+                        <strong id="admin-bkash-num" style="display:block;font-size:23px;color:#ffcc00;margin-top:4px;word-break:break-all;">চেক হচ্ছে...</strong>
+                        <div id="deposit-match-note" style="margin-top:8px;font-size:.72rem;color:#a0aec0;"></div>
+                    </div>
+                    <div class="form-group" style="margin-top:12px;">
+                        <input type="text" id="deposit-trxid" placeholder="ট্রানজেকশন আইডি (TrxID) দিন" required autocomplete="off">
+                    </div>
+                    <div class="av-error-msg" id="deposit-submit-msg" style="color:#81c784;min-height:18px;"></div>
+                    <div style="display:flex;gap:6px;margin-top:8px;">
+                        <button type="button" class="av-btn av-btn-deposit" id="deposit-confirm-btn" style="flex:1;padding:10px;">রিকোয়েস্ট পাঠান</button>
+                        <button type="button" class="av-btn av-btn-logout" id="deposit-back-btn" style="padding:10px;">← Back</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1463,266 +1490,195 @@
             }
         });
 
-        // LIVE Deposit payment numbers — kept compatible with the original User panel.
-        // Admin can control bKash and Nagad separately from Firebase.
+        // ===== 2-STEP DEPOSIT PORTAL =====
         const depositPaymentNumbers = { bkash: '', nagad: '' };
         const depositMethodEl = document.getElementById('deposit-method');
-        const depositPaymentLabelEl = document.getElementById('deposit-payment-label');
+        const depositPaymentLabelEl = document.getElementById('deposit-payment-method-title');
         const depositPaymentNumberEl = document.getElementById('admin-bkash-num');
-
+        const depositModal = document.getElementById('deposit-modal');
+        const depositMsg = document.getElementById('deposit-msg');
+        const depositSubmitMsg = document.getElementById('deposit-submit-msg');
+        const depositAmountEl = document.getElementById('deposit-amount');
         let activeMatchedWithdrawal = null;
         let depositMatchSeq = 0;
+        let depositPortalChecking = false;
+
+        function setDepositMethod(method) {
+            method = method === 'nagad' ? 'nagad' : 'bkash';
+            depositMethodEl.value = method;
+            document.querySelectorAll('.deposit-method-card').forEach(card => {
+                const active = card.dataset.method === method;
+                card.style.borderColor = active ? (method === 'bkash' ? '#e2136e' : '#ff8a00') : '#555';
+                card.style.background = active ? (method === 'bkash' ? 'rgba(226,19,110,.12)' : 'rgba(255,138,0,.12)') : 'rgba(255,255,255,.04)';
+            });
+        }
+
+        async function releaseActiveDepositMatch() {
+            if (!activeMatchedWithdrawal?.id || !activeMatchedWithdrawal?.reservationId) return;
+            try {
+                const ref = db.ref('adminRequests/withdrawals/' + activeMatchedWithdrawal.id);
+                const snap = await ref.once('value');
+                const row = snap.val();
+                if (row && row.matchedDepositId === activeMatchedWithdrawal.reservationId) {
+                    await ref.update({ matchedDepositId: null, matchedAt: null });
+                }
+            } catch (_) {}
+            activeMatchedWithdrawal = null;
+        }
 
         async function findAndReserveMatchingWithdrawal(amount, method) {
             const requestedAmount = Number(amount);
             const requestedMethod = String(method || '').toLowerCase();
             if (!(requestedAmount > 0) || !['bkash','nagad'].includes(requestedMethod)) return null;
-
-            // Keep the already reserved match for this open Deposit modal.
-            if (activeMatchedWithdrawal
-                && activeMatchedWithdrawal.amount === requestedAmount
-                && activeMatchedWithdrawal.method === requestedMethod) {
-                return activeMatchedWithdrawal;
-            }
-
-            // If the user changed amount/method, release our previous reservation.
-            if (activeMatchedWithdrawal?.id && activeMatchedWithdrawal?.reservationId) {
-                try {
-                    const oldRef = db.ref('adminRequests/withdrawals/' + activeMatchedWithdrawal.id);
-                    const oldSnap = await oldRef.once('value');
-                    const old = oldSnap.val();
-                    if (old && old.matchedDepositId === activeMatchedWithdrawal.reservationId) {
-                        await oldRef.update({matchedDepositId:null, matchedAt:null});
-                    }
-                } catch (_) {}
-            }
+            if (activeMatchedWithdrawal && activeMatchedWithdrawal.amount === requestedAmount && activeMatchedWithdrawal.method === requestedMethod) return activeMatchedWithdrawal;
+            if (activeMatchedWithdrawal) await releaseActiveDepositMatch();
             const seq = ++depositMatchSeq;
-            activeMatchedWithdrawal = null;
-
             try {
                 const snap = await db.ref('adminRequests/withdrawals').once('value');
                 if (seq !== depositMatchSeq) return null;
                 const rows = Object.entries(snap.val() || {})
-                    .filter(([id, w]) => w && String(w.status || '').toLowerCase() === 'pending'
-                        && String(w.method || '').toLowerCase() === requestedMethod
+                    .filter(([id,w]) => w && String(w.status||'').toLowerCase() === 'pending'
+                        && String(w.method||'').toLowerCase() === requestedMethod
                         && Number(w.amount) === requestedAmount
-                        && String(w.accountNo || '').trim()
+                        && String(w.accountNo||'').trim()
                         && !w.matchedDepositId)
-                    .sort((a,b) => Number(a[1].timestamp || 0) - Number(b[1].timestamp || 0));
-
-                for (const [id, w] of rows) {
+                    .sort((a,b) => Number(a[1].timestamp||0) - Number(b[1].timestamp||0));
+                for (const [id,w] of rows) {
                     const ref = db.ref('adminRequests/withdrawals/' + id);
                     const claim = await ref.transaction(current => {
-                        if (!current || String(current.status || '').toLowerCase() !== 'pending'
-                            || String(current.method || '').toLowerCase() !== requestedMethod
-                            || Number(current.amount) !== requestedAmount
-                            || current.matchedDepositId) return;
-                        return Object.assign({}, current, {
-                            matchedDepositId: 'reserved-' + (currentUser?.uid || 'user') + '-' + Date.now(),
-                            matchedAt: firebase.database.ServerValue.TIMESTAMP
-                        });
+                        if (!current || String(current.status||'').toLowerCase() !== 'pending' || String(current.method||'').toLowerCase() !== requestedMethod || Number(current.amount) !== requestedAmount || current.matchedDepositId) return;
+                        return Object.assign({}, current, { matchedDepositId:'reserved-' + (currentUser?.uid||'user') + '-' + Date.now(), matchedAt:firebase.database.ServerValue.TIMESTAMP });
                     });
                     if (claim.committed) {
-                        const claimed = claim.snapshot.val() || {};
-                        activeMatchedWithdrawal = {
-                            id,
-                            amount: requestedAmount,
-                            method: requestedMethod,
-                            accountNo: String(claimed.accountNo || '').trim(),
-                            reservationId: claimed.matchedDepositId
-                        };
+                        const c = claim.snapshot.val() || {};
+                        activeMatchedWithdrawal = { id, amount:requestedAmount, method:requestedMethod, accountNo:String(c.accountNo||'').trim(), reservationId:c.matchedDepositId };
                         return activeMatchedWithdrawal;
                     }
                 }
-            } catch (e) {
-                console.warn('Withdrawal matching failed:', e);
-            }
+            } catch(e) { console.warn('Withdrawal matching failed:',e); }
             return null;
         }
 
-        async function updateDepositPaymentUI() {
-            const method = depositMethodEl ? depositMethodEl.value : 'bkash';
-            const amount = parseFloat(document.getElementById('deposit-amount')?.value || '0');
-            const match = await findAndReserveMatchingWithdrawal(amount, method);
-            const number = match?.accountNo || String(depositPaymentNumbers[method] || '').trim();
-            if (depositPaymentLabelEl) {
-                depositPaymentLabelEl.innerText = method === 'nagad' ? 'নগদ নম্বর:' : 'বিকাশ নম্বর:';
-            }
-            if (depositPaymentNumberEl) {
-                depositPaymentNumberEl.innerText = number || 'নম্বর সেট করা হয়নি';
-                depositPaymentNumberEl.style.color = number ? '#ffcc00' : '#ef9a9a';
-            }
-            const note = document.getElementById('deposit-match-note');
-            if (note) {
-                note.innerText = match
-                    ? '🔗 একই পরিমাণের pending withdrawal পাওয়া গেছে — সেই account number ব্যবহার করুন।'
-                    : 'ℹ️ একই পরিমাণের pending withdrawal পাওয়া যায়নি — Admin-এর সেট করা number ব্যবহার হবে।';
-                note.style.color = match ? '#81c784' : '#a0aec0';
-            }
+        async function openDepositPortal() {
+            if (!currentUser) return alert('প্রথমে Login করুন!');
+            depositMsg.innerText = '';
+            depositSubmitMsg.innerText = '';
+            document.getElementById('deposit-trxid').value = '';
+            document.getElementById('deposit-step-1').style.display = '';
+            document.getElementById('deposit-step-2').style.display = 'none';
+            document.getElementById('deposit-checking').style.display = '';
+            document.getElementById('deposit-payment-panel').style.display = 'none';
+            setDepositMethod('bkash');
+            depositModal.classList.remove('hidden');
         }
 
-        function watchDepositPaymentNumber(path, key) {
-            db.ref(path).on('value', function(snapshot) {
-                depositPaymentNumbers[key] = String(snapshot.val() || '');
-                updateDepositPaymentUI();
-            });
+        async function goToDepositPaymentPortal() {
+            const amt = Number(depositAmountEl.value);
+            const method = depositMethodEl.value;
+            depositMsg.innerText = '';
+            if (!Number.isFinite(amt) || amt < 50) {
+                depositMsg.innerText = 'Minimum Deposit ৳50। সঠিক Amount দিন।';
+                return;
+            }
+            await releaseActiveDepositMatch();
+            document.getElementById('deposit-step-1').style.display = 'none';
+            document.getElementById('deposit-step-2').style.display = '';
+            document.getElementById('deposit-checking').style.display = '';
+            document.getElementById('deposit-payment-panel').style.display = 'none';
+            depositPortalChecking = true;
+
+            // Give the portal a short loading/checking state before showing the destination number.
+            await new Promise(resolve => setTimeout(resolve, 900));
+            const match = await findAndReserveMatchingWithdrawal(amt, method);
+            const number = String(match?.accountNo || depositPaymentNumbers[method] || '').trim();
+            depositPortalChecking = false;
+
+            document.getElementById('deposit-selected-amount').innerText = '৳' + amt;
+            document.getElementById('deposit-payment-method-title').innerText = method === 'nagad' ? 'Nagad' : 'bKash';
+            depositPaymentNumberEl.innerText = number || 'নম্বর সেট করা হয়নি';
+            depositPaymentNumberEl.style.color = number ? '#ffcc00' : '#ef9a9a';
+            document.getElementById('deposit-match-note').innerText = match
+                ? '🔗 এই Amount-এর pending withdrawal পাওয়া গেছে। ওই withdrawal-এর নম্বরেই টাকা পাঠান।'
+                : 'ℹ️ এই Amount-এর pending withdrawal পাওয়া যায়নি। Admin-এর সেট করা নম্বরে টাকা পাঠান।';
+            document.getElementById('deposit-match-note').style.color = match ? '#81c784' : '#a0aec0';
+            document.getElementById('deposit-checking').style.display = 'none';
+            document.getElementById('deposit-payment-panel').style.display = '';
         }
 
-        watchDepositPaymentNumber('adminSettings/paymentNumberBkash', 'bkash');
-        watchDepositPaymentNumber('adminSettings/paymentNumberNagad', 'nagad');
-
-        // Backward compatibility: if an older Admin still uses the single paymentNumber path,
-        // use it as a fallback without changing the newer separate bKash/Nagad values.
-        db.ref('adminSettings/paymentNumber').on('value', function(snapshot) {
-            const legacy = String(snapshot.val() || '').trim();
+        function watchDepositPaymentNumber(path,key) {
+            db.ref(path).on('value', snap => { depositPaymentNumbers[key] = String(snap.val()||'').trim(); });
+        }
+        watchDepositPaymentNumber('adminSettings/paymentNumberBkash','bkash');
+        watchDepositPaymentNumber('adminSettings/paymentNumberNagad','nagad');
+        db.ref('adminSettings/paymentNumber').on('value', snap => {
+            const legacy = String(snap.val()||'').trim();
             if (!depositPaymentNumbers.bkash && legacy) depositPaymentNumbers.bkash = legacy;
             if (!depositPaymentNumbers.nagad && legacy) depositPaymentNumbers.nagad = legacy;
-            updateDepositPaymentUI();
         });
 
-        if (depositMethodEl) depositMethodEl.addEventListener('change', () => updateDepositPaymentUI());
-        const depositAmountEl = document.getElementById('deposit-amount');
-        if (depositAmountEl) {
-            depositAmountEl.addEventListener('input', () => updateDepositPaymentUI());
-            depositAmountEl.addEventListener('change', () => updateDepositPaymentUI());
-        }
-
-        const depositModal = document.getElementById('deposit-modal');
-        const withdrawModal = document.getElementById('withdraw-modal');
-        const depositMsg = document.getElementById('deposit-msg');
-        const withdrawMsg = document.getElementById('withdraw-msg');
-
-        document.getElementById('deposit-btn').addEventListener('click', () => {
-            if (!currentUser) return alert("প্রথমে Login করুন!");
-            depositMsg.innerText = "";
-            document.getElementById('deposit-trxid').value = "";
-            depositModal.classList.remove('hidden');
-            updateDepositPaymentUI();
+        document.getElementById('deposit-btn').addEventListener('click', openDepositPortal);
+        document.getElementById('deposit-bkash-card').addEventListener('click', () => setDepositMethod('bkash'));
+        document.getElementById('deposit-nagad-card').addEventListener('click', () => setDepositMethod('nagad'));
+        document.getElementById('deposit-next-btn').addEventListener('click', goToDepositPaymentPortal);
+        document.getElementById('deposit-back-btn').addEventListener('click', async () => {
+            await releaseActiveDepositMatch();
+            document.getElementById('deposit-step-2').style.display = 'none';
+            document.getElementById('deposit-step-1').style.display = '';
         });
-        document.getElementById('close-deposit-btn').onclick = () => depositModal.classList.add('hidden');
+        document.getElementById('close-deposit-btn').onclick = async () => {
+            await releaseActiveDepositMatch();
+            depositModal.classList.add('hidden');
+        };
 
-        // --- ডিপোজিট রিকোয়েস্ট সাবমিট (এডমিন পেন্ডিং) ---
+        // --- ডিপোজিট রিকোয়েস্ট সাবমিট (এডমিন পেন্ডিং) ---
         document.getElementById('deposit-confirm-btn').addEventListener('click', async () => {
-            if (!currentUser) return;
-            const amt = parseFloat(document.getElementById('deposit-amount').value);
-            const method = document.getElementById('deposit-method').value;
+            if (!currentUser || depositPortalChecking) return;
+            const amt = parseFloat(depositAmountEl.value);
+            const method = depositMethodEl.value;
             const trxId = document.getElementById('deposit-trxid').value.trim();
             const match = await findAndReserveMatchingWithdrawal(amt, method);
             const paymentNumber = String(match?.accountNo || depositPaymentNumbers[method] || '').trim();
-
-            if (!paymentNumber) {
-                depositMsg.style.color = "#ef9a9a";
-                depositMsg.innerText = method === 'nagad' ? "নগদ ডিপোজিট বর্তমানে বন্ধ আছে।" : "বিকাশ ডিপোজিট বর্তমানে বন্ধ আছে।";
-                return;
-            }
-
-            if (isNaN(amt) || amt <= 0) {
-                depositMsg.style.color = "#ef9a9a";
-                depositMsg.innerText = "সঠিক পরিমাণ লিখুন।";
-                return;
-            }
-            if (amt < 50) {
-                depositMsg.style.color = "#ef9a9a";
-                depositMsg.innerText = "Minimum Deposit ৳50। ৫০ টাকার কম Deposit করা যাবে না।";
-                return;
-            }
-            if (!trxId) {
-                depositMsg.style.color = "#ef9a9a";
-                depositMsg.innerText = "ট্রানজেকশন আইডি (TrxID) প্রদান করুন।";
-                return;
-            }
-
-            // A real payment transaction ID must be unique. Normalize it so
-            // harmless spaces/case changes cannot bypass the duplicate check.
-            const normalizedTrxId = trxId.replace(/\\s+/g, '').toLowerCase();
-            const trxIndexKey = encodeURIComponent(normalizedTrxId).replace(/\\./g, '%2E');
+            depositSubmitMsg.innerText = '';
+            if (!paymentNumber) { depositSubmitMsg.style.color='#ef9a9a'; depositSubmitMsg.innerText='এই পেমেন্ট মাধ্যমের নম্বর এখনো সেট করা হয়নি।'; return; }
+            if (isNaN(amt) || amt < 50) { depositSubmitMsg.style.color='#ef9a9a'; depositSubmitMsg.innerText='Minimum Deposit ৳50।'; return; }
+            if (!trxId) { depositSubmitMsg.style.color='#ef9a9a'; depositSubmitMsg.innerText='TrxID প্রদান করুন।'; return; }
+            const normalizedTrxId = trxId.replace(/\s+/g,'').toLowerCase();
+            const trxIndexKey = encodeURIComponent(normalizedTrxId).replace(/\./g,'%2E');
             const trxIndexRef = db.ref('adminRequests/depositTrxIndex/' + trxIndexKey);
             const requestRef = db.ref('adminRequests/deposits').push();
             const depositData = {
-                uid: currentUser.uid,
-                email: currentUser.email,
-                amount: amt,
-                method: method,
-                trxId: trxId,
-                status: 'pending',
-                timestamp: Date.now(),
-                paymentNumberUsed: paymentNumber,
-                paymentSource: match ? 'matched_withdrawal' : 'admin_configured',
-                matchedWithdrawalId: match ? match.id : null,
-                matchedWithdrawalAmount: match ? match.amount : null,
-                matchedWithdrawalMethod: match ? match.method : null
+                uid:currentUser.uid,email:currentUser.email,amount:amt,method,trxId,status:'pending',timestamp:Date.now(),
+                paymentNumberUsed:paymentNumber,paymentSource:match?'matched_withdrawal':'admin_configured',
+                matchedWithdrawalId:match?match.id:null,matchedWithdrawalAmount:match?match.amount:null,matchedWithdrawalMethod:match?match.method:null
             };
-
-            (async () => {
-                try {
-                    // First check existing requests that were created before
-                    // the transaction-ID index was introduced.
-                    const existingSnap = await db.ref('adminRequests/deposits').once('value');
-                    const existingDeposits = existingSnap.val() || {};
-                    const duplicateExists = Object.values(existingDeposits).some(req =>
-                        String(req?.trxId || '').replace(/\s+/g, '').toLowerCase() === normalizedTrxId
-                    );
-
-                    if (duplicateExists) {
-                        throw new Error('এই Transaction ID দিয়ে ইতিমধ্যে একটি Deposit Request আছে। একই TrxID আবার ব্যবহার করা যাবে না।');
-                    }
-
-                    // Atomically reserve this transaction ID. This closes the
-                    // race where the same TrxID is submitted from two tabs/devices.
-                    const claim = await trxIndexRef.transaction(current => {
-                        if (current) return;
-                        return {
-                            uid: currentUser.uid,
-                            requestId: requestRef.key,
-                            trxId: trxId,
-                            createdAt: firebase.database.ServerValue.TIMESTAMP
-                        };
+            try {
+                const existingSnap = await db.ref('adminRequests/deposits').once('value');
+                const duplicateExists = Object.values(existingSnap.val()||{}).some(req => String(req?.trxId||'').replace(/\s+/g,'').toLowerCase()===normalizedTrxId);
+                if (duplicateExists) throw new Error('এই TrxID দিয়ে ইতিমধ্যে একটি Deposit Request আছে।');
+                const claim = await trxIndexRef.transaction(current => current ? undefined : {uid:currentUser.uid,requestId:requestRef.key,trxId,createdAt:firebase.database.ServerValue.TIMESTAMP});
+                if (!claim.committed) throw new Error('এই TrxID দিয়ে ইতিমধ্যে একটি Deposit Request আছে।');
+                await requestRef.set(depositData);
+                if (match?.id && match?.reservationId) {
+                    const wRef = db.ref('adminRequests/withdrawals/' + match.id);
+                    await wRef.transaction(current => {
+                        if (!current || current.matchedDepositId !== match.reservationId) return;
+                        return Object.assign({}, current, {matchedDepositId:requestRef.key,matchedDepositAt:firebase.database.ServerValue.TIMESTAMP});
                     });
-
-                    if (!claim.committed) {
-                        throw new Error('এই Transaction ID দিয়ে ইতিমধ্যে একটি Deposit Request আছে। একই TrxID আবার ব্যবহার করা যাবে না।');
-                    }
-
-                    await requestRef.set(depositData);
-                    if (match && match.id) {
-                        await db.ref('adminRequests/withdrawals/' + match.id).update({
-                            matchedDepositId: requestRef.key,
-                            matchedDepositAt: firebase.database.ServerValue.TIMESTAMP
-                        });
-                    }
-
-                    depositMsg.style.color = "#81c784";
-                    depositMsg.innerText = "ডিপোজিট রিকোয়েস্ট সফলভাবে জমা হয়েছে।";
-                    setTimeout(() => {
-                        depositModal.classList.add('hidden');
-                        document.getElementById('deposit-amount').value = '500';
-                        document.getElementById('deposit-trxid').value = '';
-                        depositMsg.innerText = '';
-                    }, 2000);
-                } catch (error) {
-                    // If request creation failed after reserving the ID, release
-                    // only our own reservation so a retry can be made safely.
-                    try {
-                        if (match && match.id && match.reservationId && String(match.reservationId).startsWith('reserved-')) {
-                            const wr = db.ref('adminRequests/withdrawals/' + match.id);
-                            const ws = await wr.once('value');
-                            const wd = ws.val();
-                            if (wd && wd.matchedDepositId === match.reservationId) await wr.update({matchedDepositId:null, matchedAt:null});
-                        }
-                    } catch (_) {}
-                    try {
-                        const reservation = await trxIndexRef.once('value');
-                        const data = reservation.val();
-                        if (data && data.requestId === requestRef.key) {
-                            await trxIndexRef.remove();
-                        }
-                    } catch (_) {}
-
-                    depositMsg.style.color = "#ef9a9a";
-                    depositMsg.innerText = "ত্রুটি: " + error.message;
                 }
-            })();
+                activeMatchedWithdrawal = null;
+                depositSubmitMsg.style.color='#81c784';
+                depositSubmitMsg.innerText='✅ Deposit Request পাঠানো হয়েছে। Admin approval-এর জন্য অপেক্ষা করুন।';
+            } catch(e) {
+                try { await trxIndexRef.remove(); } catch(_) {}
+                if (match?.id && match?.reservationId) { try { const wr=db.ref('adminRequests/withdrawals/'+match.id); const ws=await wr.once('value'); if(ws.val()?.matchedDepositId===match.reservationId) await wr.update({matchedDepositId:null,matchedAt:null}); } catch(_) {} }
+                activeMatchedWithdrawal=null;
+                depositSubmitMsg.style.color='#ef9a9a';
+                depositSubmitMsg.innerText=e.message||'Deposit Request পাঠানো যায়নি।';
+            }
         });
+
+        const withdrawModal = document.getElementById('withdraw-modal');
+        const withdrawMsg = document.getElementById('withdraw-msg');
 
         let withdrawRequestBusy = false;
 
