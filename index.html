@@ -6,7 +6,8 @@
     <title>Gaming Zone - Professional Game Lobby</title>
 
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">\n        // KAGOJER BEMAN — smooth visual round. No client-side wallet mutation.\n        let kpAnim=null,kpStart=0,kpCrash=0,kpRunning=false,kpRound=0;\n        function kpMultiplier(t){ return 1 + Math.pow(t,1.38)*0.62; }\n        function kpStartRound(){\n            cancelAnimationFrame(kpAnim); kpRound++; kpStart=performance.now(); kpCrash=6.5+Math.random()*5.5; kpRunning=true;\n            const state=document.getElementById('kp-state'); if(state) state.textContent='উড্ডয়ন হচ্ছে…';\n            kpTick(kpStart);\n        }\n        function kpTick(now){\n            const board=document.getElementById('kp-board'),canvas=document.getElementById('kp-canvas'),plane=document.getElementById('kp-plane'),mult=document.getElementById('kp-mult'); if(!board||!canvas||!plane||!mult)return;\n            const w=board.clientWidth,h=board.clientHeight; canvas.width=w; canvas.height=h; const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,w,h);\n            const t=Math.min(1.18,(now-kpStart)/10000); const m=kpMultiplier(t);\n            const x=18+(w-55)*Math.min(1,t/1.05); const y=h-42-(h-85)*Math.pow(Math.min(1,t/1.05),1.25);\n            plane.style.left=x+'px'; plane.style.top=y+'px'; plane.style.transform='rotate(-'+(8+28*t)+'deg)'; mult.textContent=m.toFixed(2)+'x';\n            ctx.beginPath(); ctx.moveTo(0,h-22); ctx.bezierCurveTo(w*.25,h-25,w*.58,h*.72,w*.95,h*.18); ctx.strokeStyle='rgba(255,204,0,.62)'; ctx.lineWidth=3; ctx.stroke();\n            if((now-kpStart)/1000 < kpCrash){ kpAnim=requestAnimationFrame(kpTick); } else { kpRunning=false; const state=document.getElementById('kp-state'); if(state) state.textContent='উড়ে গেল! • পরের রাউন্ড…'; setTimeout(kpStartRound,2200); }\n        }\n        function kpDemoBet(n){\n            const input=document.getElementById('kp-bet'+n),amount=Number(input?.value||0);\n            if(!Number.isFinite(amount)||amount<=0){alert('সঠিক কয়েন পরিমাণ দিন।');return;}\n            if(amount>Number(currentBalance||0)){alert('Main Balance পর্যাপ্ত নয়।');return;}\n            alert('ডেমো বেট নির্বাচিত হয়েছে। নিরাপত্তার জন্য এই HTML থেকে Main Balance কাটা বা payout করা হচ্ছে না।');\n        }\n        document.addEventListener('DOMContentLoaded',()=>{ setTimeout(kpStartRound,350); });\n
+    </script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -654,6 +655,229 @@
             filter: grayscale(80%);
         }
 
+        /* FLAG KING STYLES — separate game, same structure */
+        #flag-king-screen {
+            background: linear-gradient(rgba(13, 1, 26, 0.85), rgba(13, 1, 26, 0.95)), 
+                        url('https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?q=80&w=1200&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .fk-game-container {
+            width: 100%;
+            max-width: 430px;
+            background: rgba(20, 5, 35, 0.85); 
+            border: 3px solid #ffcc00;
+            border-radius: 24px;
+            padding: 15px;
+            box-shadow: 0 0 40px rgba(255, 204, 0, 0.25);
+            text-align: center;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+            margin-top: 30px;
+            box-sizing: border-box;
+        }
+
+        .fk-game-header h1 {
+            font-size: 22px;
+            color: #ffcc00;
+            text-transform: uppercase;
+            text-shadow: 0 0 8px #ff3300, 2px 2px 0px #000;
+            margin: 0 0 2px 0;
+        }
+
+        .fk-game-header span {
+            font-size: 9px;
+            letter-spacing: 1px;
+            color: #ff9900;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .fk-fullscreen-toggle-btn {
+            background: linear-gradient(135deg, #00ffff, #0088cc);
+            color: black;
+            border: 2px solid #fff;
+            padding: 5px 12px;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            outline: none;
+        }
+
+        .fk-multiplier-bar {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 8px 0;
+        }
+
+        .fk-mult-box {
+            background: #222;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #666;
+            border: 1px solid #333;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .fk-mult-box.active {
+            background: linear-gradient(135deg, #ffcc00, #ff6600);
+            color: black;
+            border-color: #fff;
+            box-shadow: 0 0 12px #ffcc00;
+            transform: scale(1.1);
+        }
+
+        .fk-reels-board {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 8px;
+            border-radius: 12px;
+            border: 2px solid #2a1b40;
+            margin-bottom: 8px;
+            touch-action: manipulation;
+        }
+
+        .fk-slot-cell {
+            aspect-ratio: 1 / 1;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, #222 0%, #050505 100%);
+            border-radius: 8px;
+            border: 1.5px solid #ffcc00;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+            transition: transform 0.25s ease, opacity 0.25s ease, background 0.25s ease;
+            will-change: transform, opacity;
+        }
+
+        .fk-explode {
+            transform: scale(0) rotate(45deg);
+            opacity: 0;
+            background: radial-gradient(circle, #fff 0%, #ff0055 100%) !important;
+        }
+
+        .fk-spinning {
+            transform: scaleY(0.9);
+            opacity: 0.7;
+        }
+
+        .fk-status {
+            margin: 6px 0;
+            font-size: 13px;
+            font-weight: bold;
+            min-height: 20px;
+            color: #aaa;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fk-dashboard {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 204, 0, 0.2);
+        }
+
+        .fk-dash-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fk-dash-label {
+            font-size: 9px;
+            color: #ffcc00;
+            text-transform: uppercase;
+        }
+
+        .fk-dash-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        #fk-bal { color: #00ffcc; }
+        #fk-win-display { color: #ff3366; }
+        #fk-bet-display { color: #ffcc00; }
+
+        .fk-controls-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.6);
+            padding: 6px 12px;
+            border-radius: 50px;
+        }
+
+        .fk-bet-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #ffcc00;
+            background: #222;
+            color: #ffcc00;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+        }
+
+        .fk-bet-btn:disabled {
+            border-color: #444;
+            color: #444;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .fk-spin-btn-container {
+            background: radial-gradient(circle, #5a4000 0%, transparent 70%);
+            padding: 3px;
+            border-radius: 50%;
+        }
+
+        .fk-spin-btn {
+            width: 65px;
+            height: 65px;
+            font-size: 14px;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffe066 0%, #ff9900 50%, #b36600 100%);
+            color: #000;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            outline: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .fk-spin-btn:disabled {
+            background: linear-gradient(135deg, #555, #222);
+            color: #666;
+            border-color: #444;
+            cursor: not-allowed;
+            box-shadow: none;
+            filter: grayscale(80%);
+        }
+
         /* RED vs BLUE — added game styles only */
         #redblue-game-screen{background:radial-gradient(circle at 50% 20%,#17213b 0,#090b10 55%);padding:10px;align-items:center;justify-content:center}
         .rb-container{width:100%;max-width:460px;background:#0f1420e8;border:1px solid #ffffff18;border-radius:24px;padding:14px;box-shadow:0 0 35px #000b;text-align:center;margin-top:20px}
@@ -725,6 +949,7 @@
             <div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:10px;" id="admin-deposit-instruction">
                 <span id="deposit-payment-label">বিকাশ নম্বর:</span> <strong id="admin-bkash-num" style="color:#ffcc00;">লোড হচ্ছে...</strong><br>
                 টাকা পাঠিয়ে নিচের তথ্যগুলো দিন:
+                <div id="deposit-match-note" style="margin-top:5px;color:#a0aec0;">ℹ️ Amount ও method অনুযায়ী payment number যাচাই হচ্ছে...</div>
             </div>
             <div class="form-group">
                 <select id="deposit-method">
@@ -733,7 +958,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <input type="number" id="deposit-amount" placeholder="কয়েন পরিমাণ (যেমন: ৫০০)" value="500" min="100">
+                <input type="number" id="deposit-amount" placeholder="কয়েন পরিমাণ (যেমন: ৫০০)" value="500" min="50">
             </div>
             <div class="form-group">
                 <input type="text" id="deposit-trxid" placeholder="ট্রানজেকশন আইডি (TrxID) দিন" required>
@@ -804,8 +1029,9 @@
                 <button class="av-btn" id="bonus-btn" type="button" style="background:#8e24aa;padding:7px 18px;font-size:0.75rem;position:relative;white-space:nowrap;box-shadow:0 4px 12px rgba(142,36,170,0.28);">🎁 Bonus <span id="bonus-count-badge" style="display:none;margin-left:4px;background:#ffcc00;color:#111;border-radius:999px;padding:1px 6px;font-size:10px;font-weight:900;">0</span></button>
             </div>
 
-            <div class="category-bar">
+            <div class="category-bar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
                 <div class="category-badge">🔥 HOT GAMES</div>
+                <button type="button" id="help-center-btn" class="av-btn" style="padding:7px 12px;font-size:.72rem;background:#1976d2;white-space:nowrap;">🆘 Help Center</button>
             </div>
 
             <div class="games-grid" id="lobby-games-grid"></div>
@@ -849,7 +1075,7 @@
         </div>
     </div>
 
-    <!-- PAGE 3: BOXING KING -->
+\n    <!-- PAGE 4: BOXING KING -->
     <div class="page-screen" id="boxing-king-screen">
         <div class="bk-game-container" id="bkGameContainer">
             <div class="bk-game-header">
@@ -872,7 +1098,7 @@
 
             <div class="bk-reels-board" id="bk-board"></div>
 
-            <div class="bk-status" id="bk-status">SPIN চাপুন! 🥊</div>
+            <div class="bk-status" id="bk-status">SPIN চাপুন! 🇧🇩</div>
 
             <div class="bk-dashboard">
                 <div class="bk-dash-box">
@@ -901,10 +1127,62 @@
 
 
 
+    <!-- PAGE 3B: FLAG KING -->
+    <div class="page-screen" id="flag-king-screen">
+        <div class="fk-game-container" id="fkGameContainer">
+            <div class="fk-game-header">
+                <h1>Flag King</h1>
+                <span>LEFT TO RIGHT ONLY</span>
+            </div>
+
+            <div>
+                <button class="fk-fullscreen-toggle-btn" id="fkFsBtn" onclick="toggleFkFullScreen()">
+                    📱 ফুলস্ক্রিন করুন
+                </button>
+            </div>
+
+            <div class="fk-multiplier-bar">
+                <div class="fk-mult-box active" id="fk-m1">1X</div>
+                <div class="fk-mult-box" id="fk-m2">2X</div>
+                <div class="fk-mult-box" id="fk-m3">3X</div>
+                <div class="fk-mult-box" id="fk-m5">5X</div>
+            </div>
+
+            <div class="fk-reels-board" id="fk-board"></div>
+
+            <div class="fk-status" id="fk-status">SPIN চাপুন! 🇧🇩</div>
+
+            <div class="fk-dashboard">
+                <div class="fk-dash-box">
+                    <span class="fk-dash-label">Win (Coin)</span>
+                    <span id="fk-win-display" class="fk-dash-value">0.00</span>
+                </div>
+                <div class="fk-dash-box">
+                    <span class="fk-dash-label">Bet (Coin)</span>
+                    <span id="fk-bet-display" class="fk-dash-value">1.00</span>
+                </div>
+                <div class="fk-dash-box">
+                    <span class="fk-dash-label">Balance</span>
+                    <span id="fk-bal" class="fk-dash-value">0.00</span>
+                </div>
+            </div>
+
+            <div class="fk-controls-panel">
+                <button class="fk-bet-btn" id="fk-bet-minus-btn" onclick="changeFkBet(-1)">-</button>
+                <div class="fk-spin-btn-container">
+                    <button class="fk-spin-btn" onclick="handleFkSpinClick()" id="fk-spin-btn">SPIN</button>
+                </div>
+                <button class="fk-bet-btn" id="fk-bet-plus-btn" onclick="changeFkBet(1)">+</button>
+            </div>
+        </div>
+    </div>
+
+
+
     <!-- PAGE 4: COLOR GEMS -->
     <div class="page-screen" id="color-gems-screen">
       <div class="cg-container" id="cgGameContainer">
-        <button class="cg-fs" id="cg-fs-btn" onclick="toggleCgFullScreen()">📱 ফুলস্ক্রিন করুন</button>
+        <div class="cg-fs" id="cg-balance-display"><span id="cg-top-balance">0.00</span></div>
         <div class="cg-top"><div class="cg-ways">2000 WAYS</div><div class="cg-mults" id="cg-mults"><span class="active">1X</span><span>2X</span><span>3X</span><span>5X</span></div></div>
         <div class="cg-frame"><div class="cg-reels" id="cg-board"></div></div>
         <div class="cg-actions"><button class="cg-action" id="cg-extra-btn">⚡ Extra Bet</button><button class="cg-action buy" id="cg-buy-btn">💎 Buy Feature</button></div>
@@ -963,6 +1241,14 @@
                 screenId: 'boxing-king-screen',
                 svgBg: 'linear-gradient(135deg, #2b033d, #6b0f4a)',
                 svgIcon: `🥊`
+            },
+            {
+                id: 'flag-king',
+                name: 'ফ্ল্যাগ কিং (Flag King)',
+                provider: 'Gaming Zone',
+                screenId: 'flag-king-screen',
+                svgBg: 'linear-gradient(135deg, #063b35, #1d6f5d)',
+                svgIcon: `🎰`
             },
             {
                 id: 'color-gems',
@@ -1056,6 +1342,13 @@
         let isProcessingBet = false;
         let lastCrashSettlementAttempt = -1;
         let aviatorBetsListener = null;
+
+        function logGameActivity(game, details) {
+            if (!currentUser) return;
+            const ref = db.ref('users/' + currentUser.uid + '/gameLogs').push();
+            const record = Object.assign({game: game, uid: currentUser.uid, email: currentUser.email || '', timestamp: firebase.database.ServerValue.TIMESTAMP}, details || {});
+            ref.set(record).catch(function(err){ console.warn('Game log write failed:', err); });
+        }
 
         // Aviator uses Firebase server time so every device derives the same round/crash point.
         // This prevents one phone from being a few seconds ahead/behind because of local clock drift.
@@ -1178,15 +1471,94 @@
         const depositPaymentLabelEl = document.getElementById('deposit-payment-label');
         const depositPaymentNumberEl = document.getElementById('admin-bkash-num');
 
-        function updateDepositPaymentUI() {
+        let activeMatchedWithdrawal = null;
+        let depositMatchSeq = 0;
+
+        async function findAndReserveMatchingWithdrawal(amount, method) {
+            const requestedAmount = Number(amount);
+            const requestedMethod = String(method || '').toLowerCase();
+            if (!(requestedAmount > 0) || !['bkash','nagad'].includes(requestedMethod)) return null;
+
+            // Keep the already reserved match for this open Deposit modal.
+            if (activeMatchedWithdrawal
+                && activeMatchedWithdrawal.amount === requestedAmount
+                && activeMatchedWithdrawal.method === requestedMethod) {
+                return activeMatchedWithdrawal;
+            }
+
+            // If the user changed amount/method, release our previous reservation.
+            if (activeMatchedWithdrawal?.id && activeMatchedWithdrawal?.reservationId) {
+                try {
+                    const oldRef = db.ref('adminRequests/withdrawals/' + activeMatchedWithdrawal.id);
+                    const oldSnap = await oldRef.once('value');
+                    const old = oldSnap.val();
+                    if (old && old.matchedDepositId === activeMatchedWithdrawal.reservationId) {
+                        await oldRef.update({matchedDepositId:null, matchedAt:null});
+                    }
+                } catch (_) {}
+            }
+            const seq = ++depositMatchSeq;
+            activeMatchedWithdrawal = null;
+
+            try {
+                const snap = await db.ref('adminRequests/withdrawals').once('value');
+                if (seq !== depositMatchSeq) return null;
+                const rows = Object.entries(snap.val() || {})
+                    .filter(([id, w]) => w && String(w.status || '').toLowerCase() === 'pending'
+                        && String(w.method || '').toLowerCase() === requestedMethod
+                        && Number(w.amount) === requestedAmount
+                        && String(w.accountNo || '').trim()
+                        && !w.matchedDepositId)
+                    .sort((a,b) => Number(a[1].timestamp || 0) - Number(b[1].timestamp || 0));
+
+                for (const [id, w] of rows) {
+                    const ref = db.ref('adminRequests/withdrawals/' + id);
+                    const claim = await ref.transaction(current => {
+                        if (!current || String(current.status || '').toLowerCase() !== 'pending'
+                            || String(current.method || '').toLowerCase() !== requestedMethod
+                            || Number(current.amount) !== requestedAmount
+                            || current.matchedDepositId) return;
+                        return Object.assign({}, current, {
+                            matchedDepositId: 'reserved-' + (currentUser?.uid || 'user') + '-' + Date.now(),
+                            matchedAt: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    });
+                    if (claim.committed) {
+                        const claimed = claim.snapshot.val() || {};
+                        activeMatchedWithdrawal = {
+                            id,
+                            amount: requestedAmount,
+                            method: requestedMethod,
+                            accountNo: String(claimed.accountNo || '').trim(),
+                            reservationId: claimed.matchedDepositId
+                        };
+                        return activeMatchedWithdrawal;
+                    }
+                }
+            } catch (e) {
+                console.warn('Withdrawal matching failed:', e);
+            }
+            return null;
+        }
+
+        async function updateDepositPaymentUI() {
             const method = depositMethodEl ? depositMethodEl.value : 'bkash';
-            const number = String(depositPaymentNumbers[method] || '').trim();
+            const amount = parseFloat(document.getElementById('deposit-amount')?.value || '0');
+            const match = await findAndReserveMatchingWithdrawal(amount, method);
+            const number = match?.accountNo || String(depositPaymentNumbers[method] || '').trim();
             if (depositPaymentLabelEl) {
                 depositPaymentLabelEl.innerText = method === 'nagad' ? 'নগদ নম্বর:' : 'বিকাশ নম্বর:';
             }
             if (depositPaymentNumberEl) {
                 depositPaymentNumberEl.innerText = number || 'নম্বর সেট করা হয়নি';
                 depositPaymentNumberEl.style.color = number ? '#ffcc00' : '#ef9a9a';
+            }
+            const note = document.getElementById('deposit-match-note');
+            if (note) {
+                note.innerText = match
+                    ? '🔗 একই পরিমাণের pending withdrawal পাওয়া গেছে — সেই account number ব্যবহার করুন।'
+                    : 'ℹ️ একই পরিমাণের pending withdrawal পাওয়া যায়নি — Admin-এর সেট করা number ব্যবহার হবে।';
+                note.style.color = match ? '#81c784' : '#a0aec0';
             }
         }
 
@@ -1209,7 +1581,12 @@
             updateDepositPaymentUI();
         });
 
-        if (depositMethodEl) depositMethodEl.addEventListener('change', updateDepositPaymentUI);
+        if (depositMethodEl) depositMethodEl.addEventListener('change', () => updateDepositPaymentUI());
+        const depositAmountEl = document.getElementById('deposit-amount');
+        if (depositAmountEl) {
+            depositAmountEl.addEventListener('input', () => updateDepositPaymentUI());
+            depositAmountEl.addEventListener('change', () => updateDepositPaymentUI());
+        }
 
         const depositModal = document.getElementById('deposit-modal');
         const withdrawModal = document.getElementById('withdraw-modal');
@@ -1221,6 +1598,7 @@
             depositMsg.innerText = "";
             document.getElementById('deposit-trxid').value = "";
             depositModal.classList.remove('hidden');
+            updateDepositPaymentUI();
         });
         document.getElementById('close-deposit-btn').onclick = () => depositModal.classList.add('hidden');
 
@@ -1230,7 +1608,8 @@
             const amt = parseFloat(document.getElementById('deposit-amount').value);
             const method = document.getElementById('deposit-method').value;
             const trxId = document.getElementById('deposit-trxid').value.trim();
-            const paymentNumber = (depositPaymentNumbers[method] || '').trim();
+            const match = await findAndReserveMatchingWithdrawal(amt, method);
+            const paymentNumber = String(match?.accountNo || depositPaymentNumbers[method] || '').trim();
 
             if (!paymentNumber) {
                 depositMsg.style.color = "#ef9a9a";
@@ -1243,12 +1622,23 @@
                 depositMsg.innerText = "সঠিক পরিমাণ লিখুন।";
                 return;
             }
+            if (amt < 50) {
+                depositMsg.style.color = "#ef9a9a";
+                depositMsg.innerText = "Minimum Deposit ৳50। ৫০ টাকার কম Deposit করা যাবে না।";
+                return;
+            }
             if (!trxId) {
                 depositMsg.style.color = "#ef9a9a";
                 depositMsg.innerText = "ট্রানজেকশন আইডি (TrxID) প্রদান করুন।";
                 return;
             }
 
+            // A real payment transaction ID must be unique. Normalize it so
+            // harmless spaces/case changes cannot bypass the duplicate check.
+            const normalizedTrxId = trxId.replace(/\\s+/g, '').toLowerCase();
+            const trxIndexKey = encodeURIComponent(normalizedTrxId).replace(/\\./g, '%2E');
+            const trxIndexRef = db.ref('adminRequests/depositTrxIndex/' + trxIndexKey);
+            const requestRef = db.ref('adminRequests/deposits').push();
             const depositData = {
                 uid: currentUser.uid,
                 email: currentUser.email,
@@ -1256,11 +1646,52 @@
                 method: method,
                 trxId: trxId,
                 status: 'pending',
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                paymentNumberUsed: paymentNumber,
+                paymentSource: match ? 'matched_withdrawal' : 'admin_configured',
+                matchedWithdrawalId: match ? match.id : null,
+                matchedWithdrawalAmount: match ? match.amount : null,
+                matchedWithdrawalMethod: match ? match.method : null
             };
 
-            db.ref('adminRequests/deposits').push(depositData)
-                .then(() => {
+            (async () => {
+                try {
+                    // First check existing requests that were created before
+                    // the transaction-ID index was introduced.
+                    const existingSnap = await db.ref('adminRequests/deposits').once('value');
+                    const existingDeposits = existingSnap.val() || {};
+                    const duplicateExists = Object.values(existingDeposits).some(req =>
+                        String(req?.trxId || '').replace(/\s+/g, '').toLowerCase() === normalizedTrxId
+                    );
+
+                    if (duplicateExists) {
+                        throw new Error('এই Transaction ID দিয়ে ইতিমধ্যে একটি Deposit Request আছে। একই TrxID আবার ব্যবহার করা যাবে না।');
+                    }
+
+                    // Atomically reserve this transaction ID. This closes the
+                    // race where the same TrxID is submitted from two tabs/devices.
+                    const claim = await trxIndexRef.transaction(current => {
+                        if (current) return;
+                        return {
+                            uid: currentUser.uid,
+                            requestId: requestRef.key,
+                            trxId: trxId,
+                            createdAt: firebase.database.ServerValue.TIMESTAMP
+                        };
+                    });
+
+                    if (!claim.committed) {
+                        throw new Error('এই Transaction ID দিয়ে ইতিমধ্যে একটি Deposit Request আছে। একই TrxID আবার ব্যবহার করা যাবে না।');
+                    }
+
+                    await requestRef.set(depositData);
+                    if (match && match.id) {
+                        await db.ref('adminRequests/withdrawals/' + match.id).update({
+                            matchedDepositId: requestRef.key,
+                            matchedDepositAt: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+
                     depositMsg.style.color = "#81c784";
                     depositMsg.innerText = "ডিপোজিট রিকোয়েস্ট সফলভাবে জমা হয়েছে।";
                     setTimeout(() => {
@@ -1269,21 +1700,35 @@
                         document.getElementById('deposit-trxid').value = '';
                         depositMsg.innerText = '';
                     }, 2000);
-                })
-                .catch(error => {
+                } catch (error) {
+                    // If request creation failed after reserving the ID, release
+                    // only our own reservation so a retry can be made safely.
+                    try {
+                        if (match && match.id && match.reservationId && String(match.reservationId).startsWith('reserved-')) {
+                            const wr = db.ref('adminRequests/withdrawals/' + match.id);
+                            const ws = await wr.once('value');
+                            const wd = ws.val();
+                            if (wd && wd.matchedDepositId === match.reservationId) await wr.update({matchedDepositId:null, matchedAt:null});
+                        }
+                    } catch (_) {}
+                    try {
+                        const reservation = await trxIndexRef.once('value');
+                        const data = reservation.val();
+                        if (data && data.requestId === requestRef.key) {
+                            await trxIndexRef.remove();
+                        }
+                    } catch (_) {}
+
                     depositMsg.style.color = "#ef9a9a";
                     depositMsg.innerText = "ত্রুটি: " + error.message;
-                });
+                }
+            })();
         });
 
         let withdrawRequestBusy = false;
 
         document.getElementById('withdraw-btn').addEventListener('click', async () => {
             if (!currentUser) return alert("প্রথমে Login করুন!");
-            if (withdrawRequestBusy) return;
-            withdrawRequestBusy = true;
-            const withdrawButton = document.getElementById('withdraw-btn');
-            if (withdrawButton) withdrawButton.disabled = true;
             withdrawMsg.innerText = "";
             document.getElementById('withdraw-account').value = "";
             const notice = document.getElementById('withdraw-cooldown-notice');
@@ -1306,6 +1751,10 @@
         // --- উইথড্র রিকোয়েস্ট সাবমিট (এডমিন পেন্ডিং) ---
         document.getElementById('withdraw-confirm-btn').addEventListener('click', async (e) => {
             if (!currentUser) return;
+            if (withdrawRequestBusy) return;
+            withdrawRequestBusy = true;
+            const withdrawConfirmButton = document.getElementById('withdraw-confirm-btn');
+            if (withdrawConfirmButton) withdrawConfirmButton.disabled = true;
             try {
                 const snap = await db.ref('users/' + currentUser.uid).once('value');
                 const u = snap.val() || {};
@@ -1324,9 +1773,9 @@
             const method = document.getElementById('withdraw-method').value;
             const accountNo = document.getElementById('withdraw-account').value.trim();
 
-            if (isNaN(amt) || amt <= 0) {
+            if (isNaN(amt) || amt < 100) {
                 withdrawMsg.style.color = "#ef9a9a";
-                withdrawMsg.innerText = "সঠিক পরিমাণ লিখুন।";
+                withdrawMsg.innerText = "সর্বনিম্ন ৳100 Withdraw করতে হবে।";
                 return;
             }
             if (!accountNo) {
@@ -1402,7 +1851,7 @@
                 withdrawMsg.innerText = "ত্রুটি: " + (error.message || error);
             } finally {
                 withdrawRequestBusy = false;
-                if (withdrawButton) withdrawButton.disabled = false;
+                if (withdrawConfirmButton) withdrawConfirmButton.disabled = false;
             }
             return;
         });
@@ -1425,9 +1874,20 @@
             testUserUid: '',
             testRtpFactor: 1.0
         };
-        // Color Gems uses the SAME Boxing King configuration.
-        // There is intentionally NO separate config/colorGems path.
-        let cgConfig = bkConfig;
+        // Color Gems has its OWN independent configuration.
+        // Boxing King/Flag King continue using config/boxingKing/rtpFactor.
+        // Color Gems reads ONLY config/colorGems, so changing one does not change the other.
+        let cgConfig = {
+            enabled: true,
+            minBet: 1,
+            maxBet: 10,
+            betOptions: [1.00, 2.00, 3.00, 5.00, 10.00],
+            animationSpeedMs: 90,
+            rtpFactor: 1.0,
+            testMode: false,
+            testUserUid: '',
+            testRtpFactor: 1.0
+        };
 
         // User-specific RTP / Reference Factor loader.
         // This reads the value saved by the Admin Panel for the logged-in UID.
@@ -1476,23 +1936,45 @@
                     bkConfig.betOptions = [1.00, 2.00, 3.00, 5.00, 10.00];
                 }
             }
-            cgConfig = bkConfig;
             applyBkConfigToUI();
+            applyCgConfigToUI();
+        });
+
+        // Color Gems — independent configuration path.
+        db.ref('config/colorGems').on('value', function(snapshot) {
+            const cfg = snapshot.val();
+            if (cfg) {
+                cgConfig = Object.assign({}, cgConfig, cfg);
+                if (typeof cgConfig.betOptions === 'string') {
+                    cgConfig.betOptions = cgConfig.betOptions.split(',').map(n => parseFloat(n.trim())).filter(n => !isNaN(n));
+                }
+                if (!Array.isArray(cgConfig.betOptions) || cgConfig.betOptions.length === 0) {
+                    cgConfig.betOptions = [1.00, 2.00, 3.00, 5.00, 10.00];
+                }
+            }
             applyCgConfigToUI();
         });
 
         function updateSharedBalanceUI() {
             const lobbyBalEl = document.getElementById('lobby-bal');
             if (lobbyBalEl) lobbyBalEl.innerText = currentBalance.toFixed(2);
+            const kpBalEl = document.getElementById('kp-main-balance');
+            if (kpBalEl) kpBalEl.innerText = currentBalance.toFixed(2);
 
             const bkBalEl = document.getElementById('bk-bal');
             if (bkBalEl) bkBalEl.innerText = bkFormatDecimal(currentBalance);
+
+            const fkBalEl = document.getElementById('fk-bal');
+            if (fkBalEl) fkBalEl.innerText = fkFormatDecimal(currentBalance);
 
             const rbBalEl = document.getElementById('rb-balance');
             if (rbBalEl) rbBalEl.innerText = currentBalance.toFixed(2);
 
             const cgBalEl = document.getElementById('cg-bal');
             if (cgBalEl) cgBalEl.innerText = currentBalance.toFixed(2);
+
+            const cgTopBalEl = document.getElementById('cg-top-balance');
+            if (cgTopBalEl) cgTopBalEl.innerText = currentBalance.toFixed(2);
         }
 
         const canvas = document.getElementById('game-canvas');
@@ -1629,6 +2111,13 @@
             }
         });
 
+        let aviatorConfig = { maxMultiplier: null };
+        db.ref('config/aviator').on('value', function(snapshot) {
+            const cfg = snapshot.val() || {};
+            const n = Number(cfg.maxMultiplier);
+            aviatorConfig.maxMultiplier = Number.isFinite(n) && n >= 1.01 ? Number(n.toFixed(2)) : null;
+        });
+
         function getDeterministicCrashPoint(roundIndex) {
             let hash = Math.sin(roundIndex * 12.9898 + 78.233) * 43758.5453;
             let rand = hash - Math.floor(hash);
@@ -1637,6 +2126,9 @@
             else if (rand < 0.65) crash = 1.10 + ((rand - 0.12) / 0.53) * 0.90; 
             else if (rand < 0.90) crash = 2.00 + ((rand - 0.65) / 0.25) * 3.00; 
             else crash = 5.00 + ((rand - 0.90) / 0.10) * 20.00; 
+            if (aviatorConfig.maxMultiplier !== null) {
+                crash = Math.min(crash, aviatorConfig.maxMultiplier);
+            }
             return parseFloat(crash.toFixed(2));
         }
 
@@ -1795,6 +2287,8 @@
                 data.aviatorBets = bets;
                 data.games = (Number(data.games) || 0) + 1;
                 return data;
+            }).then(function(result) {
+                if(result && result.committed){ const d=result.snapshot.val()||{}; const b=(d.aviatorBets||{})[roundKey]; if(b && b.status==='lost') logGameActivity('Aviator',{roundIndex:roundIndex,betAmount:Number(b.amount||0),result:'loss',multiplier:0,payout:0,crashPoint:Number(targetCrashPoint||0)}); }
             }).catch(function(err) {
                 console.warn('Aviator crash settlement failed:', err);
             });
@@ -1802,7 +2296,7 @@
 
         function masterGameLoop() {
             if (!isAviatorOnline()) { stopAviatorLoopForOffline(); return; }
-            const CYCLE_DURATION = 18000;
+            const CYCLE_DURATION = 100000;
             const WAIT_DURATION = 3000;
 
             const now = getAviatorServerNow();
@@ -1913,7 +2407,7 @@
             if (!isAviatorOnline()) return alert("ইন্টারনেট সংযোগ নেই। সংযোগ ফিরে এলে আবার চেষ্টা করুন।");
             if (!currentUser) return alert("প্রথমে Login করুন!");
 
-            const CYCLE_DURATION = 18000;
+            const CYCLE_DURATION = 100000;
             const WAIT_DURATION = 3000;
             const now = getAviatorServerNow();
             const cycleElapsed = now % CYCLE_DURATION;
@@ -2032,9 +2526,11 @@
 
                     if (result.committed && bet && bet.status === 'cashed') {
                         syncLocalAviatorBet(currentRoundIndex, bet);
+                        logGameActivity('Aviator', {roundIndex:currentRoundIndex, betAmount:Number(bet.amount||0), result:'win', multiplier:Number(bet.multiplier||0), payout:Number(bet.payout||0), crashPoint:Number(bet.crashPoint||0)});
                         cashoutBannerContainer.innerHTML = '<div class="av-cashout-banner">CASHED OUT ' + Number(bet.payout).toFixed(2) + ' কয়েন (' + Number(bet.multiplier).toFixed(2) + 'x)</div>';
                     } else if (bet && bet.status === 'lost') {
                         syncLocalAviatorBet(currentRoundIndex, bet);
+                        logGameActivity('Aviator', {roundIndex:currentRoundIndex, betAmount:Number(bet.amount||0), result:'loss', multiplier:0, payout:0, crashPoint:Number(bet.crashPoint||0)});
                         alert("CASH OUT নেওয়ার আগেই রাউন্ড শেষ হয়েছে।");
                     } else {
                         alert("CASH OUT নেওয়া যায়নি—রাউন্ডটি ইতিমধ্যে settle হয়ে গেছে।");
@@ -2416,6 +2912,7 @@
                         db.ref(uidRef + '/boxingKingWins').transaction(w => (w || 0) + 1);
                     }
                     db.ref(uidRef + '/boxingKingGames').transaction(g => (g || 0) + 1);
+                    logGameActivity('Boxing King', {betAmount:Number(activeBet||0), result:bkCurrentSpinTotalWin>0?'win':'loss', payout:Number(bkCurrentSpinTotalWin||0)});
                 }
 
                 bkIsSpinning = false;
@@ -2440,7 +2937,403 @@
 
 
 /* COLOR GEMS — same lobby/auth/shared-wallet/admin-control pattern as Boxing King */
-        const CG_ITEMS=['🔴','🟠','🟡','🟢','🔵','🟣','💎','⭐','🟤','⚫'];
+        const FK_ITEMS = ['🇧🇩','🇧🇷','🇯🇵','🇮🇷','🇸🇪','🇹🇻','🇵🇰'];
+        const FK_SYMBOL_VALUES = {'🇧🇩':1.2,'🇧🇷':2.0,'🇯🇵':1.0,'🇮🇷':0.8,'🇸🇪':0.6,'🇹🇻':1.5,'🇵🇰':0.5};
+        let FK_BET_OPTIONS = [1.00, 2.00, 3.00, 5.00, 10.00];
+        let FK_MULTIPLIER_STEPS = [1, 2, 3, 5];
+        let fkMultiplierConfig = { m1: 1, m2: 2, m3: 3, m5: 5 };
+
+        let fkCurrentBetIndex = 0;
+        let fkIsSpinning = false;
+        let fkCurrentMultiplierIndex = 0;
+        let fkCurrentSpinTotalWin = 0;
+        let fkBoardState = Array(25).fill('');
+        let fkAudioCtx = null;
+
+        function initFkAudio() {
+            if (!fkAudioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) fkAudioCtx = new AudioContextClass();
+            }
+            if (fkAudioCtx && fkAudioCtx.state === 'suspended') {
+                fkAudioCtx.resume().catch(() => {});
+            }
+        }
+
+        function playFkSound(type) {
+            try {
+                initFkAudio();
+                if (!fkAudioCtx || fkAudioCtx.state !== 'running') return;
+                const now = fkAudioCtx.currentTime;
+
+                if (type === 'spin') {
+                    const osc = fkAudioCtx.createOscillator();
+                    const gain = fkAudioCtx.createGain();
+                    osc.connect(gain); gain.connect(fkAudioCtx.destination);
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.linearRampToValueAtTime(280, now + 0.08);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.08);
+                    osc.start(now); osc.stop(now + 0.08);
+                } else if (type === 'blast') {
+                    const osc = fkAudioCtx.createOscillator();
+                    const gain = fkAudioCtx.createGain();
+                    osc.connect(gain); gain.connect(fkAudioCtx.destination);
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(140, now);
+                    osc.frequency.exponentialRampToValueAtTime(20, now + 0.25);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now); osc.stop(now + 0.25);
+                } else if (type === 'win') {
+                    const baseFreq = [523.25, 587.33, 698.46, 880.00][Math.max(0, Math.min(fkCurrentMultiplierIndex, 3))];
+                    const osc1 = fkAudioCtx.createOscillator();
+                    const osc2 = fkAudioCtx.createOscillator();
+                    const gain = fkAudioCtx.createGain();
+                    osc1.connect(gain); osc2.connect(gain); gain.connect(fkAudioCtx.destination);
+                    osc1.type = 'sine'; osc2.type = 'sine';
+                    osc1.frequency.setValueAtTime(baseFreq, now);
+                    osc2.frequency.setValueAtTime(baseFreq * 1.25, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                    osc1.start(now); osc2.start(now);
+                    osc1.stop(now + 0.4); osc2.stop(now + 0.4);
+                }
+            } catch (e) {}
+        }
+
+        function fkFormatDecimal(num) {
+            return (Math.round((num + Number.EPSILON) * 100) / 100).toFixed(2);
+        }
+
+        function getFkCellIndex(row, col) {
+            return row * 5 + col;
+        }
+
+        const fkBoardContainer = document.getElementById('fk-board');
+
+        function initFkBoardDOM() {
+            fkBoardContainer.innerHTML = '';
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'fk-slot-cell';
+                cell.id = `fk-cell-${i}`;
+                const randomItem = FK_ITEMS[Math.floor(Math.random() * FK_ITEMS.length)];
+                cell.innerText = randomItem;
+                fkBoardState[i] = randomItem;
+                fkBoardContainer.appendChild(cell);
+            }
+        }
+
+        function updateFkMultiplierUI() {
+            document.querySelectorAll('.fk-mult-box').forEach(b => b.classList.remove('active'));
+            const ids = ['fk-m1', 'fk-m2', 'fk-m3', 'fk-m5'];
+            const id = ids[Math.max(0, Math.min(fkCurrentMultiplierIndex, ids.length - 1))];
+            const el = document.getElementById(id);
+            if (el) el.classList.add('active');
+        }
+
+        function changeFkBet(direction) {
+            if (fkIsSpinning) return;
+            initFkAudio();
+            fkCurrentBetIndex += direction;
+            if (fkCurrentBetIndex < 0) fkCurrentBetIndex = 0;
+            if (fkCurrentBetIndex >= FK_BET_OPTIONS.length) fkCurrentBetIndex = FK_BET_OPTIONS.length - 1;
+            document.getElementById('fk-bet-display').innerText = fkFormatDecimal(FK_BET_OPTIONS[fkCurrentBetIndex]);
+        }
+
+        function applyFkConfigToUI() {
+            FK_BET_OPTIONS = bkConfig.betOptions;
+            if (fkCurrentBetIndex >= FK_BET_OPTIONS.length) fkCurrentBetIndex = FK_BET_OPTIONS.length - 1;
+            const betDisplayEl = document.getElementById('fk-bet-display');
+            if (betDisplayEl) betDisplayEl.innerText = fkFormatDecimal(FK_BET_OPTIONS[fkCurrentBetIndex]);
+
+            const spinBtn = document.getElementById('fk-spin-btn');
+            const statusEl = document.getElementById('fk-status');
+            if (spinBtn) {
+                if (!bkConfig.enabled) {
+                    spinBtn.disabled = true;
+                    if (statusEl) { statusEl.innerText = "গেমটি বর্তমানে বন্ধ আছে 🚧"; statusEl.style.color = "#ff9900"; }
+                } else if (!fkIsSpinning) {
+                    spinBtn.disabled = false;
+                }
+            }
+        }
+
+        function setFkControlsDisabled(disabled) {
+            document.getElementById("fk-spin-btn").disabled = disabled;
+            document.getElementById("fk-bet-minus-btn").disabled = disabled;
+            document.getElementById("fk-bet-plus-btn").disabled = disabled;
+        }
+
+        // Flag King uses the exact same Boxing King sandbox/test-user decision.
+        // This keeps the Global RTP configuration shared with Boxing King.
+        function isFkSandboxTestUser() {
+            return typeof isBkSandboxTestUser === 'function' ? isBkSandboxTestUser() : false;
+        }
+
+        function handleFkSpinClick() {
+            if (fkIsSpinning) return;
+            initFkAudio();
+
+            if (!currentUser) { alert("প্রথমে Login করুন!"); return; }
+            if (!bkConfig.enabled) {
+                const statusEl = document.getElementById("fk-status");
+                statusEl.innerText = "গেমটি বর্তমানে বন্ধ আছে 🚧";
+                statusEl.style.color = "#ff9900";
+                return;
+            }
+
+            const activeBet = FK_BET_OPTIONS[fkCurrentBetIndex];
+
+            if (!isFkSandboxTestUser() && currentBalance < activeBet) {
+                const statusEl = document.getElementById("fk-status");
+                statusEl.innerText = "পর্যাপ্ত কয়েন নেই! 😢";
+                statusEl.style.color = "#ff3333";
+                return;
+            }
+
+            fkIsSpinning = true;
+            setFkControlsDisabled(true);
+
+            if (isFkSandboxTestUser()) {
+                startFkSpinSequence(activeBet);
+                return;
+            }
+
+            db.ref('users/' + currentUser.uid + '/balance').transaction(cur => {
+                if ((cur || 0) >= activeBet) return (cur || 0) - activeBet;
+            }, (error, committed) => {
+                if (!committed) {
+                    fkIsSpinning = false;
+                    setFkControlsDisabled(false);
+                    const statusEl = document.getElementById("fk-status");
+                    statusEl.innerText = "পর্যাপ্ত কয়েন নেই! 😢";
+                    statusEl.style.color = "#ff3333";
+                    return;
+                }
+                startFkSpinSequence(activeBet);
+            });
+        }
+
+        function startFkSpinSequence(activeBet) {
+            fkCurrentSpinTotalWin = 0;
+            fkCurrentMultiplierIndex = 0;
+            updateFkMultiplierUI();
+            
+            document.getElementById("fk-win-display").innerText = "0.00";
+            const statusEl = document.getElementById("fk-status");
+            statusEl.innerText = "রিল ঘুরছে... 🇯🇵";
+            statusEl.style.color = "#aaa";
+
+            const allCells = document.querySelectorAll('.fk-slot-cell');
+            allCells.forEach(cell => {
+                cell.classList.remove('fk-explode');
+                cell.classList.add('fk-spinning');
+            });
+
+            let spinCounter = 0;
+            const spinInterval = setInterval(() => {
+                playFkSound('spin'); 
+                for (let i = 0; i < 25; i++) {
+                    const randSym = FK_ITEMS[Math.floor(Math.random() * FK_ITEMS.length)];
+                    fkBoardState[i] = randSym;
+                    document.getElementById(`fk-cell-${i}`).innerText = randSym;
+                }
+                spinCounter++;
+
+                if (spinCounter >= 10) {
+                    clearInterval(spinInterval);
+                    allCells.forEach(cell => cell.classList.remove('fk-spinning'));
+                    setTimeout(() => {
+                        evaluateFkCascade(activeBet);
+                    }, 200);
+                }
+            }, bkConfig.animationSpeedMs || 90);
+        }
+
+        function findFkLeftToRightMatches() {
+            const winningCellIndices = new Set();
+            let totalMatchUnits = 0;
+
+            FK_ITEMS.forEach(symbol => {
+                const connectedIndices = new Set();
+                let maxColumnReached = -1;
+
+                let currentColumnNodes = [];
+                for (let r = 0; r < 5; r++) {
+                    const idx = getFkCellIndex(r, 0);
+                    if (fkBoardState[idx] === symbol) {
+                        currentColumnNodes.push({ row: r, col: 0, index: idx });
+                    }
+                }
+
+                if (currentColumnNodes.length === 0) return;
+
+                let colIndex = 0;
+                while (currentColumnNodes.length > 0 && colIndex < 5) {
+                    maxColumnReached = colIndex;
+                    currentColumnNodes.forEach(n => connectedIndices.add(n.index));
+
+                    if (colIndex === 4) break;
+
+                    const nextColumnIndex = colIndex + 1;
+                    const nextColumnNodes = [];
+                    const nextColVisited = new Set();
+
+                    currentColumnNodes.forEach(currentNode => {
+                        const candidateRows = [currentNode.row - 1, currentNode.row, currentNode.row + 1];
+                        candidateRows.forEach(r => {
+                            if (r >= 0 && r < 5) {
+                                const nextIdx = getFkCellIndex(r, nextColumnIndex);
+                                if (fkBoardState[nextIdx] === symbol && !nextColVisited.has(nextIdx)) {
+                                    nextColVisited.add(nextIdx);
+                                    nextColumnNodes.push({ row: r, col: nextColumnIndex, index: nextIdx });
+                                }
+                            }
+                        });
+                    });
+
+                    currentColumnNodes = nextColumnNodes;
+                    colIndex++;
+                }
+
+                if (maxColumnReached >= 2) {
+                    connectedIndices.forEach(idx => winningCellIndices.add(idx));
+                    const symbolBaseVal = FK_SYMBOL_VALUES[symbol] || 1.0;
+                    totalMatchUnits += (connectedIndices.size * symbolBaseVal);
+                }
+            });
+
+            return {
+                winningIndices: Array.from(winningCellIndices),
+                matchUnits: totalMatchUnits
+            };
+        }
+
+        function evaluateFkCascade(activeBet) {
+            const evalResult = findFkLeftToRightMatches();
+            const winningIndices = evalResult.winningIndices;
+
+            if (winningIndices.length > 0) {
+                const currentMultiplier = FK_MULTIPLIER_STEPS[fkCurrentMultiplierIndex];
+                const configuredRtp = isFkSandboxTestUser() ? Number(bkConfig.testRtpFactor) : Number(bkConfig.rtpFactor);
+                const rtpFactor = Number.isFinite(configuredRtp) && configuredRtp > 0 ? configuredRtp : 1.0;
+                const stepWin = evalResult.matchUnits * (activeBet * 0.4) * currentMultiplier * rtpFactor;
+
+                fkCurrentSpinTotalWin += stepWin;
+
+                document.getElementById("fk-win-display").innerText = fkFormatDecimal(fkCurrentSpinTotalWin);
+                
+                const statusEl = document.getElementById("fk-status");
+                statusEl.innerText = `💥 চেইন হিট (${currentMultiplier}X)! উইন: +${fkFormatDecimal(stepWin)} কয়েন`;
+                statusEl.style.color = "#00ff00";
+
+                playFkSound('blast');
+                if (currentMultiplier > 1) {
+                    setTimeout(() => playFkSound('win'), 150);
+                }
+
+                winningIndices.forEach(idx => {
+                    const cell = document.getElementById(`fk-cell-${idx}`);
+                    cell.classList.add('fk-explode');
+                    fkBoardState[idx] = '';
+                });
+
+                setTimeout(() => {
+                    for (let col = 0; col < 5; col++) {
+                        let existingSymbolsInCol = [];
+                        for (let row = 0; row < 5; row++) {
+                            const idx = getFkCellIndex(row, col);
+                            if (fkBoardState[idx] !== '') {
+                                existingSymbolsInCol.push(fkBoardState[idx]);
+                            }
+                        }
+
+                        const emptyCount = 5 - existingSymbolsInCol.length;
+                        const newSymbols = [];
+                        for (let k = 0; k < emptyCount; k++) {
+                            newSymbols.push(FK_ITEMS[Math.floor(Math.random() * FK_ITEMS.length)]);
+                        }
+
+                        const fullColSymbols = newSymbols.concat(existingSymbolsInCol);
+                        
+                        for (let row = 0; row < 5; row++) {
+                            const idx = getFkCellIndex(row, col);
+                            fkBoardState[idx] = fullColSymbols[row];
+                            const cell = document.getElementById(`fk-cell-${idx}`);
+                            cell.innerText = fullColSymbols[row];
+                            cell.classList.remove('fk-explode');
+                        }
+                    }
+
+                    for (let col = 0; col < 5; col++) {
+                        setTimeout(() => {
+                            for (let row = 0; row < 5; row++) {
+                                const idx = getFkCellIndex(row, col);
+                                const cell = document.getElementById(`fk-cell-${idx}`);
+                                cell.style.transform = 'scale(1.15)';
+                                setTimeout(() => { cell.style.transform = 'scale(1)'; }, 120);
+                            }
+                            playFkSound('spin');
+                        }, col * 80);
+                    }
+
+                    if (fkCurrentMultiplierIndex < FK_MULTIPLIER_STEPS.length - 1) {
+                        fkCurrentMultiplierIndex++;
+                    }
+                    updateFkMultiplierUI();
+
+                    setTimeout(() => {
+                        evaluateFkCascade(activeBet);
+                    }, 650);
+
+                }, 350);
+
+            } else {
+                const statusEl = document.getElementById("fk-status");
+                if (fkCurrentSpinTotalWin === 0) {
+                    statusEl.innerText = "আবার চেষ্টা করুন ❌";
+                    statusEl.style.color = "#ff3333";
+                } else {
+                    statusEl.innerText = `💰 চেইন শেষ! মোট উইন: ${fkFormatDecimal(fkCurrentSpinTotalWin)} কয়েন`;
+                    statusEl.style.color = "#ffcc00";
+                }
+
+                if (currentUser && !isFkSandboxTestUser()) {
+                    const uidRef = 'users/' + currentUser.uid;
+                    if (fkCurrentSpinTotalWin > 0) {
+                        db.ref(uidRef + '/balance').transaction(cur => (cur || 0) + fkCurrentSpinTotalWin);
+                        db.ref(uidRef + '/flagKingWins').transaction(w => (w || 0) + 1);
+                    }
+                    db.ref(uidRef + '/flagKingGames').transaction(g => (g || 0) + 1);
+                    logGameActivity('Flag King', {betAmount:Number(activeBet||0), result:fkCurrentSpinTotalWin>0?'win':'loss', payout:Number(fkCurrentSpinTotalWin||0)});
+                }
+
+                fkIsSpinning = false;
+                setFkControlsDisabled(bkConfig.enabled === false);
+            }
+        }
+
+        function toggleFkFullScreen() {
+            initFkAudio();
+            const container = document.getElementById("fkGameContainer");
+            const isFS = document.fullscreenElement || document.wefkitFullscreenElement;
+
+            if (!isFS) {
+                if (container.requestFullscreen) container.requestFullscreen().catch(() => {});
+                else if (container.wefkitRequestFullscreen) container.wefkitRequestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+                else if (document.wefkitExitFullscreen) document.wefkitExitFullscreen();
+            }
+        }
+
+
+
+/* COLOR GEMS — same lobby/auth/shared-wallet/admin-control pattern as Boxing King */
+        const CG_ITEMS=['🔴','🟠','🟡','🟢','🔵','🟣','💎'];
         let CG_BET_OPTIONS=[1,2,3,5,10],cgBetIndex=0,cgSpinning=false,cgAuto=false,cgAutoTimer=null,cgBoardState=Array(25).fill(''),cgWin=0,cgMultiplierIndex=0;
         /* Color Gems multiplier sequence follows Boxing King's 1X → 2X → 3X → 5X. */
         const CG_MULTS=[1,2,3,5];
@@ -2610,6 +3503,7 @@
                 cgMultiplierIndex=0;updateCgMult();cgSetStatus('আবার চেষ্টা করুন ❌','#ff6666');
             }
             if(!cgConfig.testMode)db.ref('users/'+currentUser.uid+'/colorGemsGames').transaction(v=>(v||0)+1);
+            logGameActivity('Color Gems', {betAmount:Number(activeBet||0), result:cgWin>0?'win':'loss', payout:Number(cgWin||0), testMode:!!cgConfig.testMode});
             updateCgUI();
             cgSpinning=false;setCgControls(!cgConfig.enabled);
             if(cgAuto)cgAutoTimer=setTimeout(handleCgSpin,900);
@@ -2783,6 +3677,7 @@ function rbLockAndSpin(){
                 if(win) db.ref('users/'+currentUser.uid+'/balance').transaction(v=>(v||0)+payout);
                 db.ref('users/'+currentUser.uid+'/games').transaction(v=>(v||0)+1);
                 if(win) db.ref('users/'+currentUser.uid+'/wins').transaction(v=>(v||0)+1);
+                logGameActivity('Red vs Blue', {betAmount:Number(amount||0), selectedColor:bet.color, result:win?'win':'loss', winningColor:shared.result, payout:Number(payout||0), roundIndex:roundIndex});
 
                 rbSpinning=false;
                 rbPendingBet=null;
@@ -2799,8 +3694,12 @@ function rbLockAndSpin(){
             initBkBoardDOM();
             updateBkMultiplierUI();
             document.getElementById('bk-bet-display').innerText = bkFormatDecimal(BK_BET_OPTIONS[bkCurrentBetIndex]);
+            initFkBoardDOM();
+            updateFkMultiplierUI();
+            document.getElementById('fk-bet-display').innerText = fkFormatDecimal(FK_BET_OPTIONS[fkCurrentBetIndex]);
             updateSharedBalanceUI();
             applyBkConfigToUI();
+            applyFkConfigToUI();
             initCgBoard();
             updateCgUI();
             rbBuildExactWheel();
@@ -2917,10 +3816,12 @@ function rbLockAndSpin(){
       card.style.cssText="background:#0b1018;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;";
       const amount=Number(b.amount||0);
       const exp=Number(b.expiresAt||0);
+      const title=String(b.title||"Bonus").replace(/[&<>"']/g, ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
       card.innerHTML=`
         <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
           <div>
-            <div style="font-weight:900;color:#ffd54f;font-size:20px;">৳${amount.toFixed(2)}</div>
+            <div style="font-weight:900;color:#ffd54f;font-size:20px;">${title}</div>
+            <div style="font-size:16px;color:#fff;margin-top:4px;">৳${amount.toFixed(2)}</div>
             <div style="font-size:12px;color:#9aa6b2;margin-top:4px;">Bonus • Claim করলে main balance-এ যোগ হবে</div>
           </div>
           <button type="button" data-bonus-id="${id}" style="border:0;border-radius:10px;padding:10px 14px;background:#8e24aa;color:#fff;font-weight:800;cursor:pointer;">Claim</button>
@@ -2981,20 +3882,26 @@ function rbLockAndSpin(){
 
   async function updateWithdrawLockUI(){
     const btn=document.getElementById("withdraw-btn");
+    const notice=document.getElementById("withdraw-cooldown-notice");
+    const countdown=document.getElementById("withdraw-countdown");
     if(!btn || !currentUser) return;
     try{
       const snap=await db.ref("users/"+currentUser.uid).once("value");
       const u=snap.val()||{};
-      const last= getLastDepositAtFromUser(u);
+      const last=getLastDepositAtFromUser(u);
       const left=last ? (last+WITHDRAW_COOLDOWN-bonusNow()) : 0;
       if(left>0){
         btn.title="ডিপোজিটের ৬ ঘণ্টা পূর্ণ হয়নি";
         btn.dataset.withdrawLocked="1";
         btn.style.opacity=".65";
+        if(notice) notice.classList.remove("hidden");
+        if(countdown) countdown.textContent=fmtRemaining(left);
       }else{
         btn.title="";
         btn.dataset.withdrawLocked="0";
         btn.style.opacity="";
+        if(notice) notice.classList.add("hidden");
+        if(countdown) countdown.textContent="00ঘ 00মি 00সে";
       }
     }catch(e){}
   }
@@ -3026,7 +3933,7 @@ function rbLockAndSpin(){
   });
 
   // Keep the lock state fresh while the user remains logged in.
-  setInterval(updateWithdrawLockUI,15000);
+  setInterval(updateWithdrawLockUI,1000);
   setTimeout(updateWithdrawLockUI,1000);
   setTimeout(refreshBonusBadge,1200);
   setInterval(refreshBonusBadge,15000);
@@ -3046,5 +3953,59 @@ function rbLockAndSpin(){
   </div>
 </div>
 
+
+    <!-- PRIVATE HELP CENTER -->
+    <div class="av-modal-overlay hidden" id="help-center-modal">
+        <div class="av-glass-card av-modal" style="max-width:430px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                <h2 style="margin:0;">🆘 Help Center</h2>
+                <button type="button" id="close-help-center-btn" class="av-btn av-btn-logout" style="padding:6px 10px;">✕</button>
+            </div>
+            <div style="font-size:.72rem;color:var(--text-dim);margin:8px 0 10px;">এটি আপনার ব্যক্তিগত Support Chat। অন্য কোনো user এই conversation দেখতে পারবে না।</div>
+            <div id="help-chat-list" style="height:280px;overflow:auto;display:flex;flex-direction:column;gap:7px;padding:8px;background:rgba(0,0,0,.18);border-radius:12px;"></div>
+            <div class="av-error-msg" id="help-chat-msg" style="margin-top:7px;"></div>
+            <div style="display:flex;gap:6px;margin-top:8px;">
+                <input type="text" id="help-chat-input" maxlength="500" placeholder="আপনার সমস্যা লিখুন..." style="flex:1;min-width:0;">
+                <button type="button" id="help-chat-send" class="av-btn av-btn-deposit" style="padding:8px 12px;">Send</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+(function(){
+  const btn=document.getElementById('help-center-btn');
+  const modal=document.getElementById('help-center-modal');
+  const close=document.getElementById('close-help-center-btn');
+  const list=document.getElementById('help-chat-list');
+  const input=document.getElementById('help-chat-input');
+  const send=document.getElementById('help-chat-send');
+  const status=document.getElementById('help-chat-msg');
+  let chatListener=null;
+  function esc(v){return String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));}
+  function render(snap){
+    const data=snap.val()||{};
+    const rows=Object.entries(data).sort((a,b)=>Number(a[1]?.timestamp||0)-Number(b[1]?.timestamp||0));
+    list.innerHTML=rows.length?rows.map(([id,m])=>`<div style="align-self:${m.senderUid===currentUser?.uid?'flex-end':'flex-start'};max-width:86%;padding:7px 9px;border-radius:10px;background:${m.senderUid===currentUser?.uid?'rgba(25,118,210,.32)':'rgba(255,255,255,.08)'};"><div style="font-size:.78rem;white-space:pre-wrap;overflow-wrap:anywhere;">${esc(m.text)}</div><div style="font-size:.58rem;color:#9aa4b2;margin-top:3px;">${m.senderUid===currentUser?.uid?'You':'Admin'}</div></div>`).join(''):'<div style="text-align:center;color:#9aa4b2;font-size:.72rem;padding:35px 8px;">আপনার কোনো message নেই। সাহায্যের জন্য লিখুন।</div>';
+    list.scrollTop=list.scrollHeight;
+  }
+  function start(){
+    if(!currentUser){alert('প্রথমে Login করুন!');return false;}
+    const ref=db.ref('supportChats/'+currentUser.uid+'/messages').limitToLast(100);
+    if(chatListener) chatListener.ref.off('value',chatListener.fn);
+    const fn=snap=>render(snap); chatListener={ref,fn}; ref.on('value',fn); return true;
+  }
+  function stop(){if(chatListener){chatListener.ref.off('value',chatListener.fn);chatListener=null;}}
+  btn?.addEventListener('click',()=>{if(start()){status.textContent='';modal.classList.remove('hidden');input?.focus();}});
+  close?.addEventListener('click',()=>{stop();modal.classList.add('hidden');});
+  send?.addEventListener('click',async()=>{
+    if(!currentUser)return; const text=input.value.trim(); if(!text)return;
+    send.disabled=true; status.textContent='';
+    try{await db.ref('supportChats/'+currentUser.uid+'/messages').push({text:text.slice(0,500),senderUid:currentUser.uid,senderType:'user',timestamp:firebase.database.ServerValue.TIMESTAMP}); input.value='';}
+    catch(e){status.textContent='Message পাঠানো যায়নি: '+(e.message||e);}
+    finally{send.disabled=false;input.focus();}
+  });
+  input?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.click();}});
+})();
+</script>
 </body>
 </html>
