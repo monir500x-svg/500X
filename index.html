@@ -6,7 +6,8 @@
     <title>Gaming Zone - Professional Game Lobby</title>
 
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">\n        // KAGOJER BEMAN — smooth visual round. No client-side wallet mutation.\n        let kpAnim=null,kpStart=0,kpCrash=0,kpRunning=false,kpRound=0;\n        function kpMultiplier(t){ return 1 + Math.pow(t,1.38)*0.62; }\n        function kpStartRound(){\n            cancelAnimationFrame(kpAnim); kpRound++; kpStart=performance.now(); kpCrash=6.5+Math.random()*5.5; kpRunning=true;\n            const state=document.getElementById('kp-state'); if(state) state.textContent='উড্ডয়ন হচ্ছে…';\n            kpTick(kpStart);\n        }\n        function kpTick(now){\n            const board=document.getElementById('kp-board'),canvas=document.getElementById('kp-canvas'),plane=document.getElementById('kp-plane'),mult=document.getElementById('kp-mult'); if(!board||!canvas||!plane||!mult)return;\n            const w=board.clientWidth,h=board.clientHeight; canvas.width=w; canvas.height=h; const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,w,h);\n            const t=Math.min(1.18,(now-kpStart)/10000); const m=kpMultiplier(t);\n            const x=18+(w-55)*Math.min(1,t/1.05); const y=h-42-(h-85)*Math.pow(Math.min(1,t/1.05),1.25);\n            plane.style.left=x+'px'; plane.style.top=y+'px'; plane.style.transform='rotate(-'+(8+28*t)+'deg)'; mult.textContent=m.toFixed(2)+'x';\n            ctx.beginPath(); ctx.moveTo(0,h-22); ctx.bezierCurveTo(w*.25,h-25,w*.58,h*.72,w*.95,h*.18); ctx.strokeStyle='rgba(255,204,0,.62)'; ctx.lineWidth=3; ctx.stroke();\n            if((now-kpStart)/1000 < kpCrash){ kpAnim=requestAnimationFrame(kpTick); } else { kpRunning=false; const state=document.getElementById('kp-state'); if(state) state.textContent='উড়ে গেল! • পরের রাউন্ড…'; setTimeout(kpStartRound,2200); }\n        }\n        function kpDemoBet(n){\n            const input=document.getElementById('kp-bet'+n),amount=Number(input?.value||0);\n            if(!Number.isFinite(amount)||amount<=0){alert('সঠিক কয়েন পরিমাণ দিন।');return;}\n            if(amount>Number(currentBalance||0)){alert('Main Balance পর্যাপ্ত নয়।');return;}\n            alert('ডেমো বেট নির্বাচিত হয়েছে। নিরাপত্তার জন্য এই HTML থেকে Main Balance কাটা বা payout করা হচ্ছে না।');\n        }\n        document.addEventListener('DOMContentLoaded',()=>{ setTimeout(kpStartRound,350); });\n
+    </script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -941,58 +942,30 @@
         </div>
     </div>
 
-    <!-- DEPOSIT MODAL / 2-STEP DEPOSIT PORTAL -->
+    <!-- DEPOSIT MODAL -->
     <div class="av-modal-overlay hidden" id="deposit-modal">
-        <div class="av-glass-card av-modal" style="max-width:430px;">
-            <div id="deposit-step-1">
-                <h2>➕ ডিপোজিট</h2>
-                <div style="font-size:.75rem;color:var(--text-dim);margin:4px 0 14px;text-align:center;">প্রথমে পেমেন্ট মাধ্যম ও Amount নির্বাচন করুন</div>
-                <div style="display:flex;gap:10px;margin-bottom:14px;">
-                    <button type="button" class="deposit-method-card active" data-method="bkash" id="deposit-bkash-card" style="flex:1;border:1px solid #e2136e;border-radius:12px;background:rgba(226,19,110,.12);padding:14px 8px;color:#fff;font-weight:700;cursor:pointer;">
-                        <div style="font-size:28px;">bK</div><div>bKash</div>
-                    </button>
-                    <button type="button" class="deposit-method-card" data-method="nagad" id="deposit-nagad-card" style="flex:1;border:1px solid #555;border-radius:12px;background:rgba(255,255,255,.04);padding:14px 8px;color:#fff;font-weight:700;cursor:pointer;">
-                        <div style="font-size:28px;">৳</div><div>Nagad</div>
-                    </button>
-                </div>
-                <input type="hidden" id="deposit-method" value="bkash">
-                <div class="form-group">
-                    <label style="font-size:.72rem;color:var(--text-dim);">ডিপোজিট Amount</label>
-                    <input type="number" id="deposit-amount" placeholder="যেমন: ৫০০" value="" min="0" step="1" inputmode="numeric">
-                </div>
-                <div class="av-error-msg" id="deposit-msg" style="color:#ef9a9a;min-height:18px;"></div>
-                <div style="display:flex;gap:6px;margin-top:8px;">
-                    <button type="button" class="av-btn av-btn-deposit" id="deposit-next-btn" style="flex:1;padding:10px;">Next ➜</button>
-                    <button type="button" class="av-btn av-btn-logout" id="close-deposit-btn" style="padding:10px;">বন্ধ</button>
-                </div>
+        <div class="av-glass-card av-modal">
+            <h2>➕ কয়েন ডিপোজিট</h2>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:10px;" id="admin-deposit-instruction">
+                <span id="deposit-payment-label">বিকাশ নম্বর:</span> <strong id="admin-bkash-num" style="color:#ffcc00;">লোড হচ্ছে...</strong><br>
+                টাকা পাঠিয়ে নিচের তথ্যগুলো দিন:
             </div>
-
-            <div id="deposit-step-2" style="display:none;">
-                <h2>💳 পেমেন্ট পোর্টাল</h2>
-                <div id="deposit-checking" style="text-align:center;padding:24px 8px;">
-                    <div style="font-size:30px;margin-bottom:8px;">⏳</div>
-                    <div style="font-weight:700;">চেক করা হচ্ছে...</div>
-                    <div style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">এই Amount-এর কোনো pending withdrawal আছে কিনা যাচাই করা হচ্ছে।</div>
-                </div>
-                <div id="deposit-payment-panel" style="display:none;">
-                    <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;text-align:center;">
-                        <div style="font-size:.72rem;color:var(--text-dim);">পেমেন্ট করুন</div>
-                        <div id="deposit-payment-method-title" style="font-weight:700;margin-top:3px;">bKash</div>
-                        <div style="font-size:.7rem;color:var(--text-dim);margin-top:10px;">পাঠানোর Amount</div>
-                        <div id="deposit-selected-amount" style="font-size:25px;font-weight:800;color:#ffcc00;">৳500</div>
-                        <div style="font-size:.7rem;color:var(--text-dim);margin-top:10px;">এই নম্বরে টাকা পাঠান</div>
-                        <strong id="admin-bkash-num" style="display:block;font-size:23px;color:#ffcc00;margin-top:4px;word-break:break-all;">চেক হচ্ছে...</strong>
-                        <div id="deposit-match-note" style="margin-top:8px;font-size:.72rem;color:#a0aec0;"></div>
-                    </div>
-                    <div class="form-group" style="margin-top:12px;">
-                        <input type="text" id="deposit-trxid" placeholder="ট্রানজেকশন আইডি (TrxID) দিন" required autocomplete="off">
-                    </div>
-                    <div class="av-error-msg" id="deposit-submit-msg" style="color:#81c784;min-height:18px;"></div>
-                    <div style="display:flex;gap:6px;margin-top:8px;">
-                        <button type="button" class="av-btn av-btn-deposit" id="deposit-confirm-btn" style="flex:1;padding:10px;">রিকোয়েস্ট পাঠান</button>
-                        <button type="button" class="av-btn av-btn-logout" id="deposit-back-btn" style="padding:10px;">← Back</button>
-                    </div>
-                </div>
+            <div class="form-group">
+                <select id="deposit-method">
+                    <option value="bkash">বিকাশ (Bkash)</option>
+                    <option value="nagad">নগদ (Nagad)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="number" id="deposit-amount" placeholder="কয়েন পরিমাণ (যেমন: ৫০০)" value="500" min="50">
+            </div>
+            <div class="form-group">
+                <input type="text" id="deposit-trxid" placeholder="ট্রানজেকশন আইডি (TrxID) দিন" required>
+            </div>
+            <div class="av-error-msg" id="deposit-msg" style="color:#81c784;"></div>
+            <div style="display:flex; gap:6px; margin-top:8px;">
+                <button type="button" class="av-btn av-btn-deposit" id="deposit-confirm-btn" style="flex:1; padding:8px;">রিকোয়েস্ট পাঠান</button>
+                <button type="button" class="av-btn av-btn-logout" id="close-deposit-btn" style="padding:8px;">বন্ধ</button>
             </div>
         </div>
     </div>
@@ -1101,7 +1074,7 @@
         </div>
     </div>
 
-\n    <!-- PAGE 4: BOXING KING -->
+\n    <!-- PAGE 3: KAGOJER BEMAN -->\n    <div class="page-screen" id="paper-plane-game-screen">\n        <div class="kp-wrap">\n            <div class="kp-header">\n                <div><div class="kp-title">✈️ কাগজের বিমান</div><div class="kp-sub">SMOOTH MULTIPLIER • SHARED MAIN BALANCE</div></div>\n                <div class="kp-balance">🪙 Main Balance: <strong id="kp-main-balance">0.00</strong></div>\n            </div>\n            <div class="kp-board" id="kp-board">\n                <canvas id="kp-canvas"></canvas><div class="kp-plane" id="kp-plane">✈️</div>\n                <div class="kp-mult" id="kp-mult">1.00x</div><div class="kp-state" id="kp-state">ROUND STARTING…</div>\n            </div>\n            <div class="kp-bets">\n                <div class="kp-bet-card"><h3>BET 1</h3><div class="kp-bet-row"><input id="kp-bet1" type="number" min="1" step="1" value="10" placeholder="কয়েন"><button class="kp-bet-btn" type="button" onclick="kpDemoBet(1)">BET</button></div></div>\n                <div class="kp-bet-card"><h3>BET 2</h3><div class="kp-bet-row"><input id="kp-bet2" type="number" min="1" step="1" value="10" placeholder="কয়েন"><button class="kp-bet-btn" type="button" onclick="kpDemoBet(2)">BET</button></div></div>\n            </div>\n            <div class="kp-security">🔒 Main Balance is display-synced only. Client-side code does not write balance or settle payouts.</div>\n            <div class="kp-note">Server-side callable function/authoritative round settlement ছাড়া কোনো client-side bet balance থেকে কাটা হবে না।</div>\n        </div>\n    </div>\n\n    <!-- PAGE 4: BOXING KING -->
     <div class="page-screen" id="boxing-king-screen">
         <div class="bk-game-container" id="bkGameContainer">
             <div class="bk-game-header">
@@ -1261,6 +1234,14 @@
                 svgIcon: `✈️`
             },
             {
+                id: 'paper-plane',
+                name: 'কাগজের বিমান (Paper Plane)',
+                provider: 'Gaming Zone',
+                screenId: 'paper-plane-game-screen',
+                svgBg: 'linear-gradient(135deg, #063b35, #123b78)',
+                svgIcon: `✈️`
+            },
+            {
                 id: 'boxing-king',
                 name: 'বক্সিং কিং (Boxing King)',
                 provider: 'Jili',
@@ -1368,13 +1349,6 @@
         let isProcessingBet = false;
         let lastCrashSettlementAttempt = -1;
         let aviatorBetsListener = null;
-
-        function logGameActivity(game, details) {
-            if (!currentUser) return;
-            const ref = db.ref('users/' + currentUser.uid + '/gameLogs').push();
-            const record = Object.assign({game: game, uid: currentUser.uid, email: currentUser.email || '', timestamp: firebase.database.ServerValue.TIMESTAMP}, details || {});
-            ref.set(record).catch(function(err){ console.warn('Game log write failed:', err); });
-        }
 
         // Aviator uses Firebase server time so every device derives the same round/crash point.
         // This prevents one phone from being a few seconds ahead/behind because of local clock drift.
@@ -1490,250 +1464,161 @@
             }
         });
 
-        // ===== 2-STEP DEPOSIT PORTAL =====
+        // LIVE Deposit payment numbers — kept compatible with the original User panel.
+        // Admin can control bKash and Nagad separately from Firebase.
         const depositPaymentNumbers = { bkash: '', nagad: '' };
         const depositMethodEl = document.getElementById('deposit-method');
-        const depositPaymentLabelEl = document.getElementById('deposit-payment-method-title');
+        const depositPaymentLabelEl = document.getElementById('deposit-payment-label');
         const depositPaymentNumberEl = document.getElementById('admin-bkash-num');
-        const depositModal = document.getElementById('deposit-modal');
-        const depositMsg = document.getElementById('deposit-msg');
-        const depositSubmitMsg = document.getElementById('deposit-submit-msg');
-        const depositAmountEl = document.getElementById('deposit-amount');
-        let activeMatchedWithdrawal = null;
-        let depositMatchSeq = 0;
-        let depositPortalChecking = false;
 
-        // Amount input: allow any numeric amount to be typed. Only the Next
-        // button is blocked when the amount is below ৳50 (or invalid).
-        function validateDepositAmountInput() {
-            const raw = String(depositAmountEl.value || '').trim();
-            const amt = Number(raw);
-            const valid = raw !== '' && Number.isFinite(amt) && amt >= 50;
-            const btn = document.getElementById('deposit-next-btn');
-            btn.disabled = !valid;
-            btn.style.opacity = valid ? '1' : '.55';
-            btn.style.cursor = valid ? 'pointer' : 'not-allowed';
-            if (raw !== '' && Number.isFinite(amt) && amt < 50) {
-                depositMsg.innerText = 'Minimum Deposit ৳50।';
-            } else if (raw === '' || valid) {
-                depositMsg.innerText = '';
+        function updateDepositPaymentUI() {
+            const method = depositMethodEl ? depositMethodEl.value : 'bkash';
+            const number = String(depositPaymentNumbers[method] || '').trim();
+            if (depositPaymentLabelEl) {
+                depositPaymentLabelEl.innerText = method === 'nagad' ? 'নগদ নম্বর:' : 'বিকাশ নম্বর:';
+            }
+            if (depositPaymentNumberEl) {
+                depositPaymentNumberEl.innerText = number || 'নম্বর সেট করা হয়নি';
+                depositPaymentNumberEl.style.color = number ? '#ffcc00' : '#ef9a9a';
             }
         }
-        depositAmountEl.addEventListener('input', validateDepositAmountInput);
 
-        function setDepositMethod(method) {
-            method = method === 'nagad' ? 'nagad' : 'bkash';
-            depositMethodEl.value = method;
-            document.querySelectorAll('.deposit-method-card').forEach(card => {
-                const active = card.dataset.method === method;
-                card.style.borderColor = active ? (method === 'bkash' ? '#e2136e' : '#ff8a00') : '#555';
-                card.style.background = active ? (method === 'bkash' ? 'rgba(226,19,110,.12)' : 'rgba(255,138,0,.12)') : 'rgba(255,255,255,.04)';
+        function watchDepositPaymentNumber(path, key) {
+            db.ref(path).on('value', function(snapshot) {
+                depositPaymentNumbers[key] = String(snapshot.val() || '');
+                updateDepositPaymentUI();
             });
         }
 
-        async function releaseActiveDepositMatch() {
-            if (!activeMatchedWithdrawal?.id || !activeMatchedWithdrawal?.reservationId) return;
-            try {
-                const ref = db.ref('adminRequests/withdrawals/' + activeMatchedWithdrawal.id);
-                const snap = await ref.once('value');
-                const row = snap.val();
-                if (row && row.matchedDepositId === activeMatchedWithdrawal.reservationId) {
-                    await ref.update({ matchedDepositId: null, matchedAt: null });
-                }
-            } catch (_) {}
-            activeMatchedWithdrawal = null;
-        }
+        watchDepositPaymentNumber('adminSettings/paymentNumberBkash', 'bkash');
+        watchDepositPaymentNumber('adminSettings/paymentNumberNagad', 'nagad');
 
-        function normalizePaymentMethod(value) {
-            const v = String(value || '').trim().toLowerCase();
-            if (v === 'bkash' || v === 'b-kash' || v === 'b_kash' || v === 'বিকাশ') return 'bkash';
-            if (v === 'nagad' || v === 'নগদ') return 'nagad';
-            return v;
-        }
-
-        function normalizeMoney(value) {
-            const n = Number(String(value ?? '').replace(/[৳,\s]/g, ''));
-            return Number.isFinite(n) ? Math.round(n * 100) / 100 : NaN;
-        }
-
-        async function findAndReserveMatchingWithdrawal(amount, method, reserveForSubmit = false) {
-            const requestedAmount = normalizeMoney(amount);
-            const requestedMethod = normalizePaymentMethod(method);
-            if (!(requestedAmount >= 50) || !['bkash','nagad'].includes(requestedMethod)) return null;
-            if (activeMatchedWithdrawal && activeMatchedWithdrawal.amount === requestedAmount && activeMatchedWithdrawal.method === requestedMethod && !reserveForSubmit) return activeMatchedWithdrawal;
-            if (!reserveForSubmit && activeMatchedWithdrawal) activeMatchedWithdrawal = null;
-            const seq = ++depositMatchSeq;
-            try {
-                const snap = await db.ref('adminRequests/withdrawals').once('value');
-                if (seq !== depositMatchSeq) return null;
-                const rows = Object.entries(snap.val() || {})
-                    .filter(([id,w]) => {
-                        if (!w) return false;
-                        const status = String(w.status || 'pending').trim().toLowerCase();
-                        const wMethod = normalizePaymentMethod(w.method || w.paymentMethod || w.withdrawMethod);
-                        const wAmount = normalizeMoney(w.amount ?? w.withdrawAmount ?? w.requestedAmount);
-                        const account = String(w.accountNo ?? w.accountNumber ?? w.mobile ?? w.phone ?? '').trim();
-                        const linkedDeposit = String(w.matchedDepositId || '').trim();
-                        const staleReservation = linkedDeposit.startsWith('reserved-');
-                        return status === 'pending' && wMethod === requestedMethod && wAmount === requestedAmount && !!account && (!linkedDeposit || staleReservation);
-                    })
-                    .sort((a,b) => Number(a[1]?.timestamp || a[1]?.createdAt || 0) - Number(b[1]?.timestamp || b[1]?.createdAt || 0));
-                if (!rows.length) return null;
-
-                // Merely opening the payment portal MUST NOT reserve a withdrawal.
-                // Reservation happens only when the user actually submits the TrxID.
-                if (!reserveForSubmit) {
-                    const [id,w] = rows[0];
-                    const account = String(w.accountNo ?? w.accountNumber ?? w.mobile ?? w.phone ?? '').trim();
-                    activeMatchedWithdrawal = { id, amount:requestedAmount, method:requestedMethod, accountNo:account, reservationId:null };
-                    return activeMatchedWithdrawal;
-                }
-
-                for (const [id,w] of rows) {
-                    const ref = db.ref('adminRequests/withdrawals/' + id);
-                    const claim = await ref.transaction(current => {
-                        if (!current) return;
-                        const currentMethod = normalizePaymentMethod(current.method || current.paymentMethod || current.withdrawMethod);
-                        const currentAmount = normalizeMoney(current.amount ?? current.withdrawAmount ?? current.requestedAmount);
-                        const currentStatus = String(current.status || 'pending').trim().toLowerCase();
-                        const currentAccount = String(current.accountNo ?? current.accountNumber ?? current.mobile ?? current.phone ?? '').trim();
-                        const existingLink = String(current.matchedDepositId || '').trim();
-                        const reclaimableStaleReservation = existingLink.startsWith('reserved-');
-                        if (currentStatus !== 'pending' || currentMethod !== requestedMethod || currentAmount !== requestedAmount || !currentAccount || (existingLink && !reclaimableStaleReservation)) return;
-                        return Object.assign({}, current, { matchedDepositId:'submitting-' + (currentUser?.uid||'user') + '-' + Date.now(), matchedAt:firebase.database.ServerValue.TIMESTAMP });
-                    });
-                    if (claim.committed) {
-                        const c = claim.snapshot.val() || {};
-                        const account = String(c.accountNo ?? c.accountNumber ?? c.mobile ?? c.phone ?? '').trim();
-                        activeMatchedWithdrawal = { id, amount:requestedAmount, method:requestedMethod, accountNo:account, reservationId:c.matchedDepositId };
-                        return activeMatchedWithdrawal;
-                    }
-                }
-            } catch(e) { console.warn('Withdrawal matching failed:', e); }
-            return null;
-        }
-
-        async function openDepositPortal() {
-            if (!currentUser) return alert('প্রথমে Login করুন!');
-            depositMsg.innerText = '';
-            depositSubmitMsg.innerText = '';
-            document.getElementById('deposit-trxid').value = '';
-            document.getElementById('deposit-step-1').style.display = '';
-            document.getElementById('deposit-step-2').style.display = 'none';
-            document.getElementById('deposit-checking').style.display = '';
-            document.getElementById('deposit-payment-panel').style.display = 'none';
-            setDepositMethod('bkash');
-            validateDepositAmountInput();
-            depositModal.classList.remove('hidden');
-        }
-
-        async function goToDepositPaymentPortal() {
-            const amt = Number(depositAmountEl.value);
-            const method = depositMethodEl.value;
-            depositMsg.innerText = '';
-            if (!Number.isFinite(amt) || amt < 50) {
-                depositMsg.innerText = 'Minimum Deposit ৳50। সঠিক Amount দিন।';
-                return;
-            }
-            await releaseActiveDepositMatch();
-            document.getElementById('deposit-step-1').style.display = 'none';
-            document.getElementById('deposit-step-2').style.display = '';
-            document.getElementById('deposit-checking').style.display = '';
-            document.getElementById('deposit-payment-panel').style.display = 'none';
-            depositPortalChecking = true;
-
-            // Give the portal a short loading/checking state before showing the destination number.
-            await new Promise(resolve => setTimeout(resolve, 900));
-            const match = await findAndReserveMatchingWithdrawal(amt, method, false);
-            const number = String(match?.accountNo || depositPaymentNumbers[method] || '').trim();
-            depositPortalChecking = false;
-
-            document.getElementById('deposit-selected-amount').innerText = '৳' + amt;
-            document.getElementById('deposit-payment-method-title').innerText = method === 'nagad' ? 'Nagad' : 'bKash';
-            depositPaymentNumberEl.innerText = number || 'নম্বর সেট করা হয়নি';
-            depositPaymentNumberEl.style.color = number ? '#ffcc00' : '#ef9a9a';
-            document.getElementById('deposit-match-note').innerText = match
-                ? '🔗 এই Amount-এর pending withdrawal পাওয়া গেছে। ওই withdrawal-এর নম্বরেই টাকা পাঠান।'
-                : 'ℹ️ এই Amount-এর pending withdrawal পাওয়া যায়নি। Admin-এর সেট করা নম্বরে টাকা পাঠান।';
-            document.getElementById('deposit-match-note').style.color = match ? '#81c784' : '#a0aec0';
-            document.getElementById('deposit-checking').style.display = 'none';
-            document.getElementById('deposit-payment-panel').style.display = '';
-        }
-
-        function watchDepositPaymentNumber(path,key) {
-            db.ref(path).on('value', snap => { depositPaymentNumbers[key] = String(snap.val()||'').trim(); });
-        }
-        watchDepositPaymentNumber('adminSettings/paymentNumberBkash','bkash');
-        watchDepositPaymentNumber('adminSettings/paymentNumberNagad','nagad');
-        db.ref('adminSettings/paymentNumber').on('value', snap => {
-            const legacy = String(snap.val()||'').trim();
+        // Backward compatibility: if an older Admin still uses the single paymentNumber path,
+        // use it as a fallback without changing the newer separate bKash/Nagad values.
+        db.ref('adminSettings/paymentNumber').on('value', function(snapshot) {
+            const legacy = String(snapshot.val() || '').trim();
             if (!depositPaymentNumbers.bkash && legacy) depositPaymentNumbers.bkash = legacy;
             if (!depositPaymentNumbers.nagad && legacy) depositPaymentNumbers.nagad = legacy;
+            updateDepositPaymentUI();
         });
 
-        document.getElementById('deposit-btn').addEventListener('click', openDepositPortal);
-        document.getElementById('deposit-bkash-card').addEventListener('click', () => setDepositMethod('bkash'));
-        document.getElementById('deposit-nagad-card').addEventListener('click', () => setDepositMethod('nagad'));
-        document.getElementById('deposit-next-btn').addEventListener('click', goToDepositPaymentPortal);
-        document.getElementById('deposit-back-btn').addEventListener('click', async () => {
-            await releaseActiveDepositMatch();
-            document.getElementById('deposit-step-2').style.display = 'none';
-            document.getElementById('deposit-step-1').style.display = '';
-        });
-        document.getElementById('close-deposit-btn').onclick = async () => {
-            await releaseActiveDepositMatch();
-            depositModal.classList.add('hidden');
-        };
+        if (depositMethodEl) depositMethodEl.addEventListener('change', updateDepositPaymentUI);
 
-        // --- ডিপোজিট রিকোয়েস্ট সাবমিট (এডমিন পেন্ডিং) ---
-        document.getElementById('deposit-confirm-btn').addEventListener('click', async () => {
-            if (!currentUser || depositPortalChecking) return;
-            const amt = parseFloat(depositAmountEl.value);
-            const method = depositMethodEl.value;
+        const depositModal = document.getElementById('deposit-modal');
+        const withdrawModal = document.getElementById('withdraw-modal');
+        const depositMsg = document.getElementById('deposit-msg');
+        const withdrawMsg = document.getElementById('withdraw-msg');
+
+        document.getElementById('deposit-btn').addEventListener('click', () => {
+            if (!currentUser) return alert("প্রথমে Login করুন!");
+            depositMsg.innerText = "";
+            document.getElementById('deposit-trxid').value = "";
+            depositModal.classList.remove('hidden');
+        });
+        document.getElementById('close-deposit-btn').onclick = () => depositModal.classList.add('hidden');
+
+        // --- ডিপোজিট রিকোয়েস্ট সাবমিট (এডমিন পেন্ডিং) ---
+        document.getElementById('deposit-confirm-btn').addEventListener('click', () => {
+            if (!currentUser) return;
+            const amt = parseFloat(document.getElementById('deposit-amount').value);
+            const method = document.getElementById('deposit-method').value;
             const trxId = document.getElementById('deposit-trxid').value.trim();
-            const match = await findAndReserveMatchingWithdrawal(amt, method, true);
-            const paymentNumber = String(match?.accountNo || depositPaymentNumbers[method] || '').trim();
-            depositSubmitMsg.innerText = '';
-            if (!paymentNumber) { depositSubmitMsg.style.color='#ef9a9a'; depositSubmitMsg.innerText='এই পেমেন্ট মাধ্যমের নম্বর এখনো সেট করা হয়নি।'; return; }
-            if (isNaN(amt) || amt < 50) { depositSubmitMsg.style.color='#ef9a9a'; depositSubmitMsg.innerText='Minimum Deposit ৳50।'; return; }
-            if (!trxId) { depositSubmitMsg.style.color='#ef9a9a'; depositSubmitMsg.innerText='TrxID প্রদান করুন।'; return; }
-            const normalizedTrxId = trxId.replace(/\s+/g,'').toLowerCase();
-            const trxIndexKey = encodeURIComponent(normalizedTrxId).replace(/\./g,'%2E');
+            const paymentNumber = (depositPaymentNumbers[method] || '').trim();
+
+            if (!paymentNumber) {
+                depositMsg.style.color = "#ef9a9a";
+                depositMsg.innerText = method === 'nagad' ? "নগদ ডিপোজিট বর্তমানে বন্ধ আছে।" : "বিকাশ ডিপোজিট বর্তমানে বন্ধ আছে।";
+                return;
+            }
+
+            if (isNaN(amt) || amt <= 0) {
+                depositMsg.style.color = "#ef9a9a";
+                depositMsg.innerText = "সঠিক পরিমাণ লিখুন।";
+                return;
+            }
+            if (amt < 50) {
+                depositMsg.style.color = "#ef9a9a";
+                depositMsg.innerText = "Minimum Deposit ৳50। ৫০ টাকার কম Deposit করা যাবে না।";
+                return;
+            }
+            if (!trxId) {
+                depositMsg.style.color = "#ef9a9a";
+                depositMsg.innerText = "ট্রানজেকশন আইডি (TrxID) প্রদান করুন।";
+                return;
+            }
+
+            // A real payment transaction ID must be unique. Normalize it so
+            // harmless spaces/case changes cannot bypass the duplicate check.
+            const normalizedTrxId = trxId.replace(/\\s+/g, '').toLowerCase();
+            const trxIndexKey = encodeURIComponent(normalizedTrxId).replace(/\\./g, '%2E');
             const trxIndexRef = db.ref('adminRequests/depositTrxIndex/' + trxIndexKey);
             const requestRef = db.ref('adminRequests/deposits').push();
             const depositData = {
-                uid:currentUser.uid,email:currentUser.email,amount:amt,method,trxId,status:'pending',timestamp:Date.now(),
-                paymentNumberUsed:paymentNumber,paymentSource:match?'matched_withdrawal':'admin_configured',
-                matchedWithdrawalId:match?match.id:null,matchedWithdrawalAmount:match?match.amount:null,matchedWithdrawalMethod:match?match.method:null
+                uid: currentUser.uid,
+                email: currentUser.email,
+                amount: amt,
+                method: method,
+                trxId: trxId,
+                status: 'pending',
+                timestamp: Date.now()
             };
-            try {
-                const existingSnap = await db.ref('adminRequests/deposits').once('value');
-                const duplicateExists = Object.values(existingSnap.val()||{}).some(req => String(req?.trxId||'').replace(/\s+/g,'').toLowerCase()===normalizedTrxId);
-                if (duplicateExists) throw new Error('এই TrxID দিয়ে ইতিমধ্যে একটি Deposit Request আছে।');
-                const claim = await trxIndexRef.transaction(current => current ? undefined : {uid:currentUser.uid,requestId:requestRef.key,trxId,createdAt:firebase.database.ServerValue.TIMESTAMP});
-                if (!claim.committed) throw new Error('এই TrxID দিয়ে ইতিমধ্যে একটি Deposit Request আছে।');
-                await requestRef.set(depositData);
-                if (match?.id && match?.reservationId) {
-                    const wRef = db.ref('adminRequests/withdrawals/' + match.id);
-                    await wRef.transaction(current => {
-                        if (!current || current.matchedDepositId !== match.reservationId) return;
-                        return Object.assign({}, current, {matchedDepositId:requestRef.key,matchedDepositAt:firebase.database.ServerValue.TIMESTAMP});
-                    });
-                }
-                activeMatchedWithdrawal = null;
-                depositSubmitMsg.style.color='#81c784';
-                depositSubmitMsg.innerText='✅ Deposit Request পাঠানো হয়েছে। Admin approval-এর জন্য অপেক্ষা করুন।';
-            } catch(e) {
-                try { await trxIndexRef.remove(); } catch(_) {}
-                if (match?.id && match?.reservationId) { try { const wr=db.ref('adminRequests/withdrawals/'+match.id); const ws=await wr.once('value'); if(ws.val()?.matchedDepositId===match.reservationId) await wr.update({matchedDepositId:null,matchedAt:null}); } catch(_) {} }
-                activeMatchedWithdrawal=null;
-                depositSubmitMsg.style.color='#ef9a9a';
-                depositSubmitMsg.innerText=e.message||'Deposit Request পাঠানো যায়নি।';
-            }
-        });
 
-        const withdrawModal = document.getElementById('withdraw-modal');
-        const withdrawMsg = document.getElementById('withdraw-msg');
+            (async () => {
+                try {
+                    // First check existing requests that were created before
+                    // the transaction-ID index was introduced.
+                    const existingSnap = await db.ref('adminRequests/deposits').once('value');
+                    const existingDeposits = existingSnap.val() || {};
+                    const duplicateExists = Object.values(existingDeposits).some(req =>
+                        String(req?.trxId || '').replace(/\s+/g, '').toLowerCase() === normalizedTrxId
+                    );
+
+                    if (duplicateExists) {
+                        throw new Error('এই Transaction ID দিয়ে ইতিমধ্যে একটি Deposit Request আছে। একই TrxID আবার ব্যবহার করা যাবে না।');
+                    }
+
+                    // Atomically reserve this transaction ID. This closes the
+                    // race where the same TrxID is submitted from two tabs/devices.
+                    const claim = await trxIndexRef.transaction(current => {
+                        if (current) return;
+                        return {
+                            uid: currentUser.uid,
+                            requestId: requestRef.key,
+                            trxId: trxId,
+                            createdAt: firebase.database.ServerValue.TIMESTAMP
+                        };
+                    });
+
+                    if (!claim.committed) {
+                        throw new Error('এই Transaction ID দিয়ে ইতিমধ্যে একটি Deposit Request আছে। একই TrxID আবার ব্যবহার করা যাবে না।');
+                    }
+
+                    await requestRef.set(depositData);
+
+                    depositMsg.style.color = "#81c784";
+                    depositMsg.innerText = "ডিপোজিট রিকোয়েস্ট সফলভাবে জমা হয়েছে।";
+                    setTimeout(() => {
+                        depositModal.classList.add('hidden');
+                        document.getElementById('deposit-amount').value = '500';
+                        document.getElementById('deposit-trxid').value = '';
+                        depositMsg.innerText = '';
+                    }, 2000);
+                } catch (error) {
+                    // If request creation failed after reserving the ID, release
+                    // only our own reservation so a retry can be made safely.
+                    try {
+                        const reservation = await trxIndexRef.once('value');
+                        const data = reservation.val();
+                        if (data && data.requestId === requestRef.key) {
+                            await trxIndexRef.remove();
+                        }
+                    } catch (_) {}
+
+                    depositMsg.style.color = "#ef9a9a";
+                    depositMsg.innerText = "ত্রুটি: " + error.message;
+                }
+            })();
+        });
 
         let withdrawRequestBusy = false;
 
@@ -1884,20 +1769,9 @@
             testUserUid: '',
             testRtpFactor: 1.0
         };
-        // Color Gems has its OWN independent configuration.
-        // Boxing King/Flag King continue using config/boxingKing/rtpFactor.
-        // Color Gems reads ONLY config/colorGems, so changing one does not change the other.
-        let cgConfig = {
-            enabled: true,
-            minBet: 1,
-            maxBet: 10,
-            betOptions: [1.00, 2.00, 3.00, 5.00, 10.00],
-            animationSpeedMs: 90,
-            rtpFactor: 1.0,
-            testMode: false,
-            testUserUid: '',
-            testRtpFactor: 1.0
-        };
+        // Color Gems uses the SAME Boxing King configuration.
+        // There is intentionally NO separate config/colorGems path.
+        let cgConfig = bkConfig;
 
         // User-specific RTP / Reference Factor loader.
         // This reads the value saved by the Admin Panel for the logged-in UID.
@@ -1946,22 +1820,8 @@
                     bkConfig.betOptions = [1.00, 2.00, 3.00, 5.00, 10.00];
                 }
             }
+            cgConfig = bkConfig;
             applyBkConfigToUI();
-            applyCgConfigToUI();
-        });
-
-        // Color Gems — independent configuration path.
-        db.ref('config/colorGems').on('value', function(snapshot) {
-            const cfg = snapshot.val();
-            if (cfg) {
-                cgConfig = Object.assign({}, cgConfig, cfg);
-                if (typeof cgConfig.betOptions === 'string') {
-                    cgConfig.betOptions = cgConfig.betOptions.split(',').map(n => parseFloat(n.trim())).filter(n => !isNaN(n));
-                }
-                if (!Array.isArray(cgConfig.betOptions) || cgConfig.betOptions.length === 0) {
-                    cgConfig.betOptions = [1.00, 2.00, 3.00, 5.00, 10.00];
-                }
-            }
             applyCgConfigToUI();
         });
 
@@ -2121,13 +1981,6 @@
             }
         });
 
-        let aviatorConfig = { maxMultiplier: null };
-        db.ref('config/aviator').on('value', function(snapshot) {
-            const cfg = snapshot.val() || {};
-            const n = Number(cfg.maxMultiplier);
-            aviatorConfig.maxMultiplier = Number.isFinite(n) && n >= 1.01 ? Number(n.toFixed(2)) : null;
-        });
-
         function getDeterministicCrashPoint(roundIndex) {
             let hash = Math.sin(roundIndex * 12.9898 + 78.233) * 43758.5453;
             let rand = hash - Math.floor(hash);
@@ -2136,9 +1989,6 @@
             else if (rand < 0.65) crash = 1.10 + ((rand - 0.12) / 0.53) * 0.90; 
             else if (rand < 0.90) crash = 2.00 + ((rand - 0.65) / 0.25) * 3.00; 
             else crash = 5.00 + ((rand - 0.90) / 0.10) * 20.00; 
-            if (aviatorConfig.maxMultiplier !== null) {
-                crash = Math.min(crash, aviatorConfig.maxMultiplier);
-            }
             return parseFloat(crash.toFixed(2));
         }
 
@@ -2213,69 +2063,114 @@
             }
             ctx.restore();
 
-            let startX = canvas.width * 0.05;
-            let startY = canvas.height * 0.90;
+            /*
+             * Flight path update only:
+             * Keep the plane inside the game screen and give it a natural
+             * airline-style curved path. Near the upper-right corner it
+             * briefly comes slightly back/down, then climbs forward again.
+             * No multiplier, crash-point, RTP or round timing is changed.
+             */
+            const padX = Math.max(24, canvas.width * 0.055);
+            const padY = Math.max(22, canvas.height * 0.09);
+            const startX = padX;
+            const startY = canvas.height - padY;
+            const safeRight = canvas.width - padX - 24;
+            const safeTop = padY + 24;
+            const progress = Math.max(0, Math.min(1, timeElapsed / Math.max(0.001, totalDurationNeeded)));
 
-            let currentX = startX + (timeElapsed * (canvas.width * 0.18));
-            let currentY = startY - (timeElapsed * (canvas.height * 0.15));
+            function getFlightPoint(t) {
+                let x, y;
+                if (t < 0.78) {
+                    const q = t / 0.78;
+                    const e = 1 - Math.pow(1 - q, 1.35);
+                    x = startX + (safeRight - startX) * 0.90 * e;
+                    y = startY - (startY - safeTop) * 0.72 * Math.pow(e, 1.12);
+                } else if (t < 0.90) {
+                    const q = (t - 0.78) / 0.12;
+                    const e = q * q * (3 - 2 * q);
+                    const cornerX = startX + (safeRight - startX) * 0.90;
+                    const cornerY = startY - (startY - safeTop) * 0.72;
+                    x = cornerX - (safeRight - startX) * 0.045 * e;
+                    y = cornerY + (startY - safeTop) * 0.065 * e;
+                } else {
+                    const q = (t - 0.90) / 0.10;
+                    const e = q * q * (3 - 2 * q);
+                    const cornerX = startX + (safeRight - startX) * 0.90;
+                    const cornerY = startY - (startY - safeTop) * 0.72;
+                    x = cornerX - (safeRight - startX) * 0.045 * (1 - e) + (safeRight - startX) * 0.045 * e;
+                    y = cornerY + (startY - safeTop) * 0.065 * (1 - e) - (startY - safeTop) * 0.13 * e;
+                }
+                return {x, y};
+            }
 
-            let overflowX = Math.max(0, currentX - (canvas.width * 0.75));
-            let overflowY = Math.max(0, (canvas.height * 0.20) - currentY);
-
-            currentX -= overflowX * 0.85;
-            currentY += overflowY * 0.85;
+            let point = getFlightPoint(progress);
+            let currentX = Math.max(padX, Math.min(canvas.width - padX, point.x));
+            let currentY = Math.max(padY, Math.min(canvas.height - padY, point.y));
 
             if (isCrashed) {
-                let crashTime = (timeElapsed - totalDurationNeeded);
-                currentX += crashTime * canvas.width * 2.2;
-                currentY -= crashTime * canvas.height * 1.5;
+                /* Keep the crash motion visible but still inside the screen. */
+                const crashTime = Math.max(0, timeElapsed - totalDurationNeeded);
+                const crashProgress = Math.min(1, crashTime / 1.0);
+                currentX = Math.min(canvas.width - padX, currentX + canvas.width * 0.05 * crashProgress);
+                currentY = Math.max(padY, currentY - canvas.height * 0.06 * crashProgress);
             }
 
-            let controlX = startX + (currentX - startX) * 0.4;
-            let controlY = startY;
+            /* Draw the same curved path behind the plane. */
+            const steps = Math.max(8, Math.ceil(progress * 70));
+            const firstPoint = getFlightPoint(0);
+            const gradient = ctx.createLinearGradient(0, startY, 0, safeTop);
+            gradient.addColorStop(0, 'rgba(229, 57, 53, 0.00)');
+            gradient.addColorStop(1, 'rgba(229, 57, 53, 0.55)');
 
-            if (currentX <= canvas.width + 100 && currentY >= -100) {
-                let fillGradient = ctx.createLinearGradient(0, startY, 0, Math.max(currentY, 0));
-                fillGradient.addColorStop(0, 'rgba(229, 57, 53, 0.00)');
-                fillGradient.addColorStop(1, 'rgba(229, 57, 53, 0.55)');
-
-                ctx.beginPath();
-                ctx.moveTo(startX, startY);
-                ctx.quadraticCurveTo(controlX, controlY, currentX, currentY);
-                ctx.lineTo(Math.min(currentX, canvas.width), startY);
-                ctx.closePath();
-                ctx.fillStyle = fillGradient;
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.strokeStyle = '#e53935';
-                ctx.lineWidth = 3.5;
-                ctx.lineCap = 'round';
-                ctx.moveTo(startX, startY);
-                ctx.quadraticCurveTo(controlX, controlY, currentX, currentY);
-                ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(firstPoint.x, firstPoint.y);
+            for (let i = 1; i <= steps; i++) {
+                const pt = getFlightPoint(progress * (i / steps));
+                ctx.lineTo(pt.x, pt.y);
             }
+            ctx.lineTo(currentX, startY);
+            ctx.lineTo(firstPoint.x, startY);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
 
-            if (currentX <= canvas.width + 80 && currentY >= -80) {
-                ctx.save();
-                ctx.translate(currentX, currentY);
-                let tiltAngle = -Math.PI / 10 + (Math.sin(timeElapsed * 6) * 0.02);
-                ctx.rotate(tiltAngle);
-
-                ctx.fillStyle = "#e53935";
-                ctx.beginPath();
-                ctx.moveTo(18, 0); ctx.lineTo(-18, -9); ctx.lineTo(-12, 0); ctx.lineTo(-18, 9);
-                ctx.closePath(); ctx.fill();
-
-                ctx.fillStyle = "#b71c1c";
-                ctx.beginPath();
-                ctx.moveTo(-2, 0); ctx.lineTo(-10, -15); ctx.lineTo(-5, -15); ctx.lineTo(3, 0);
-                ctx.closePath(); ctx.fill();
-
-                ctx.fillStyle = "#ffffff";
-                ctx.beginPath(); ctx.arc(4, -1, 3, 0, Math.PI * 2); ctx.fill();
-                ctx.restore();
+            ctx.beginPath();
+            for (let i = 0; i <= steps; i++) {
+                const pt = getFlightPoint(progress * (i / steps));
+                if (i === 0) ctx.moveTo(pt.x, pt.y);
+                else ctx.lineTo(pt.x, pt.y);
             }
+            ctx.strokeStyle = '#e53935';
+            ctx.lineWidth = 3.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+
+            /* Plane stays fully inside the canvas. */
+            ctx.save();
+            ctx.translate(currentX, currentY);
+            const lookAhead = getFlightPoint(Math.min(1, progress + 0.015));
+            const lookBack = getFlightPoint(Math.max(0, progress - 0.015));
+            let dx = lookAhead.x - lookBack.x;
+            let dy = lookAhead.y - lookBack.y;
+            let tiltAngle = Math.atan2(dy, dx);
+            if (!Number.isFinite(tiltAngle)) tiltAngle = -Math.PI / 10;
+            tiltAngle += Math.sin(timeElapsed * 5) * 0.018;
+            ctx.rotate(tiltAngle);
+
+            ctx.fillStyle = "#e53935";
+            ctx.beginPath();
+            ctx.moveTo(18, 0); ctx.lineTo(-18, -9); ctx.lineTo(-12, 0); ctx.lineTo(-18, 9);
+            ctx.closePath(); ctx.fill();
+
+            ctx.fillStyle = "#b71c1c";
+            ctx.beginPath();
+            ctx.moveTo(-2, 0); ctx.lineTo(-10, -15); ctx.lineTo(-5, -15); ctx.lineTo(3, 0);
+            ctx.closePath(); ctx.fill();
+
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath(); ctx.arc(4, -1, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
         }
 
         function settleAviatorCrash(roundIndex, targetCrashPoint) {
@@ -2297,8 +2192,6 @@
                 data.aviatorBets = bets;
                 data.games = (Number(data.games) || 0) + 1;
                 return data;
-            }).then(function(result) {
-                if(result && result.committed){ const d=result.snapshot.val()||{}; const b=(d.aviatorBets||{})[roundKey]; if(b && b.status==='lost') logGameActivity('Aviator',{roundIndex:roundIndex,betAmount:Number(b.amount||0),result:'loss',multiplier:0,payout:0,crashPoint:Number(targetCrashPoint||0)}); }
             }).catch(function(err) {
                 console.warn('Aviator crash settlement failed:', err);
             });
@@ -2306,7 +2199,7 @@
 
         function masterGameLoop() {
             if (!isAviatorOnline()) { stopAviatorLoopForOffline(); return; }
-            const CYCLE_DURATION = 100000;
+            const CYCLE_DURATION = 18000;
             const WAIT_DURATION = 3000;
 
             const now = getAviatorServerNow();
@@ -2417,7 +2310,7 @@
             if (!isAviatorOnline()) return alert("ইন্টারনেট সংযোগ নেই। সংযোগ ফিরে এলে আবার চেষ্টা করুন।");
             if (!currentUser) return alert("প্রথমে Login করুন!");
 
-            const CYCLE_DURATION = 100000;
+            const CYCLE_DURATION = 18000;
             const WAIT_DURATION = 3000;
             const now = getAviatorServerNow();
             const cycleElapsed = now % CYCLE_DURATION;
@@ -2536,11 +2429,9 @@
 
                     if (result.committed && bet && bet.status === 'cashed') {
                         syncLocalAviatorBet(currentRoundIndex, bet);
-                        logGameActivity('Aviator', {roundIndex:currentRoundIndex, betAmount:Number(bet.amount||0), result:'win', multiplier:Number(bet.multiplier||0), payout:Number(bet.payout||0), crashPoint:Number(bet.crashPoint||0)});
                         cashoutBannerContainer.innerHTML = '<div class="av-cashout-banner">CASHED OUT ' + Number(bet.payout).toFixed(2) + ' কয়েন (' + Number(bet.multiplier).toFixed(2) + 'x)</div>';
                     } else if (bet && bet.status === 'lost') {
                         syncLocalAviatorBet(currentRoundIndex, bet);
-                        logGameActivity('Aviator', {roundIndex:currentRoundIndex, betAmount:Number(bet.amount||0), result:'loss', multiplier:0, payout:0, crashPoint:Number(bet.crashPoint||0)});
                         alert("CASH OUT নেওয়ার আগেই রাউন্ড শেষ হয়েছে।");
                     } else {
                         alert("CASH OUT নেওয়া যায়নি—রাউন্ডটি ইতিমধ্যে settle হয়ে গেছে।");
@@ -2922,7 +2813,6 @@
                         db.ref(uidRef + '/boxingKingWins').transaction(w => (w || 0) + 1);
                     }
                     db.ref(uidRef + '/boxingKingGames').transaction(g => (g || 0) + 1);
-                    logGameActivity('Boxing King', {betAmount:Number(activeBet||0), result:bkCurrentSpinTotalWin>0?'win':'loss', payout:Number(bkCurrentSpinTotalWin||0)});
                 }
 
                 bkIsSpinning = false;
@@ -3318,7 +3208,6 @@
                         db.ref(uidRef + '/flagKingWins').transaction(w => (w || 0) + 1);
                     }
                     db.ref(uidRef + '/flagKingGames').transaction(g => (g || 0) + 1);
-                    logGameActivity('Flag King', {betAmount:Number(activeBet||0), result:fkCurrentSpinTotalWin>0?'win':'loss', payout:Number(fkCurrentSpinTotalWin||0)});
                 }
 
                 fkIsSpinning = false;
@@ -3513,7 +3402,6 @@
                 cgMultiplierIndex=0;updateCgMult();cgSetStatus('আবার চেষ্টা করুন ❌','#ff6666');
             }
             if(!cgConfig.testMode)db.ref('users/'+currentUser.uid+'/colorGemsGames').transaction(v=>(v||0)+1);
-            logGameActivity('Color Gems', {betAmount:Number(activeBet||0), result:cgWin>0?'win':'loss', payout:Number(cgWin||0), testMode:!!cgConfig.testMode});
             updateCgUI();
             cgSpinning=false;setCgControls(!cgConfig.enabled);
             if(cgAuto)cgAutoTimer=setTimeout(handleCgSpin,900);
@@ -3687,7 +3575,6 @@ function rbLockAndSpin(){
                 if(win) db.ref('users/'+currentUser.uid+'/balance').transaction(v=>(v||0)+payout);
                 db.ref('users/'+currentUser.uid+'/games').transaction(v=>(v||0)+1);
                 if(win) db.ref('users/'+currentUser.uid+'/wins').transaction(v=>(v||0)+1);
-                logGameActivity('Red vs Blue', {betAmount:Number(amount||0), selectedColor:bet.color, result:win?'win':'loss', winningColor:shared.result, payout:Number(payout||0), roundIndex:roundIndex});
 
                 rbSpinning=false;
                 rbPendingBet=null;
