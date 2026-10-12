@@ -2111,14 +2111,23 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         });
 
         function getDeterministicCrashPoint(roundIndex) {
-            let hash = Math.sin(roundIndex * 12.9898 + 78.233) * 43758.5453;
-            let rand = hash - Math.floor(hash);
-            let crash = 1.00;
-            if (rand < 0.12) crash = 1.00 + (rand * 0.8); 
-            else if (rand < 0.65) crash = 1.10 + ((rand - 0.12) / 0.53) * 0.90; 
-            else if (rand < 0.90) crash = 2.00 + ((rand - 0.65) / 0.25) * 3.00; 
-            else crash = 5.00 + ((rand - 0.90) / 0.10) * 20.00; 
-            return parseFloat(crash.toFixed(2));
+            /*
+             * Keep the same result for a given shared server-time round on every device,
+             * but replace the weak sine-based pattern with a 32-bit integer mixer.
+             * This reduces visibly repeated/predictable sequences; it is still client-side
+             * and should not be treated as cryptographically fair randomness.
+             */
+            let x = (Number(roundIndex) >>> 0) ^ 0x6D2B79F5;
+            x = Math.imul(x ^ (x >>> 15), x | 1);
+            x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+            x = (x ^ (x >>> 14)) >>> 0;
+            const rand = x / 4294967296;
+            let crash;
+            if (rand < 0.12) crash = 1.00 + (rand / 0.12) * 0.80;
+            else if (rand < 0.65) crash = 1.80 + ((rand - 0.12) / 0.53) * 0.90;
+            else if (rand < 0.90) crash = 2.70 + ((rand - 0.65) / 0.25) * 3.00;
+            else crash = 5.70 + ((rand - 0.90) / 0.10) * 19.30;
+            return Math.max(1.00, parseFloat(crash.toFixed(2)));
         }
 
         function calculateMultiplierFromTime(seconds) {
