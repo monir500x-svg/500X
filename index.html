@@ -2219,6 +2219,11 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 currentY -= crashTime * canvas.height * 1.5;
             }
 
+            // Keep the plane fully inside the canvas, including during crash animation.
+            const planeMargin = 24;
+            currentX = Math.max(planeMargin, Math.min(canvas.width - planeMargin, currentX));
+            currentY = Math.max(planeMargin, Math.min(canvas.height - planeMargin, currentY));
+
             let controlX = startX + (currentX - startX) * 0.4;
             let controlY = startY;
 
