@@ -2372,7 +2372,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     }
 
                     renderMyLiveBetUI(currentRoundIndex, true);
-                    drawAviatorFlight(targetCrashPoint, flyElapsed, totalFlightTimeNeeded);
+                    drawAviatorFlight(targetCrashPoint, flyElapsed, totalFlightTimeNeeded, currentRoundIndex);
 
                     betBtn.innerText = "অপেক্ষমাণ...";
                     betBtn.className = "av-btn av-btn-action av-btn-waiting";
@@ -2386,7 +2386,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     multiplierDisplay.classList.remove('crashed');
 
                     renderMyLiveBetUI(currentRoundIndex, false);
-                    drawAviatorFlight(currentLocalMult, flyElapsed, totalFlightTimeNeeded);
+                    drawAviatorFlight(currentLocalMult, flyElapsed, totalFlightTimeNeeded, currentRoundIndex);
 
                     if (isBetActiveForCurrentRound && !hasCashedOut) {
                         const liveWin = (activeBet * currentLocalMult).toFixed(2);
