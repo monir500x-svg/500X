@@ -2184,11 +2184,12 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             `;
         }
 
-        function drawAviatorFlight(mult, timeElapsed, totalDurationNeeded, roundIndex = 0) {
+        function drawAviatorFlight(mult, timeElapsed, totalDurationNeeded) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const isCrashed = (timeElapsed >= totalDurationNeeded);
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
+            let isCrashed = (timeElapsed >= totalDurationNeeded);
+
+            let centerX = canvas.width / 2;
+            let centerY = canvas.height / 2;
             ctx.save();
             ctx.fillStyle = "rgba(255, 255, 255, 0.022)";
             for (let i = 0; i < 12; i++) {
@@ -2200,80 +2201,69 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             }
             ctx.restore();
 
-            const startX = canvas.width * 0.05;
-            const startY = canvas.height * 0.90;
-            const safeProgress = Math.max(0, Math.min(1, timeElapsed / Math.max(0.001, totalDurationNeeded)));
+            let startX = canvas.width * 0.05;
+            let startY = canvas.height * 0.90;
 
-            // Vary the decorative flight path per shared round. This changes only the plane's
-            // visible trajectory; the existing server-synced multiplier/crash result is untouched.
-            const roundKey = Number(roundIndex ?? (window.currentRoundIndex ?? 0)) >>> 0;
-            let seedA = (roundKey ^ 0x9E3779B9) >>> 0;
-            seedA = Math.imul(seedA ^ (seedA >>> 16), 0x85EBCA6B) >>> 0;
-            seedA = Math.imul(seedA ^ (seedA >>> 13), 0xC2B2AE35) >>> 0;
-            seedA = (seedA ^ (seedA >>> 16)) >>> 0;
-            const randA = seedA / 4294967296;
-            let seedB = (seedA ^ 0xA5A5A5A5) >>> 0;
-            seedB = Math.imul(seedB ^ (seedB >>> 15), 0x2C1B3C6D) >>> 0;
-            seedB = (seedB ^ (seedB >>> 13)) >>> 0;
-            const randB = seedB / 4294967296;
+            let currentX = startX + (timeElapsed * (canvas.width * 0.18));
+            let currentY = startY - (timeElapsed * (canvas.height * 0.15));
 
-            const endX = canvas.width * (0.62 + randA * 0.23);
-            const endY = canvas.height * (0.16 + randB * 0.34);
-            const baseX = startX + (endX - startX) * safeProgress;
-            const baseY = startY + (endY - startY) * safeProgress;
-            const phaseA = randA * Math.PI * 2;
-            const phaseB = randB * Math.PI * 2;
-            const wave = Math.sin(safeProgress * Math.PI * (2 + randB * 2.5) + phaseA);
-            const driftWave = Math.sin(safeProgress * Math.PI * (1.5 + randA * 2.5) + phaseB);
-            const bob = wave * canvas.height * (0.008 + randA * 0.012);
-            const drift = driftWave * canvas.width * (0.004 + randB * 0.008);
-            let currentX = Math.max(canvas.width * 0.05, Math.min(canvas.width * 0.88, baseX + drift));
-            let currentY = Math.max(canvas.height * 0.10, Math.min(canvas.height * 0.92, baseY + bob));
+            let overflowX = Math.max(0, currentX - (canvas.width * 0.75));
+            let overflowY = Math.max(0, (canvas.height * 0.20) - currentY);
+
+            currentX -= overflowX * 0.85;
+            currentY += overflowY * 0.85;
 
             if (isCrashed) {
-                // Brief crash motion remains visible inside the canvas.
-                const crashTime = Math.max(0, timeElapsed - totalDurationNeeded);
-                currentX = Math.min(canvas.width * 0.88, currentX + crashTime * canvas.width * 0.12);
-                currentY = Math.min(canvas.height * 0.88, currentY + crashTime * canvas.height * 0.08);
+                let crashTime = (timeElapsed - totalDurationNeeded);
+                currentX += crashTime * canvas.width * 2.2;
+                currentY -= crashTime * canvas.height * 1.5;
             }
 
-            const controlX = startX + (currentX - startX) * 0.52;
-            const controlY = startY + (currentY - startY) * 0.10;
-            const fillGradient = ctx.createLinearGradient(0, startY, 0, Math.max(currentY, 0));
-            fillGradient.addColorStop(0, 'rgba(229, 57, 53, 0.00)');
-            fillGradient.addColorStop(1, 'rgba(229, 57, 53, 0.45)');
+            let controlX = startX + (currentX - startX) * 0.4;
+            let controlY = startY;
 
-            ctx.beginPath();
-            ctx.moveTo(startX, startY);
-            ctx.quadraticCurveTo(controlX, controlY, currentX, currentY);
-            ctx.lineTo(currentX, startY);
-            ctx.closePath();
-            ctx.fillStyle = fillGradient;
-            ctx.fill();
+            if (currentX <= canvas.width + 100 && currentY >= -100) {
+                let fillGradient = ctx.createLinearGradient(0, startY, 0, Math.max(currentY, 0));
+                fillGradient.addColorStop(0, 'rgba(229, 57, 53, 0.00)');
+                fillGradient.addColorStop(1, 'rgba(229, 57, 53, 0.55)');
 
-            ctx.beginPath();
-            ctx.strokeStyle = '#e53935';
-            ctx.lineWidth = 3.5;
-            ctx.lineCap = 'round';
-            ctx.moveTo(startX, startY);
-            ctx.quadraticCurveTo(controlX, controlY, currentX, currentY);
-            ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.quadraticCurveTo(controlX, controlY, currentX, currentY);
+                ctx.lineTo(Math.min(currentX, canvas.width), startY);
+                ctx.closePath();
+                ctx.fillStyle = fillGradient;
+                ctx.fill();
 
-            ctx.save();
-            ctx.translate(currentX, currentY);
-            const tiltAngle = -Math.PI / 10 + Math.sin(timeElapsed * 2.1) * 0.035;
-            ctx.rotate(tiltAngle);
-            ctx.fillStyle = "#e53935";
-            ctx.beginPath();
-            ctx.moveTo(18, 0); ctx.lineTo(-18, -9); ctx.lineTo(-12, 0); ctx.lineTo(-18, 9);
-            ctx.closePath(); ctx.fill();
-            ctx.fillStyle = "#b71c1c";
-            ctx.beginPath();
-            ctx.moveTo(-2, 0); ctx.lineTo(-10, -15); ctx.lineTo(-5, -15); ctx.lineTo(3, 0);
-            ctx.closePath(); ctx.fill();
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath(); ctx.arc(4, -1, 3, 0, Math.PI * 2); ctx.fill();
-            ctx.restore();
+                ctx.beginPath();
+                ctx.strokeStyle = '#e53935';
+                ctx.lineWidth = 3.5;
+                ctx.lineCap = 'round';
+                ctx.moveTo(startX, startY);
+                ctx.quadraticCurveTo(controlX, controlY, currentX, currentY);
+                ctx.stroke();
+            }
+
+            if (currentX <= canvas.width + 80 && currentY >= -80) {
+                ctx.save();
+                ctx.translate(currentX, currentY);
+                let tiltAngle = -Math.PI / 10 + (Math.sin(timeElapsed * 6) * 0.02);
+                ctx.rotate(tiltAngle);
+
+                ctx.fillStyle = "#e53935";
+                ctx.beginPath();
+                ctx.moveTo(18, 0); ctx.lineTo(-18, -9); ctx.lineTo(-12, 0); ctx.lineTo(-18, 9);
+                ctx.closePath(); ctx.fill();
+
+                ctx.fillStyle = "#b71c1c";
+                ctx.beginPath();
+                ctx.moveTo(-2, 0); ctx.lineTo(-10, -15); ctx.lineTo(-5, -15); ctx.lineTo(3, 0);
+                ctx.closePath(); ctx.fill();
+
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath(); ctx.arc(4, -1, 3, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
         }
 
         function settleAviatorCrash(roundIndex, targetCrashPoint) {
