@@ -2184,7 +2184,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             `;
         }
 
-        function drawAviatorFlight(mult, timeElapsed, totalDurationNeeded) {
+        function drawAviatorFlight(mult, timeElapsed, totalDurationNeeded, roundIndex = 0) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             const isCrashed = (timeElapsed >= totalDurationNeeded);
             const centerX = canvas.width / 2;
@@ -2203,14 +2203,32 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             const startX = canvas.width * 0.05;
             const startY = canvas.height * 0.90;
             const safeProgress = Math.max(0, Math.min(1, timeElapsed / Math.max(0.001, totalDurationNeeded)));
-            // Keep the plane inside the canvas and use a gentle, continuous flight path.
-            const baseX = startX + (canvas.width * 0.73 * safeProgress);
-            const baseY = startY - (canvas.height * 0.66 * safeProgress);
-            // Small natural up/down bob and slight backward/forward drift, not a sharp U-turn.
-            const bob = Math.sin(timeElapsed * 2.1) * canvas.height * 0.012;
-            const drift = Math.sin(timeElapsed * 1.35) * canvas.width * 0.008;
-            let currentX = Math.max(canvas.width * 0.06, Math.min(canvas.width * 0.84, baseX + drift));
-            let currentY = Math.max(canvas.height * 0.12, Math.min(canvas.height * 0.90, baseY + bob));
+
+            // Vary the decorative flight path per shared round. This changes only the plane's
+            // visible trajectory; the existing server-synced multiplier/crash result is untouched.
+            const roundKey = Number(roundIndex ?? (window.currentRoundIndex ?? 0)) >>> 0;
+            let seedA = (roundKey ^ 0x9E3779B9) >>> 0;
+            seedA = Math.imul(seedA ^ (seedA >>> 16), 0x85EBCA6B) >>> 0;
+            seedA = Math.imul(seedA ^ (seedA >>> 13), 0xC2B2AE35) >>> 0;
+            seedA = (seedA ^ (seedA >>> 16)) >>> 0;
+            const randA = seedA / 4294967296;
+            let seedB = (seedA ^ 0xA5A5A5A5) >>> 0;
+            seedB = Math.imul(seedB ^ (seedB >>> 15), 0x2C1B3C6D) >>> 0;
+            seedB = (seedB ^ (seedB >>> 13)) >>> 0;
+            const randB = seedB / 4294967296;
+
+            const endX = canvas.width * (0.62 + randA * 0.23);
+            const endY = canvas.height * (0.16 + randB * 0.34);
+            const baseX = startX + (endX - startX) * safeProgress;
+            const baseY = startY + (endY - startY) * safeProgress;
+            const phaseA = randA * Math.PI * 2;
+            const phaseB = randB * Math.PI * 2;
+            const wave = Math.sin(safeProgress * Math.PI * (2 + randB * 2.5) + phaseA);
+            const driftWave = Math.sin(safeProgress * Math.PI * (1.5 + randA * 2.5) + phaseB);
+            const bob = wave * canvas.height * (0.008 + randA * 0.012);
+            const drift = driftWave * canvas.width * (0.004 + randB * 0.008);
+            let currentX = Math.max(canvas.width * 0.05, Math.min(canvas.width * 0.88, baseX + drift));
+            let currentY = Math.max(canvas.height * 0.10, Math.min(canvas.height * 0.92, baseY + bob));
 
             if (isCrashed) {
                 // Brief crash motion remains visible inside the canvas.
