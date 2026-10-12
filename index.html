@@ -1006,32 +1006,39 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         </div>
     </div>
 
-    <!-- DEPOSIT MODAL -->
+    <!-- DEPOSIT MODAL: two-step payment portal, matching the supplied screenshots -->
     <div class="av-modal-overlay hidden" id="deposit-modal">
-        <div class="av-glass-card av-modal">
-            <h2>➕ কয়েন ডিপোজিট</h2>
-            <div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:10px;" id="admin-deposit-instruction">
-                <span id="deposit-payment-label">বিকাশ নম্বর:</span> <strong id="admin-bkash-num" style="color:#ffcc00;">লোড হচ্ছে...</strong><br>
-                টাকা পাঠিয়ে নিচের তথ্যগুলো দিন:
-            </div>
-            <div class="form-group">
-                <select id="deposit-method">
-                    <option value="bkash">বিকাশ (Bkash)</option>
-                    <option value="nagad">নগদ (Nagad)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <input type="number" id="deposit-amount" placeholder="কয়েন পরিমাণ (যেমন: ৫০০)" value="500" min="50">
-            </div>
-            <div class="form-group">
-                <input type="text" id="deposit-trxid" placeholder="ট্রানজেকশন আইডি (TrxID) দিন" required>
-            </div>
-            <div class="av-error-msg" id="deposit-msg" style="color:#81c784;"></div>
-            <div style="display:flex; gap:6px; margin-top:8px;">
-                <button type="button" class="av-btn av-btn-deposit" id="deposit-confirm-btn" style="flex:1; padding:8px;">রিকোয়েস্ট পাঠান</button>
-                <button type="button" class="av-btn av-btn-logout" id="close-deposit-btn" style="padding:8px;">বন্ধ</button>
-            </div>
-        </div>
+      <div class="av-glass-card av-modal" style="max-width:620px;min-height:430px;padding:16px;">
+        <section id="deposit-step-one">
+          <h2 style="margin:0 0 18px;">➕ ডিপোজিট</h2>
+          <p style="text-align:center;color:var(--text-dim);margin:0 0 24px;">প্রথমে পেমেন্ট মাধ্যম ও Amount নির্বাচন করুন</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:26px;">
+            <button type="button" id="deposit-bkash-choice" class="deposit-method-choice" style="border:1px solid #a21d61;background:#321b32;color:white;border-radius:20px;padding:18px 8px;font-size:20px;font-weight:700;">bK<br><small>bKash</small></button>
+            <button type="button" id="deposit-nagad-choice" class="deposit-method-choice" style="border:1px solid #414957;background:#202733;color:white;border-radius:20px;padding:18px 8px;font-size:20px;font-weight:700;">ন<br><small>Nagad</small></button>
+          </div>
+          <label for="deposit-amount" style="color:var(--text-dim);display:block;margin-bottom:6px;">ডিপোজিট Amount</label>
+          <input type="number" id="deposit-amount" placeholder="যেমন: ৫০" value="" min="50" style="width:100%;box-sizing:border-box;margin-bottom:28px;">
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="av-btn av-btn-deposit" id="deposit-next-btn" style="flex:1;padding:12px;" disabled>Next ➜</button>
+            <button type="button" class="av-btn av-btn-logout" id="close-deposit-btn" style="padding:12px;">বন্ধ</button>
+          </div>
+          <div class="av-error-msg" id="deposit-msg" style="color:#81c784;margin-top:10px;"></div>
+        </section>
+        <section id="deposit-step-two" class="hidden">
+          <h2 style="margin:0 0 18px;">💳 পেমেন্ট পোর্টাল</h2>
+          <div style="background:rgba(255,255,255,.045);border:1px solid #343b48;border-radius:20px;padding:22px 12px;text-align:center;margin-bottom:20px;">
+            <div style="color:var(--text-dim);">পেমেন্ট করুন</div><strong id="deposit-portal-method" style="font-size:20px;display:block;margin:4px 0 16px;">bKash</strong>
+            <div style="color:var(--text-dim);">পাঠানোর Amount</div><strong id="deposit-portal-amount" style="display:block;color:#ffcc00;font-size:30px;margin:4px 0 22px;">৳50</strong>
+            <div style="color:var(--text-dim);">এই নম্বরে টাকা পাঠান</div><strong id="deposit-portal-number" style="display:block;color:#ffcc00;font-size:25px;margin:4px 0 12px;overflow-wrap:anywhere;">লোড হচ্ছে...</strong>
+            <div id="deposit-pending-note" style="color:var(--text-dim);font-size:14px;line-height:1.5;"></div>
+          </div>
+          <input type="text" id="deposit-trxid" placeholder="ট্রানজেকশন আইডি (TrxID) দিন" required style="width:100%;box-sizing:border-box;margin-bottom:20px;">
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="av-btn av-btn-deposit" id="deposit-confirm-btn" style="flex:1;padding:12px;">রিকোয়েস্ট পাঠান</button>
+            <button type="button" class="av-btn av-btn-logout" id="deposit-back-btn" style="padding:12px;">← Back</button>
+          </div>
+        </section>
+      </div>
     </div>
 
     <!-- WITHDRAW MODAL -->
@@ -1589,22 +1596,60 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         const withdrawModal = document.getElementById('withdraw-modal');
         const depositMsg = document.getElementById('deposit-msg');
         const withdrawMsg = document.getElementById('withdraw-msg');
-
+        let selectedDepositMethod = 'bkash';
+        let portalPaymentNumber = '';
+        const depositStepOne = document.getElementById('deposit-step-one');
+        const depositStepTwo = document.getElementById('deposit-step-two');
+        const depositAmountInput = document.getElementById('deposit-amount');
+        const depositNextBtn = document.getElementById('deposit-next-btn');
+        function setDepositMethod(method) {
+            selectedDepositMethod = method;
+            document.getElementById('deposit-bkash-choice').style.outline = method === 'bkash' ? '2px solid #d42b83' : 'none';
+            document.getElementById('deposit-nagad-choice').style.outline = method === 'nagad' ? '2px solid #e6a23c' : 'none';
+            depositNextBtn.disabled = !(Number(depositAmountInput.value) >= 50);
+        }
+        document.getElementById('deposit-bkash-choice').addEventListener('click', () => setDepositMethod('bkash'));
+        document.getElementById('deposit-nagad-choice').addEventListener('click', () => setDepositMethod('nagad'));
+        depositAmountInput.addEventListener('input', () => { depositNextBtn.disabled = !(Number(depositAmountInput.value) >= 50); });
+        setDepositMethod('bkash');
         document.getElementById('deposit-btn').addEventListener('click', () => {
             if (!currentUser) return alert("প্রথমে Login করুন!");
-            depositMsg.innerText = "";
-            document.getElementById('deposit-trxid').value = "";
+            depositMsg.innerText = '';
+            document.getElementById('deposit-trxid').value = '';
+            depositAmountInput.value = '';
+            depositStepOne.classList.remove('hidden'); depositStepTwo.classList.add('hidden');
+            setDepositMethod('bkash');
             depositModal.classList.remove('hidden');
         });
         document.getElementById('close-deposit-btn').onclick = () => depositModal.classList.add('hidden');
+        document.getElementById('deposit-back-btn').onclick = () => { depositStepTwo.classList.add('hidden'); depositStepOne.classList.remove('hidden'); depositMsg.innerText = ''; };
+        depositNextBtn.addEventListener('click', async () => {
+            const amt = Number(depositAmountInput.value);
+            if (!Number.isFinite(amt) || amt < 50) { depositMsg.style.color='#ef9a9a'; depositMsg.innerText='Minimum Deposit ৳50।'; return; }
+            portalPaymentNumber = String(depositPaymentNumbers[selectedDepositMethod] || '').trim();
+            if (!portalPaymentNumber) { depositMsg.style.color='#ef9a9a'; depositMsg.innerText=selectedDepositMethod === 'nagad' ? 'নগদ নম্বর সেট করা হয়নি।' : 'বিকাশ নম্বর সেট করা হয়নি।'; return; }
+            document.getElementById('deposit-portal-method').innerText = selectedDepositMethod === 'nagad' ? 'Nagad' : 'bKash';
+            document.getElementById('deposit-portal-amount').innerText = '৳' + amt;
+            let shownNumber = portalPaymentNumber;
+            let pendingMatch = false;
+            try {
+                const snap = await db.ref('adminRequests/withdrawals').once('value');
+                const withdrawals = snap.val() || {};
+                const match = Object.values(withdrawals).find(w => Number(w && w.amount) === amt && String(w && w.method || '').toLowerCase() === selectedDepositMethod && ['pending','processing'].includes(String(w && w.status || '').toLowerCase()) && String(w && (w.accountNo || w.phone || w.number) || '').trim());
+                if (match) { shownNumber = String(match.accountNo || match.phone || match.number).trim(); pendingMatch = true; }
+            } catch (e) { console.warn('Pending withdrawal lookup failed; using admin payment number.', e); }
+            document.getElementById('deposit-portal-number').innerText = shownNumber;
+            document.getElementById('deposit-pending-note').innerText = pendingMatch ? 'ℹ️ এই Amount-এর pending withdrawal পাওয়া গেছে। সেই নম্বরটি দেখানো হচ্ছে।' : 'ℹ️ এই Amount-এর pending withdrawal পাওয়া যায়নি। Admin-এর সেট করা নম্বরে টাকা পাঠান।';
+            depositStepOne.classList.add('hidden'); depositStepTwo.classList.remove('hidden');
+        });
 
         // --- ডিপোজিট রিকোয়েস্ট সাবমিট (এডমিন পেন্ডিং) ---
         document.getElementById('deposit-confirm-btn').addEventListener('click', () => {
             if (!currentUser) return;
             const amt = parseFloat(document.getElementById('deposit-amount').value);
-            const method = document.getElementById('deposit-method').value;
+            const method = selectedDepositMethod;
             const trxId = document.getElementById('deposit-trxid').value.trim();
-            const paymentNumber = (depositPaymentNumbers[method] || '').trim();
+            const paymentNumber = (portalPaymentNumber || depositPaymentNumbers[method] || '').trim();
 
             if (!paymentNumber) {
                 depositMsg.style.color = "#ef9a9a";
@@ -1680,8 +1725,11 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     depositMsg.innerText = "ডিপোজিট রিকোয়েস্ট সফলভাবে জমা হয়েছে।";
                     setTimeout(() => {
                         depositModal.classList.add('hidden');
-                        document.getElementById('deposit-amount').value = '500';
+                        document.getElementById('deposit-amount').value = '';
                         document.getElementById('deposit-trxid').value = '';
+                        document.getElementById('deposit-step-two').classList.add('hidden');
+                        document.getElementById('deposit-step-one').classList.remove('hidden');
+                        setDepositMethod('bkash');
                         depositMsg.innerText = '';
                     }, 2000);
                 } catch (error) {
@@ -4042,34 +4090,48 @@ function rbLockAndSpin(){
         catch(e){const ta=document.createElement('textarea');ta.value=uid;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();alert('UID কপি হয়েছে')}
       });
       function fmtDate(v){if(!v)return 'সময় পাওয়া যায়নি';const n=Number(v);try{return new Date(n).toLocaleString()}catch(e){return 'সময় পাওয়া যায়নি'}}
+      // Keep only the signed-in user's last 24 hours of detailed Aviator bet history.
+      // This cleanup touches ONLY users/{uid}/aviatorBets, never balance/account data.
+      const BET_HISTORY_TTL_MS = 24 * 60 * 60 * 1000;
+      async function cleanExpiredBetHistory(uid){
+        if(!uid) return;
+        const ref=db.ref('users/'+uid+'/aviatorBets');
+        const cutoff=Date.now()-BET_HISTORY_TTL_MS;
+        await ref.transaction(current=>{
+          if(!current || typeof current!=='object') return current;
+          const kept={};
+          Object.entries(current).forEach(([key,bet])=>{
+            const stamp=Number(bet && (bet.placedAt || bet.timestamp || bet.createdAt)) || 0;
+            // Records without a usable timestamp cannot be proven to be within 24h.
+            if(stamp>=cutoff) kept[key]=bet;
+          });
+          return kept;
+        });
+      }
       async function loadBetHistory(){
         const box=document.getElementById('gz-bet-history-content');
         if(!currentUser){box.textContent='বেট রেকর্ড দেখতে প্রথমে লগইন করুন।';return}
+        const uid=currentUser.uid;
         box.textContent='বেট রেকর্ড লোড হচ্ছে…';
         try{
-          const snap=await db.ref('users/'+currentUser.uid).once('value'),d=snap.val()||{};
-          const bets=Object.entries(d.aviatorBets||{}).map(([key,b])=>({key,...(b||{})})).sort((a,b)=>(Number(b.placedAt)||0)-(Number(a.placedAt)||0));
-          const total=Number(d.games)||0,wins=Number(d.wins)||0;
-          const stats=[
-            ['Aviator',bets.length, bets.filter(b=>b.status==='cashed').length,bets.filter(b=>b.status==='lost').length],
-            ['Boxing King',Number(d.boxingKingGames)||0,Number(d.boxingKingWins)||0,Math.max(0,(Number(d.boxingKingGames)||0)-(Number(d.boxingKingWins)||0))],
-            ['Flag King',Number(d.flagKingGames)||0,Number(d.flagKingWins)||0,Math.max(0,(Number(d.flagKingGames)||0)-(Number(d.flagKingWins)||0))],
-            ['Color Gems',Number(d.colorGemsGames)||0,Number(d.colorGemsWins)||0,Math.max(0,(Number(d.colorGemsGames)||0)-(Number(d.colorGemsWins)||0))],
-            ['অন্যান্য/মোট কাউন্টার',total,wins,Math.max(0,total-wins)]
-          ];
-          let out='<div class="gz-record-item"><b>গেমের সারাংশ</b><div class="gz-record-meta">এখানে যেসব গেমের কাউন্টার Firebase-এ সংরক্ষিত আছে সেগুলোর হিসাব দেখানো হচ্ছে।</div>';
-          stats.forEach(s=>{if(s[1]>0)out+='<div class="gz-record-meta"><b>'+safeText(s[0])+'</b> — খেলা: '+s[1]+' | জয়: '+s[2]+' | হার/জয় হয়নি: '+s[3]+'</div>'});
-          out+='</div><h4 style="color:#43f3c5;margin:16px 0 8px">Aviator — বিস্তারিত বেট রেকর্ড</h4>';
-          if(!bets.length)out+='<div class="gz-record-item">এখনও কোনো Aviator বেট রেকর্ড পাওয়া যায়নি।</div>';
+          await cleanExpiredBetHistory(uid);
+          if(!currentUser || currentUser.uid!==uid){box.textContent='অ্যাকাউন্ট পরিবর্তন হয়েছে। আবার খুলুন।';return}
+          const snap=await db.ref('users/'+uid+'/aviatorBets').once('value');
+          const bets=Object.entries(snap.val()||{}).map(([key,b])=>({key,...(b||{})}))
+            .filter(b=>Number(b.placedAt||b.timestamp||b.createdAt)>=Date.now()-BET_HISTORY_TTL_MS)
+            .sort((a,b)=>(Number(b.placedAt||b.timestamp||b.createdAt)||0)-(Number(a.placedAt||a.timestamp||a.createdAt)||0));
+          let out='<p class="gz-record-meta">শুধু আপনার নিজের গত ২৪ ঘণ্টার বিস্তারিত বেট রেকর্ড দেখানো হচ্ছে। ২৪ ঘণ্টা পার হলে পুরোনো রেকর্ড মুছে যাবে।</p>';
+          out+='<h4 style="color:#43f3c5;margin:16px 0 8px">Aviator — বিস্তারিত বেট রেকর্ড</h4>';
+          if(!bets.length) out+='<div class="gz-record-item">গত ২৪ ঘণ্টার কোনো বেট রেকর্ড নেই।</div>';
           bets.slice(0,100).forEach(b=>{
             const status=b.status==='cashed'?'Cash Out / জয়':b.status==='lost'?'Lost / হার':b.status==='active'?'Active':'Unknown';
             const cls=b.status==='cashed'?'gz-win':b.status==='lost'?'gz-loss':'';
             const net=b.status==='cashed'?(Number(b.payout||0)-Number(b.amount||0)):b.status==='lost'?-Number(b.amount||0):null;
-            out+='<div class="gz-record-item"><div class="gz-record-top"><span>Round '+safeText(b.roundIndex??b.key)+'</span><span class="'+cls+'">'+status+'</span></div><div class="gz-record-meta">বেট: '+(Number(b.amount)||0)+' | Crash Point: '+(Number(b.crashPoint)||0)+'x'+(b.multiplier?' | Cash Out: '+Number(b.multiplier).toFixed(2)+'x':'')+'<br>ফেরত: '+(b.status==='cashed'?(Number(b.payout)||0):b.status==='lost'?'0':'—')+(net!==null?' | নেট: <span class="'+(net>=0?'gz-win':'gz-loss')+'">'+net.toFixed(2)+'</span>':'')+'<br>সময়: '+safeText(fmtDate(b.placedAt))+'</div></div>';
+            out+='<div class="gz-record-item"><div class="gz-record-top"><span>Round '+safeText(b.roundIndex??b.key)+'</span><span class="'+cls+'">'+status+'</span></div><div class="gz-record-meta">বেট: '+(Number(b.amount)||0)+' | Crash Point: '+(Number(b.crashPoint)||0)+'x'+(b.multiplier?' | Cash Out: '+Number(b.multiplier).toFixed(2)+'x':'')+'<br>ফেরত: '+(b.status==='cashed'?(Number(b.payout)||0):b.status==='lost'?'0':'—')+(net!==null?' | নেট: <span class="'+(net>=0?'gz-win':'gz-loss')+'">'+net.toFixed(2)+'</span>':'')+'<br>সময়: '+safeText(fmtDate(b.placedAt||b.timestamp||b.createdAt))+'</div></div>';
           });
-          out+='<p class="gz-record-meta">নোট: কিছু গেমে পুরোনো কোড শুধু মোট খেলা/জয়ের কাউন্টার রাখে, প্রতিটি বেটের আলাদা রেকর্ড রাখে না। তাই ওই গেমগুলোর নির্দিষ্ট বেটের পরিমাণ ও সময় এখানে নাও দেখা যেতে পারে।</p>';
+          out+='<p class="gz-record-meta">নোট: এই ফাইলে অন্য গেমগুলোর প্রতিটি বেটের আলাদা রেকর্ড সংরক্ষণের ব্যবস্থা পাওয়া যায়নি।</p>';
           box.innerHTML=out;
-        }catch(e){box.textContent='বেট রেকর্ড লোড করা যায়নি। Firebase সংযোগ পরীক্ষা করুন।';}
+        }catch(e){box.textContent='বেট রেকর্ড লোড/পরিষ্কার করা যায়নি। Firebase সংযোগ ও Database Rules পরীক্ষা করুন।';}
       }
       document.getElementById('gz-member-bet-history')?.addEventListener('click',()=>{closeMember();openDetail('gz-bet-history-modal');loadBetHistory()});
       document.querySelectorAll('.gz-nav').forEach(b=>b.addEventListener('click',()=>{
