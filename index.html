@@ -6,7 +6,7 @@
     <title>Gaming Zone - Professional Game Lobby</title>
 
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">\n        // KAGOJER BEMAN — smooth visual round. No client-side wallet mutation.\n        let kpAnim=null,kpStart=0,kpCrash=0,kpRunning=false,kpRound=0;\n        function kpMultiplier(t){ return 1 + Math.pow(t,1.38)*0.62; }\n        function kpStartRound(){\n            cancelAnimationFrame(kpAnim); kpRound++; kpStart=performance.now(); kpCrash=6.5+Math.random()*5.5; kpRunning=true;\n            const state=document.getElementById('kp-state'); if(state) state.textContent='উড্ডয়ন হচ্ছে…';\n            kpTick(kpStart);\n        }\n        function kpTick(now){\n            const board=document.getElementById('kp-board'),canvas=document.getElementById('kp-canvas'),plane=document.getElementById('kp-plane'),mult=document.getElementById('kp-mult'); if(!board||!canvas||!plane||!mult)return;\n            const w=board.clientWidth,h=board.clientHeight; canvas.width=w; canvas.height=h; const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,w,h);\n            const t=Math.min(1.18,(now-kpStart)/10000); const m=kpMultiplier(t);\n            const x=18+(w-55)*Math.min(1,t/1.05); const y=h-42-(h-85)*Math.pow(Math.min(1,t/1.05),1.25);\n            plane.style.left=x+'px'; plane.style.top=y+'px'; plane.style.transform='rotate(-'+(8+28*t)+'deg)'; mult.textContent=m.toFixed(2)+'x';\n            ctx.beginPath(); ctx.moveTo(0,h-22); ctx.bezierCurveTo(w*.25,h-25,w*.58,h*.72,w*.95,h*.18); ctx.strokeStyle='rgba(255,204,0,.62)'; ctx.lineWidth=3; ctx.stroke();\n            if((now-kpStart)/1000 < kpCrash){ kpAnim=requestAnimationFrame(kpTick); } else { kpRunning=false; const state=document.getElementById('kp-state'); if(state) state.textContent='উড়ে গেল! • পরের রাউন্ড…'; setTimeout(kpStartRound,2200); }\n        }\n        function kpDemoBet(n){\n            const input=document.getElementById('kp-bet'+n),amount=Number(input?.value||0);\n            if(!Number.isFinite(amount)||amount<=0){alert('সঠিক কয়েন পরিমাণ দিন।');return;}\n            if(amount>Number(currentBalance||0)){alert('Main Balance পর্যাপ্ত নয়।');return;}\n            alert('ডেমো বেট নির্বাচিত হয়েছে। নিরাপত্তার জন্য এই HTML থেকে Main Balance কাটা বা payout করা হচ্ছে না।');\n        }\n        document.addEventListener('DOMContentLoaded',()=>{ setTimeout(kpStartRound,350); });\n
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">\n
     </script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -910,7 +910,71 @@
         }
         .withdraw-cooldown-notice strong { color: #ffd27a; }
         .withdraw-cooldown-notice.hidden { display: none; }
+
+/* === Gaming Zone Update 3: lobby-only visual refresh === */
+:root{--lobby-bg:#064748;--lobby-card-bg:rgba(0,67,72,.94);--lobby-accent:#35efc1;--lobby-accent-orange:#ffc15a;--lobby-glass-border:rgba(53,239,193,.22);--lobby-text:#effffb;--lobby-text-dim:#b3e7dd}
+body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100%)!important;color:#effffb}
+#lobby-screen{background:transparent!important}
+.lobby-header{position:sticky;top:0;z-index:20;background:rgba(3,58,62,.97)!important;border-bottom:1px solid #32eac233!important;backdrop-filter:blur(12px);padding:12px!important;gap:8px!important}
+.lobby-brand-title{color:#ffd34e!important;font-size:clamp(17px,4.5vw,23px)!important}
+.lobby-brand-subtitle{color:#44f1c3!important}
+.lobby-uid-box{display:none!important}
+.lobby-header>.av-balance-box,.lobby-header .av-balance-box{background:#002d38!important;color:#45f5c0!important;border:1px solid #168a80;border-radius:10px}
+.lobby-header #deposit-btn,.lobby-header #withdraw-btn{font-size:0!important;width:0!important;padding:0!important;border:0!important;overflow:hidden!important}
+.lobby-container{padding:10px 13px 100px!important;max-width:100%!important}
+.gz-promo{min-height:168px;border-radius:17px;margin:0 0 13px;padding:20px 17px;display:flex;align-items:center;position:relative;overflow:hidden;border:1px solid #d3f56c66;background:radial-gradient(circle at 83% 17%,#8be946,transparent 38%),linear-gradient(120deg,#073b23,#13824b 60%,#03483d);box-shadow:inset 0 0 30px #fff32a22}
+.gz-promo:after{content:"🎁";position:absolute;right:8px;bottom:8px;font-size:65px}
+.gz-promo-copy{position:relative;z-index:1;max-width:76%}
+.gz-promo-kicker{font-size:11px;letter-spacing:1.6px;font-weight:900;color:#ffe76a}
+.gz-promo h2{font-size:clamp(25px,6vw,34px);line-height:1;margin:8px 0;color:#ffe76a;text-shadow:2px 3px #77440a}
+.gz-promo p{font-size:12px;margin:0 0 10px;color:#f1ffe8}
+.gz-promo button{border:0;border-radius:24px;padding:9px 17px;background:linear-gradient(#fff09b,#ffb52b);color:#28431b;font-weight:900}
+.gz-promo-dots{text-align:center;color:#d3f9e9;letter-spacing:4px;margin:-4px 0 14px;font-size:10px}
+.gz-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+.gz-actions button{min-height:64px;border-radius:15px!important;font-size:clamp(16px,4.4vw,22px)!important;font-weight:900!important;box-shadow:0 5px #002b32!important}
+.gz-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 20px}
+.gz-tab{padding:13px 2px;border:1px solid #176d68;border-radius:13px;background:#003e46;color:#c6fff0;font-size:clamp(10px,2.8vw,13px);font-weight:900;box-shadow:0 4px #002d35}
+.gz-tab.active{color:#36efc1;border-color:#31dfb7}
+.category-bar{margin-bottom:12px!important;background:transparent!important;border:0!important;padding:0!important}
+.category-badge{font-size:21px!important;color:#3ff3c4!important;font-weight:900}
+#help-center-btn{border-radius:12px!important}
+.games-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px!important}
+.game-card,.game-item,.lobby-game-card{border-radius:16px!important;overflow:hidden!important}
+.gz-bottom-nav{position:fixed;z-index:999;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(3,1fr);padding:8px 5px calc(8px + env(safe-area-inset-bottom));background:rgba(3,56,61,.97);border-top:1px solid #37e8c5;box-shadow:0 -5px 22px #001c2c99;backdrop-filter:blur(12px)}
+.gz-nav{border:0;background:transparent;color:#39e9c1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;font-weight:900}
+.gz-nav span{font-size:22px;line-height:1}.gz-nav.active{color:#ffcf49}
+.gz-nav.invite{margin-top:-20px}.gz-nav.invite span{display:grid;place-items:center;width:53px;height:53px;border-radius:50%;background:linear-gradient(135deg,#44f7c6,#00a991);color:#003d43;border:3px solid #064748;font-size:24px}
+#gz-member-panel{display:none;position:fixed;inset:0;z-index:998;background:rgba(0,20,27,.78);backdrop-filter:blur(7px);padding:22px 16px 100px;overflow:auto}
+#gz-member-panel.open{display:block}
+.gz-member-card{max-width:520px;margin:30px auto 0;background:linear-gradient(150deg,#075052,#032e3b);border:1px solid #37e8c5;border-radius:20px;padding:18px;box-shadow:0 15px 40px #0008}
+.gz-member-title{font-size:23px;font-weight:900;color:#43f3c5;margin:0 0 6px}
+.gz-member-sub{font-size:12px;color:#bceee4;margin:0 0 16px}
+.gz-member-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gz-member-action{min-height:76px;border:1px solid #258c7d;border-radius:14px;background:linear-gradient(135deg,#06404a,#005451);color:#eafff8;font-weight:900;font-size:15px;padding:12px}
+.gz-member-action span{display:block;font-size:25px;margin-bottom:5px}
+.gz-member-close{float:right;border:0;border-radius:10px;padding:7px 12px;background:#123f48;color:#fff;font-weight:800}
+@media(max-width:360px){.lobby-header{padding:8px!important}.lobby-brand-title{font-size:16px!important}.games-grid{gap:6px!important}.gz-promo{padding:15px;min-height:155px}}
+@media(min-width:600px){.gz-bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(100%,520px)}}
+
 </style>
+
+<style id="gz-promo-carousel-style">
+.gz-promo-carousel{position:relative;margin:10px 12px 14px;border:1px solid #39e6bb;border-radius:17px;overflow:hidden;background:#063d42;box-shadow:0 8px 20px #001b2680}
+.gz-promo-slide{display:none;min-height:154px;padding:19px 16px;align-items:center;position:relative;overflow:hidden}
+.gz-promo-slide.active{display:flex;animation:gzPromoFade .45s ease}
+.gz-promo-slide:nth-child(1){background:radial-gradient(circle at 84% 20%,#87dd40,transparent 40%),linear-gradient(120deg,#073c25,#147b49 60%,#06453e)}
+.gz-promo-slide:nth-child(2){background:radial-gradient(circle at 84% 20%,#ff7194,transparent 40%),linear-gradient(120deg,#2b1649,#6e287c 58%,#103b54)}
+.gz-promo-slide:nth-child(3){background:radial-gradient(circle at 84% 20%,#65e7f3,transparent 40%),linear-gradient(120deg,#07394f,#087c83 58%,#063a53)}
+.gz-promo-slide:nth-child(4){background:radial-gradient(circle at 84% 20%,#ffdc72,transparent 40%),linear-gradient(120deg,#60310e,#a95018 58%,#3d244b)}
+.gz-promo-copy{position:relative;z-index:1;max-width:78%}.gz-promo-copy small{font-weight:900;letter-spacing:1.3px;color:#ffe477;font-size:10px}
+.gz-promo-copy h2{font-size:clamp(22px,6vw,32px);line-height:1;margin:8px 0;color:#fff08a;text-shadow:2px 3px #38250a}
+.gz-promo-copy p{font-size:12px;margin:0 0 10px;color:#f2fff8}.gz-promo-copy span{display:inline-block;background:linear-gradient(#fff09a,#ffb82f);border-radius:20px;padding:8px 13px;color:#263d20;font-size:10px;font-weight:900}
+.gz-promo-art{position:absolute;right:12px;bottom:9px;font-size:clamp(50px,15vw,78px);filter:drop-shadow(0 5px 5px #001a1a88)}
+.gz-promo-dots{position:absolute;bottom:8px;left:0;right:0;display:flex;justify-content:center;gap:6px}
+.gz-promo-dots button{width:7px;height:7px;border:0;padding:0;border-radius:8px;background:#d4fff0}.gz-promo-dots button.active{width:20px;background:#ffdc56}
+@keyframes gzPromoFade{from{opacity:.45;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+</style>
+
 </head>
 
 <body>
@@ -1002,6 +1066,9 @@
 
     <!-- PAGE 1: LOBBY -->
     <div class="page-screen active" id="lobby-screen">
+
+
+
         <header class="lobby-header">
             <div class="lobby-brand">
                 <div>
@@ -1023,14 +1090,36 @@
             </div>
         </header>
 
+        <section class="gz-promo-carousel" id="gz-promo-carousel" aria-label="Gaming Zone rotating banners">
+          <div class="gz-promo-slide active">
+            <div class="gz-promo-copy"><small>🎁 DAILY PROMOTION</small><h2>PLAY & WIN</h2><p>Gaming Zone-এর নতুন আপডেট দেখুন</p><span>WELCOME GAMER ›</span></div><div class="gz-promo-art">🎁</div>
+          </div>
+          <div class="gz-promo-slide">
+            <div class="gz-promo-copy"><small>✈️ CRASH GAMES</small><h2>READY TO FLY?</h2><p>আপনার পছন্দের গেম খুঁজুন</p><span>EXPLORE GAMES ›</span></div><div class="gz-promo-art">✈️</div>
+          </div>
+          <div class="gz-promo-slide">
+            <div class="gz-promo-copy"><small>💎 GAME COLLECTION</small><h2>FIND YOUR GAME</h2><p>আপনার পছন্দের গেম বেছে নিন</p><span>DISCOVER MORE ›</span></div><div class="gz-promo-art">💎</div>
+          </div>
+          <div class="gz-promo-slide">
+            <div class="gz-promo-copy"><small>🌟 GAMING ZONE</small><h2>GOOD LUCK!</h2><p>মজা করুন, বাজেটের মধ্যে খেলুন</p><span>LET'S PLAY ›</span></div><div class="gz-promo-art">🌟</div>
+          </div>
+          <div class="gz-promo-dots"><button class="active" aria-label="Banner 1" onclick="gzPromoShow(0)"></button><button aria-label="Banner 2" onclick="gzPromoShow(1)"></button><button aria-label="Banner 3" onclick="gzPromoShow(2)"></button><button aria-label="Banner 4" onclick="gzPromoShow(3)"></button></div>
+        </section>
+
         <main class="lobby-container">
+            <div class="gz-actions" id="gz-actions"></div>
+            <div class="gz-tabs">
+              <button type="button" class="gz-tab active" data-gz-tab="hot">🔥 HOT GAMES</button>
+              <button type="button" class="gz-tab" data-gz-tab="fav">💚 FAVORITES</button>
+              <button type="button" class="gz-tab" data-gz-tab="slots">🎰 SLOTS</button>
+            </div>
             <div style="display:flex;justify-content:center;align-items:center;margin:0 0 12px 0;">
-                <button class="av-btn" id="bonus-btn" type="button" style="background:#8e24aa;padding:7px 18px;font-size:0.75rem;position:relative;white-space:nowrap;box-shadow:0 4px 12px rgba(142,36,170,0.28);">🎁 Bonus <span id="bonus-count-badge" style="display:none;margin-left:4px;background:#ffcc00;color:#111;border-radius:999px;padding:1px 6px;font-size:10px;font-weight:900;">0</span></button>
+                <button class="av-btn" id="bonus-btn" type="button" style="display:none!important;background:#8e24aa;padding:7px 18px;font-size:0.75rem;position:relative;white-space:nowrap;box-shadow:0 4px 12px rgba(142,36,170,0.28);">🎁 Bonus <span id="bonus-count-badge" style="display:none;margin-left:4px;background:#ffcc00;color:#111;border-radius:999px;padding:1px 6px;font-size:10px;font-weight:900;">0</span></button>
             </div>
 
             <div class="category-bar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
                 <div class="category-badge">🔥 HOT GAMES</div>
-                <button type="button" id="help-center-btn" class="av-btn" style="padding:7px 12px;font-size:.72rem;background:#1976d2;white-space:nowrap;">🆘 Help Center</button>
+                <button type="button" id="help-center-btn" class="av-btn" style="display:none!important;">🆘 Help Center</button>
             </div>
 
             <div class="games-grid" id="lobby-games-grid"></div>
@@ -1074,7 +1163,7 @@
         </div>
     </div>
 
-\n    <!-- PAGE 3: KAGOJER BEMAN -->\n    <div class="page-screen" id="paper-plane-game-screen">\n        <div class="kp-wrap">\n            <div class="kp-header">\n                <div><div class="kp-title">✈️ কাগজের বিমান</div><div class="kp-sub">SMOOTH MULTIPLIER • SHARED MAIN BALANCE</div></div>\n                <div class="kp-balance">🪙 Main Balance: <strong id="kp-main-balance">0.00</strong></div>\n            </div>\n            <div class="kp-board" id="kp-board">\n                <canvas id="kp-canvas"></canvas><div class="kp-plane" id="kp-plane">✈️</div>\n                <div class="kp-mult" id="kp-mult">1.00x</div><div class="kp-state" id="kp-state">ROUND STARTING…</div>\n            </div>\n            <div class="kp-bets">\n                <div class="kp-bet-card"><h3>BET 1</h3><div class="kp-bet-row"><input id="kp-bet1" type="number" min="1" step="1" value="10" placeholder="কয়েন"><button class="kp-bet-btn" type="button" onclick="kpDemoBet(1)">BET</button></div></div>\n                <div class="kp-bet-card"><h3>BET 2</h3><div class="kp-bet-row"><input id="kp-bet2" type="number" min="1" step="1" value="10" placeholder="কয়েন"><button class="kp-bet-btn" type="button" onclick="kpDemoBet(2)">BET</button></div></div>\n            </div>\n            <div class="kp-security">🔒 Main Balance is display-synced only. Client-side code does not write balance or settle payouts.</div>\n            <div class="kp-note">Server-side callable function/authoritative round settlement ছাড়া কোনো client-side bet balance থেকে কাটা হবে না।</div>\n        </div>\n    </div>\n\n    <!-- PAGE 4: BOXING KING -->
+\n    <!-- PAGE 4: BOXING KING -->
     <div class="page-screen" id="boxing-king-screen">
         <div class="bk-game-container" id="bkGameContainer">
             <div class="bk-game-header">
@@ -1231,14 +1320,6 @@
                 provider: 'Spribe',
                 screenId: 'aviator-game-screen',
                 svgBg: 'linear-gradient(135deg, #1b020b, #4a0817)',
-                svgIcon: `✈️`
-            },
-            {
-                id: 'paper-plane',
-                name: 'কাগজের বিমান (Paper Plane)',
-                provider: 'Gaming Zone',
-                screenId: 'paper-plane-game-screen',
-                svgBg: 'linear-gradient(135deg, #063b35, #123b78)',
                 svgIcon: `✈️`
             },
             {
@@ -2048,10 +2129,9 @@
 
         function drawAviatorFlight(mult, timeElapsed, totalDurationNeeded) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let isCrashed = (timeElapsed >= totalDurationNeeded);
-
-            let centerX = canvas.width / 2;
-            let centerY = canvas.height / 2;
+            const isCrashed = (timeElapsed >= totalDurationNeeded);
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
             ctx.save();
             ctx.fillStyle = "rgba(255, 255, 255, 0.022)";
             for (let i = 0; i < 12; i++) {
@@ -2063,111 +2143,59 @@
             }
             ctx.restore();
 
-            /*
-             * Flight path update only:
-             * Keep the plane inside the game screen and give it a natural
-             * airline-style curved path. Near the upper-right corner it
-             * briefly comes slightly back/down, then climbs forward again.
-             * No multiplier, crash-point, RTP or round timing is changed.
-             */
-            const padX = Math.max(24, canvas.width * 0.055);
-            const padY = Math.max(22, canvas.height * 0.09);
-            const startX = padX;
-            const startY = canvas.height - padY;
-            const safeRight = canvas.width - padX - 24;
-            const safeTop = padY + 24;
-            const progress = Math.max(0, Math.min(1, timeElapsed / Math.max(0.001, totalDurationNeeded)));
-
-            function getFlightPoint(t) {
-                let x, y;
-                if (t < 0.78) {
-                    const q = t / 0.78;
-                    const e = 1 - Math.pow(1 - q, 1.35);
-                    x = startX + (safeRight - startX) * 0.90 * e;
-                    y = startY - (startY - safeTop) * 0.72 * Math.pow(e, 1.12);
-                } else if (t < 0.90) {
-                    const q = (t - 0.78) / 0.12;
-                    const e = q * q * (3 - 2 * q);
-                    const cornerX = startX + (safeRight - startX) * 0.90;
-                    const cornerY = startY - (startY - safeTop) * 0.72;
-                    x = cornerX - (safeRight - startX) * 0.045 * e;
-                    y = cornerY + (startY - safeTop) * 0.065 * e;
-                } else {
-                    const q = (t - 0.90) / 0.10;
-                    const e = q * q * (3 - 2 * q);
-                    const cornerX = startX + (safeRight - startX) * 0.90;
-                    const cornerY = startY - (startY - safeTop) * 0.72;
-                    x = cornerX - (safeRight - startX) * 0.045 * (1 - e) + (safeRight - startX) * 0.045 * e;
-                    y = cornerY + (startY - safeTop) * 0.065 * (1 - e) - (startY - safeTop) * 0.13 * e;
-                }
-                return {x, y};
-            }
-
-            let point = getFlightPoint(progress);
-            let currentX = Math.max(padX, Math.min(canvas.width - padX, point.x));
-            let currentY = Math.max(padY, Math.min(canvas.height - padY, point.y));
+            const startX = canvas.width * 0.05;
+            const startY = canvas.height * 0.90;
+            const safeProgress = Math.max(0, Math.min(1, timeElapsed / Math.max(0.001, totalDurationNeeded)));
+            // Keep the plane inside the canvas and use a gentle, continuous flight path.
+            const baseX = startX + (canvas.width * 0.73 * safeProgress);
+            const baseY = startY - (canvas.height * 0.66 * safeProgress);
+            // Small natural up/down bob and slight backward/forward drift, not a sharp U-turn.
+            const bob = Math.sin(timeElapsed * 2.1) * canvas.height * 0.012;
+            const drift = Math.sin(timeElapsed * 1.35) * canvas.width * 0.008;
+            let currentX = Math.max(canvas.width * 0.06, Math.min(canvas.width * 0.84, baseX + drift));
+            let currentY = Math.max(canvas.height * 0.12, Math.min(canvas.height * 0.90, baseY + bob));
 
             if (isCrashed) {
-                /* Keep the crash motion visible but still inside the screen. */
+                // Brief crash motion remains visible inside the canvas.
                 const crashTime = Math.max(0, timeElapsed - totalDurationNeeded);
-                const crashProgress = Math.min(1, crashTime / 1.0);
-                currentX = Math.min(canvas.width - padX, currentX + canvas.width * 0.05 * crashProgress);
-                currentY = Math.max(padY, currentY - canvas.height * 0.06 * crashProgress);
+                currentX = Math.min(canvas.width * 0.88, currentX + crashTime * canvas.width * 0.12);
+                currentY = Math.min(canvas.height * 0.88, currentY + crashTime * canvas.height * 0.08);
             }
 
-            /* Draw the same curved path behind the plane. */
-            const steps = Math.max(8, Math.ceil(progress * 70));
-            const firstPoint = getFlightPoint(0);
-            const gradient = ctx.createLinearGradient(0, startY, 0, safeTop);
-            gradient.addColorStop(0, 'rgba(229, 57, 53, 0.00)');
-            gradient.addColorStop(1, 'rgba(229, 57, 53, 0.55)');
+            const controlX = startX + (currentX - startX) * 0.52;
+            const controlY = startY + (currentY - startY) * 0.10;
+            const fillGradient = ctx.createLinearGradient(0, startY, 0, Math.max(currentY, 0));
+            fillGradient.addColorStop(0, 'rgba(229, 57, 53, 0.00)');
+            fillGradient.addColorStop(1, 'rgba(229, 57, 53, 0.45)');
 
             ctx.beginPath();
-            ctx.moveTo(firstPoint.x, firstPoint.y);
-            for (let i = 1; i <= steps; i++) {
-                const pt = getFlightPoint(progress * (i / steps));
-                ctx.lineTo(pt.x, pt.y);
-            }
+            ctx.moveTo(startX, startY);
+            ctx.quadraticCurveTo(controlX, controlY, currentX, currentY);
             ctx.lineTo(currentX, startY);
-            ctx.lineTo(firstPoint.x, startY);
             ctx.closePath();
-            ctx.fillStyle = gradient;
+            ctx.fillStyle = fillGradient;
             ctx.fill();
 
             ctx.beginPath();
-            for (let i = 0; i <= steps; i++) {
-                const pt = getFlightPoint(progress * (i / steps));
-                if (i === 0) ctx.moveTo(pt.x, pt.y);
-                else ctx.lineTo(pt.x, pt.y);
-            }
             ctx.strokeStyle = '#e53935';
             ctx.lineWidth = 3.5;
             ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
+            ctx.moveTo(startX, startY);
+            ctx.quadraticCurveTo(controlX, controlY, currentX, currentY);
             ctx.stroke();
 
-            /* Plane stays fully inside the canvas. */
             ctx.save();
             ctx.translate(currentX, currentY);
-            const lookAhead = getFlightPoint(Math.min(1, progress + 0.015));
-            const lookBack = getFlightPoint(Math.max(0, progress - 0.015));
-            let dx = lookAhead.x - lookBack.x;
-            let dy = lookAhead.y - lookBack.y;
-            let tiltAngle = Math.atan2(dy, dx);
-            if (!Number.isFinite(tiltAngle)) tiltAngle = -Math.PI / 10;
-            tiltAngle += Math.sin(timeElapsed * 5) * 0.018;
+            const tiltAngle = -Math.PI / 10 + Math.sin(timeElapsed * 2.1) * 0.035;
             ctx.rotate(tiltAngle);
-
             ctx.fillStyle = "#e53935";
             ctx.beginPath();
             ctx.moveTo(18, 0); ctx.lineTo(-18, -9); ctx.lineTo(-12, 0); ctx.lineTo(-18, 9);
             ctx.closePath(); ctx.fill();
-
             ctx.fillStyle = "#b71c1c";
             ctx.beginPath();
             ctx.moveTo(-2, 0); ctx.lineTo(-10, -15); ctx.lineTo(-5, -15); ctx.lineTo(3, 0);
             ctx.closePath(); ctx.fill();
-
             ctx.fillStyle = "#ffffff";
             ctx.beginPath(); ctx.arc(4, -1, 3, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
@@ -3904,5 +3932,171 @@ function rbLockAndSpin(){
   input?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.click();}});
 })();
 </script>
+    <section id="gz-member-panel" aria-label="Member menu">
+      <div class="gz-member-card">
+        <button type="button" class="gz-member-close" id="gz-member-close">✕ Close</button>
+        <h2 class="gz-member-title">◇ Member</h2>
+        <p class="gz-member-sub">Home, Bonus ও Help Center এখন Member মেনুর ভিতরে</p>
+        <div class="gz-member-actions">
+          <button type="button" class="gz-member-action" id="gz-member-home"><span>⌂</span>Home</button>
+          <button type="button" class="gz-member-action" id="gz-member-bonus"><span>🎁</span>Bonus</button>
+          <button type="button" class="gz-member-action" id="gz-member-help"><span>🆘</span>Help Center</button>
+          <button type="button" class="gz-member-action" id="gz-member-account"><span>👤</span>My Account</button>
+          <button type="button" class="gz-member-action" id="gz-member-bet-history"><span>📊</span>Bet History / Record</button>
+        </div>
+      </div>
+    </section>
+
+    <style>
+      .gz-detail-modal{display:none;position:fixed;inset:0;z-index:1005;background:rgba(0,15,22,.82);padding:22px 14px 40px;overflow:auto}
+      .gz-detail-modal.open{display:block}
+      .gz-detail-card{max-width:540px;margin:22px auto;background:linear-gradient(150deg,#075052,#032e3b);border:1px solid #37e8c5;border-radius:18px;padding:17px;color:#eafff8;box-shadow:0 15px 40px #0009}
+      .gz-detail-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+      .gz-detail-head h3{margin:0;color:#43f3c5;font-size:21px;flex:1}
+      .gz-detail-close{border:0;border-radius:9px;padding:8px 11px;background:#123f48;color:#fff;font-weight:800}
+      .gz-detail-row{padding:11px 0;border-bottom:1px solid #ffffff1c;overflow-wrap:anywhere}
+      .gz-detail-label{font-size:12px;color:#a9dcd4;margin-bottom:5px}
+      .gz-detail-value{font-size:14px;font-weight:800;word-break:break-word}
+      .gz-record-item{border:1px solid #258c7d;border-radius:12px;padding:11px;margin:9px 0;background:#003c45}
+      .gz-record-top{display:flex;justify-content:space-between;gap:8px;font-weight:800}
+      .gz-record-meta{font-size:12px;color:#bceee4;margin-top:6px;line-height:1.6}
+      .gz-win{color:#45f2a9}.gz-loss{color:#ff8585}
+    </style>
+    <section class="gz-detail-modal" id="gz-account-modal" aria-label="My Account details">
+      <div class="gz-detail-card">
+        <div class="gz-detail-head"><h3>👤 My Account</h3><button class="gz-detail-close" data-close-detail="gz-account-modal">✕ Close</button></div>
+        <div class="gz-detail-row"><div class="gz-detail-label">User ID (Firebase UID)</div><div class="gz-detail-value" id="gz-account-uid">—</div><button class="gz-member-action" id="gz-copy-account-uid" style="min-height:38px;margin-top:8px;padding:7px 10px">📋 Copy UID</button></div>
+        <div class="gz-detail-row"><div class="gz-detail-label">Username</div><div class="gz-detail-value" id="gz-account-username">—</div></div>
+      </div>
+    </section>
+    <section class="gz-detail-modal" id="gz-bet-history-modal" aria-label="Bet history">
+      <div class="gz-detail-card">
+        <div class="gz-detail-head"><h3>📊 Bet History / Record</h3><button class="gz-detail-close" data-close-detail="gz-bet-history-modal">✕ Close</button></div>
+        <div id="gz-bet-history-content">লোড হচ্ছে…</div>
+      </div>
+    </section>
+
+    <nav class="gz-bottom-nav" aria-label="Main navigation">
+      <button class="gz-nav active" data-gz-nav="home"><span>⌂</span>Home</button>
+      <button class="gz-nav invite" data-gz-nav="invite"><span>⌘</span>Invite</button>
+      <button class="gz-nav" data-gz-nav="member"><span>◇</span>Member</button>
+    </nav>
+    <script>
+    (function(){
+      const lobby=document.getElementById('lobby-screen');
+      if(!lobby) return;
+      const actions=document.getElementById('gz-actions');
+      ['deposit-btn','withdraw-btn'].forEach((id,i)=>{
+        const b=document.getElementById(id);
+        if(b){b.style.cssText='';b.classList.add('av-btn');b.style.display='';b.style.width='';b.style.padding='';b.style.fontSize='';actions.appendChild(b);}
+      });
+      const dep=document.getElementById('deposit-btn'), wit=document.getElementById('withdraw-btn');
+      if(dep){dep.innerHTML='💰 Deposit';dep.style.background='linear-gradient(135deg,#00313e,#00434b)';dep.style.color='#ffc15a';dep.style.border='1px solid #16877e';dep.style.minHeight='64px';dep.style.borderRadius='15px';dep.style.flex='1';}
+      if(wit){wit.innerHTML='💳 Withdraw';wit.style.background='linear-gradient(135deg,#00313e,#00434b)';wit.style.color='#ffc15a';wit.style.border='1px solid #16877e';wit.style.minHeight='64px';wit.style.borderRadius='15px';wit.style.flex='1';}
+      const cards=()=>Array.from(document.querySelectorAll('#lobby-games-grid > *'));
+      let favs=new Set(), mode='hot';
+      function cardId(c){return c.dataset.gameId||c.dataset.id||c.id||c.textContent.trim().slice(0,40)}
+      function filter(){
+        cards().forEach(c=>{
+          const id=cardId(c), txt=(c.textContent||'').toLowerCase();
+          const isSlot=/slot|gems|king|ace|color/.test(txt);
+          c.style.display=(mode==='fav'?!favs.has(id):mode==='slots'?isSlot:true)?'':'none';
+          let h=c.querySelector('.gz-fav-heart');
+          if(!h){h=document.createElement('button');h.type='button';h.className='gz-fav-heart';h.textContent='♥';h.style.cssText='position:absolute;right:7px;top:7px;z-index:8;border:0;border-radius:50%;width:29px;height:29px;background:#001b2caa;color:#ffdc4c;font-size:18px;';c.style.position='relative';c.appendChild(h);h.addEventListener('click',e=>{e.stopPropagation();if(favs.has(id)){favs.delete(id);h.style.color='#ffdc4c'}else{favs.add(id);h.style.color='#ff477a'}if(mode==='fav')filter()})}
+          h.style.color=favs.has(id)?'#ff477a':'#ffdc4c';
+        });
+        document.querySelectorAll('.gz-tab').forEach(b=>b.classList.toggle('active',b.dataset.gzTab===mode));
+      }
+      document.querySelectorAll('.gz-tab').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.gzTab;filter()}));
+      const grid=document.getElementById('lobby-games-grid');
+      if(grid){new MutationObserver(()=>{filter()}).observe(grid,{childList:true,subtree:true});setTimeout(filter,500)}
+      const promo=document.getElementById('gz-promo-btn');
+      if(promo)promo.addEventListener('click',()=>{const b=document.getElementById('bonus-btn');if(b)b.click();else document.getElementById('help-center-btn')?.click()});
+      const memberPanel=document.getElementById('gz-member-panel');
+      const closeMember=()=>{memberPanel?.classList.remove('open');document.querySelector('.gz-nav[data-gz-nav="member"]')?.classList.remove('active')};
+      document.getElementById('gz-member-close')?.addEventListener('click',closeMember);
+      memberPanel?.addEventListener('click',e=>{if(e.target===memberPanel)closeMember()});
+      document.getElementById('gz-member-home')?.addEventListener('click',()=>{closeMember();mode='hot';filter();window.scrollTo({top:0,behavior:'smooth'});document.querySelectorAll('.gz-tab').forEach(x=>x.classList.toggle('active',x.dataset.gzTab==='hot'))});
+      document.getElementById('gz-member-bonus')?.addEventListener('click',()=>{closeMember();document.getElementById('bonus-btn')?.click()});
+      document.getElementById('gz-member-help')?.addEventListener('click',()=>{closeMember();document.getElementById('help-center-btn')?.click()});
+      const openDetail=id=>{document.getElementById(id)?.classList.add('open')};
+      document.querySelectorAll('[data-close-detail]').forEach(b=>b.addEventListener('click',()=>document.getElementById(b.dataset.closeDetail)?.classList.remove('open')));
+      document.querySelectorAll('.gz-detail-modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+      function safeText(v){return String(v==null?'—':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+      async function loadAccountDetails(){
+        const uid=currentUser?.uid||'';
+        document.getElementById('gz-account-uid').textContent=uid||'লগইন করা নেই';
+        document.getElementById('gz-account-username').textContent='লোড হচ্ছে…';
+        if(!uid){document.getElementById('gz-account-username').textContent='প্রথমে লগইন করুন';return}
+        try{
+          const snap=await db.ref('users/'+uid).once('value');
+          const d=snap.val()||{};
+          const name=d.username||d.userName||d.displayName||d.nickname||d.name||(currentUser.email?currentUser.email.split('@')[0]:'');
+          document.getElementById('gz-account-username').textContent=name||'নাম সেট করা নেই';
+        }catch(e){document.getElementById('gz-account-username').textContent='তথ্য লোড করা যায়নি';}
+      }
+      document.getElementById('gz-member-account')?.addEventListener('click',()=>{closeMember();openDetail('gz-account-modal');loadAccountDetails()});
+      document.getElementById('gz-copy-account-uid')?.addEventListener('click',async()=>{
+        const uid=currentUser?.uid||'';if(!uid){alert('প্রথমে লগইন করুন');return}
+        try{await navigator.clipboard.writeText(uid);alert('UID কপি হয়েছে')}
+        catch(e){const ta=document.createElement('textarea');ta.value=uid;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();alert('UID কপি হয়েছে')}
+      });
+      function fmtDate(v){if(!v)return 'সময় পাওয়া যায়নি';const n=Number(v);try{return new Date(n).toLocaleString()}catch(e){return 'সময় পাওয়া যায়নি'}}
+      async function loadBetHistory(){
+        const box=document.getElementById('gz-bet-history-content');
+        if(!currentUser){box.textContent='বেট রেকর্ড দেখতে প্রথমে লগইন করুন।';return}
+        box.textContent='বেট রেকর্ড লোড হচ্ছে…';
+        try{
+          const snap=await db.ref('users/'+currentUser.uid).once('value'),d=snap.val()||{};
+          const bets=Object.entries(d.aviatorBets||{}).map(([key,b])=>({key,...(b||{})})).sort((a,b)=>(Number(b.placedAt)||0)-(Number(a.placedAt)||0));
+          const total=Number(d.games)||0,wins=Number(d.wins)||0;
+          const stats=[
+            ['Aviator',bets.length, bets.filter(b=>b.status==='cashed').length,bets.filter(b=>b.status==='lost').length],
+            ['Boxing King',Number(d.boxingKingGames)||0,Number(d.boxingKingWins)||0,Math.max(0,(Number(d.boxingKingGames)||0)-(Number(d.boxingKingWins)||0))],
+            ['Flag King',Number(d.flagKingGames)||0,Number(d.flagKingWins)||0,Math.max(0,(Number(d.flagKingGames)||0)-(Number(d.flagKingWins)||0))],
+            ['Color Gems',Number(d.colorGemsGames)||0,Number(d.colorGemsWins)||0,Math.max(0,(Number(d.colorGemsGames)||0)-(Number(d.colorGemsWins)||0))],
+            ['অন্যান্য/মোট কাউন্টার',total,wins,Math.max(0,total-wins)]
+          ];
+          let out='<div class="gz-record-item"><b>গেমের সারাংশ</b><div class="gz-record-meta">এখানে যেসব গেমের কাউন্টার Firebase-এ সংরক্ষিত আছে সেগুলোর হিসাব দেখানো হচ্ছে।</div>';
+          stats.forEach(s=>{if(s[1]>0)out+='<div class="gz-record-meta"><b>'+safeText(s[0])+'</b> — খেলা: '+s[1]+' | জয়: '+s[2]+' | হার/জয় হয়নি: '+s[3]+'</div>'});
+          out+='</div><h4 style="color:#43f3c5;margin:16px 0 8px">Aviator — বিস্তারিত বেট রেকর্ড</h4>';
+          if(!bets.length)out+='<div class="gz-record-item">এখনও কোনো Aviator বেট রেকর্ড পাওয়া যায়নি।</div>';
+          bets.slice(0,100).forEach(b=>{
+            const status=b.status==='cashed'?'Cash Out / জয়':b.status==='lost'?'Lost / হার':b.status==='active'?'Active':'Unknown';
+            const cls=b.status==='cashed'?'gz-win':b.status==='lost'?'gz-loss':'';
+            const net=b.status==='cashed'?(Number(b.payout||0)-Number(b.amount||0)):b.status==='lost'?-Number(b.amount||0):null;
+            out+='<div class="gz-record-item"><div class="gz-record-top"><span>Round '+safeText(b.roundIndex??b.key)+'</span><span class="'+cls+'">'+status+'</span></div><div class="gz-record-meta">বেট: '+(Number(b.amount)||0)+' | Crash Point: '+(Number(b.crashPoint)||0)+'x'+(b.multiplier?' | Cash Out: '+Number(b.multiplier).toFixed(2)+'x':'')+'<br>ফেরত: '+(b.status==='cashed'?(Number(b.payout)||0):b.status==='lost'?'0':'—')+(net!==null?' | নেট: <span class="'+(net>=0?'gz-win':'gz-loss')+'">'+net.toFixed(2)+'</span>':'')+'<br>সময়: '+safeText(fmtDate(b.placedAt))+'</div></div>';
+          });
+          out+='<p class="gz-record-meta">নোট: কিছু গেমে পুরোনো কোড শুধু মোট খেলা/জয়ের কাউন্টার রাখে, প্রতিটি বেটের আলাদা রেকর্ড রাখে না। তাই ওই গেমগুলোর নির্দিষ্ট বেটের পরিমাণ ও সময় এখানে নাও দেখা যেতে পারে।</p>';
+          box.innerHTML=out;
+        }catch(e){box.textContent='বেট রেকর্ড লোড করা যায়নি। Firebase সংযোগ পরীক্ষা করুন।';}
+      }
+      document.getElementById('gz-member-bet-history')?.addEventListener('click',()=>{closeMember();openDetail('gz-bet-history-modal');loadBetHistory()});
+      document.querySelectorAll('.gz-nav').forEach(b=>b.addEventListener('click',()=>{
+        document.querySelectorAll('.gz-nav').forEach(x=>x.classList.toggle('active',x===b));
+        const n=b.dataset.gzNav;
+        if(n==='home'){mode='hot';filter();window.scrollTo({top:0,behavior:'smooth'});document.querySelectorAll('.gz-tab').forEach(x=>x.classList.toggle('active',x.dataset.gzTab==='hot'))}
+        else if(n==='member'){memberPanel?.classList.add('open')}
+        else if(n==='invite'){const uid=document.getElementById('lobby-user-uid')?.textContent||'';if(navigator.clipboard&&uid&&uid!=='—')navigator.clipboard.writeText(uid).then(()=>alert('UID কপি হয়েছে')).catch(()=>alert('তোমার UID: '+uid));else alert('তোমার UID: '+uid)}
+      }));
+    })();
+    </script>
+
+<script id="gz-promo-carousel-script">
+(function(){
+ let index=0,timer=null;
+ window.gzPromoShow=function(n){
+   const slides=[...document.querySelectorAll('.gz-promo-slide')];
+   const dots=[...document.querySelectorAll('.gz-promo-dots button')];
+   if(!slides.length)return;
+   index=(n+slides.length)%slides.length;
+   slides.forEach((s,i)=>s.classList.toggle('active',i===index));
+   dots.forEach((d,i)=>d.classList.toggle('active',i===index));
+ };
+ function start(){if(timer)clearInterval(timer);timer=setInterval(()=>window.gzPromoShow(index+1),5000);}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+</script>
+
 </body>
 </html>
