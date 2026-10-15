@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gaming Zone - Professional Game Lobby</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">\n
@@ -288,6 +289,26 @@
             transform: scale(0.92);
         }
 
+        /* Lobby announcement ticker inspired by the supplied reference image. */
+        .gz-lobby-announcement {
+            display:flex; align-items:center; gap:10px; width:calc(100% - 20px);
+            margin:8px 10px 10px; min-height:46px; box-sizing:border-box;
+            padding:0 12px; overflow:hidden; border-radius:12px;
+            background:linear-gradient(180deg,#003b42,#002d35);
+            border:1px solid rgba(50,205,190,.28);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 3px 9px rgba(0,0,0,.16);
+        }
+        .gz-lobby-announcement.hidden { display:none !important; }
+        .gz-lobby-announcement-icon { flex:0 0 auto; font-size:23px; line-height:1; }
+        .gz-lobby-announcement-window { flex:1; min-width:0; overflow:hidden; white-space:nowrap; }
+        .gz-lobby-announcement-text {
+            display:inline-block; min-width:max-content; padding-left:100%;
+            color:#e8c47b; font-size:clamp(13px,3.5vw,17px); font-weight:700;
+            line-height:1.35; animation:gzAnnouncementScroll 20s linear infinite;
+        }
+        @keyframes gzAnnouncementScroll { from { transform:translateX(0); } to { transform:translateX(-100%); } }
+        @media (prefers-reduced-motion: reduce) { .gz-lobby-announcement-text { animation:none; padding-left:0; white-space:normal; min-width:0; } }
+
         .global-announce-bar {
             position: fixed;
             top: 0; left: 0; right: 0;
@@ -396,6 +417,8 @@
             border-radius: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; flex-shrink: 0;
         }
 
+        .av-game-balance-row { display:flex; justify-content:flex-end; align-items:center; width:100%; min-height:26px; margin:0 0 5px; flex-shrink:0; }
+        .av-game-balance { position:static; z-index:12; padding:5px 8px; border-radius:8px; background:rgba(0,0,0,.72); border:1px solid rgba(129,199,132,.75); color:#81c784; font-size:.75rem; font-weight:800; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,.25); }
         #game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         .av-multiplier-text { font-size: 2.2rem; font-weight: 900; z-index: 2; text-shadow: 0 0 20px rgba(0, 0, 0, 0.9); text-align: center; }
         .av-multiplier-text.crashed { color: var(--accent-red); }
@@ -941,6 +964,8 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
 .games-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px!important}
 .game-card,.game-item,.lobby-game-card{border-radius:16px!important;overflow:hidden!important}
 .gz-bottom-nav{position:fixed;z-index:999;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(3,1fr);padding:8px 5px calc(8px + env(safe-area-inset-bottom));background:rgba(3,56,61,.97);border-top:1px solid #37e8c5;box-shadow:0 -5px 22px #001c2c99;backdrop-filter:blur(12px)}
+/* Keep Home/Invite/Member available in the lobby, but hide the navigation while a game is open so the game can use the full screen. */
+.gz-bottom-nav.game-hidden{display:none!important}
 .gz-nav{border:0;background:transparent;color:#39e9c1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;font-weight:900}
 .gz-nav span{font-size:22px;line-height:1}.gz-nav.active{color:#ffcf49}
 .gz-nav.invite{margin-top:-20px}.gz-nav.invite span{display:grid;place-items:center;width:53px;height:53px;border-radius:50%;background:linear-gradient(135deg,#44f7c6,#00a991);color:#003d43;border:3px solid #064748;font-size:24px}
@@ -1097,6 +1122,11 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             </div>
         </header>
 
+        <div class="gz-lobby-announcement hidden" id="gz-lobby-announcement" role="status" aria-label="Announcement">
+          <span class="gz-lobby-announcement-icon" aria-hidden="true">📣</span>
+          <div class="gz-lobby-announcement-window"><span class="gz-lobby-announcement-text" id="gz-lobby-announcement-text">✨ Gaming Zone-এ স্বাগতম!</span></div>
+        </div>
+
         <section class="gz-promo-carousel" id="gz-promo-carousel" aria-label="Gaming Zone rotating banners">
           <div class="gz-promo-slide active">
             <div class="gz-promo-copy"><small>🎁 DAILY PROMOTION</small><h2>PLAY & WIN</h2><p>Gaming Zone-এর নতুন আপডেট দেখুন</p><span>WELCOME GAMER ›</span></div><div class="gz-promo-art">🎁</div>
@@ -1137,7 +1167,10 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
     <div class="page-screen" id="aviator-game-screen">
         <header class="av-header">
             <div class="av-logo">✈️ AVIATOR PRO</div>
-            <button class="av-btn" id="av-fs-btn" onclick="toggleAviatorFullScreen()" style="padding: 3px 10px; font-size: 0.65rem; background: #0088cc;">📱 ফুলস্ক্রিন</button>
+            <div class="av-header-actions" style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                <div class="av-game-balance" aria-label="বর্তমান ব্যালেন্স" style="padding:4px 7px;font-size:.7rem;white-space:nowrap;">🪙 <span id="av-game-balance-amount">0.00</span></div>
+                <button class="av-btn" id="av-fs-btn" onclick="toggleAviatorFullScreen()" style="padding: 3px 10px; font-size: 0.65rem; background: #0088cc;white-space:nowrap;">📱 ফুলস্ক্রিন</button>
+            </div>
         </header>
 
         <div class="av-container">
@@ -1318,6 +1351,27 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         </div>
     </div>
 
+
+    <!-- PAGE: VEGAS 3D SLOT -->
+    <div class="page-screen" id="vegas3d-game-screen">
+      <canvas class="vg-canvas" id="vg-webgl-canvas"></canvas>
+      <div class="vg-machine-label">★ VEGAS 3D ★</div>
+      <div class="vg-ui">
+        <div class="vg-top">
+          <div class="vg-top-left"><div class="vg-glass vg-brand">👑 VEGAS 3D</div><div class="vg-glass vg-balance">🪙 <span id="vg-top-balance">0.00</span></div></div>
+          <div class="vg-actions"><button type="button" class="vg-small-btn vg-glass" id="vg-paytable-btn">🏆 পুরস্কার</button><button type="button" class="vg-small-btn vg-glass" id="vg-sound-btn" aria-label="Sound">🔊</button></div>
+        </div>
+        <div class="vg-bottom"><div class="vg-glass vg-panel">
+          <div class="vg-row" style="border-bottom:1px solid #ffffff18;padding-bottom:8px"><div><div class="vg-muted">ফলাফল</div><div class="vg-result"><span id="vg-strip-0">🍒</span> <span style="color:#536078">|</span> <span id="vg-strip-1">🔔</span> <span style="color:#536078">|</span> <span id="vg-strip-2">⭐</span></div></div><div style="text-align:right"><div class="vg-muted">সর্বশেষ জয়</div><strong id="vg-last-win" style="color:#ffdf7c;font-size:15px">0.00</strong></div></div>
+          <div class="vg-controls"><button class="vg-control" id="vg-minus"><span>বেট কমান</span><strong>−</strong></button><div class="vg-control"><span class="vg-muted">বেটের পরিমাণ</span><strong id="vg-bet-value">1.00</strong></div><button class="vg-control" id="vg-plus"><span>বেট বাড়ান</span><strong>＋</strong></button></div>
+          <button type="button" class="vg-spin" id="vg-spin-btn" style="width:100%;padding:14px;border-radius:12px;margin-top:9px">🎰 SPIN</button>
+          <div class="vg-row" style="margin-top:8px"><span class="vg-muted">ডেমো ফলাফল নয় · মেইন ব্যালেন্স</span><button class="vg-small-btn" id="vg-auto-btn">⚡ অটো: বন্ধ</button></div>
+          <div class="vg-status" id="vg-status">স্পিন করতে বোতাম চাপুন</div>
+        </div></div>
+      </div>
+      <div class="vg-modal" id="vg-paytable-modal"><div class="vg-modal-card vg-glass"><div class="vg-row"><b style="color:#ffdf7c">পুরস্কারের তালিকা</b><button class="vg-small-btn" id="vg-close-paytable">✕</button></div><div id="vg-paytable-rows"></div><p class="vg-muted" style="margin-top:10px">ফলাফল ও পেআউট বর্তমান ক্লায়েন্ট-সাইড গেম লজিক দ্বারা তৈরি হয়।</p></div></div>
+    </div>
+
     <!-- JAVASCRIPT LOGIC -->
     <script>
         const GAME_CONFIGS = [
@@ -1360,6 +1414,14 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 screenId: 'redblue-game-screen',
                 svgBg: 'linear-gradient(135deg, #650b16, #102d67)',
                 svgIcon: `🔴🔵`
+            },
+            {
+                id: 'vegas3d',
+                name: 'ভেগাস 3D (VEGAS 3D)',
+                provider: 'Gaming Zone',
+                screenId: 'vegas3d-game-screen',
+                svgBg: 'linear-gradient(135deg, #16132d, #5b1839)',
+                svgIcon: `7️⃣7️⃣7️⃣`
             }
         ];
 
@@ -1388,17 +1450,30 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         function openGameScreen(screenId) {
             document.querySelectorAll('.page-screen').forEach(scr => scr.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
+            if (typeof updateAnnouncementBars === 'function') updateAnnouncementBars();
             document.getElementById('global-back-btn').classList.remove('hidden');
+            // Hide (do not remove) the lobby navigation only while inside a game.
+            document.querySelector('.gz-bottom-nav')?.classList.add('game-hidden');
 
             if (screenId === 'aviator-game-screen') {
                 setTimeout(resizeCanvas, 150);
+                // Recalculate after the navigation has been hidden so the canvas gets the extra space.
+                setTimeout(resizeCanvas, 250);
+            }
+            if (screenId === 'vegas3d-game-screen' && window.vegas3dResize) {
+                setTimeout(window.vegas3dResize, 100);
+                setTimeout(window.vegas3dResize, 250);
+                window.vegas3dRefreshBalance && window.vegas3dRefreshBalance();
             }
         }
 
         function openLobby() {
             document.querySelectorAll('.page-screen').forEach(scr => scr.classList.remove('active'));
             document.getElementById('lobby-screen').classList.add('active');
+            if (typeof updateAnnouncementBars === 'function') updateAnnouncementBars();
             document.getElementById('global-back-btn').classList.add('hidden');
+            // Restore Home/Invite/Member navigation in the lobby.
+            document.querySelector('.gz-bottom-nav')?.classList.remove('game-hidden');
         }
 
         const firebaseConfig = {
@@ -1438,15 +1513,17 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         let lastCrashSettlementAttempt = -1;
         let aviatorBetsListener = null;
 
-        // Aviator uses Firebase server time so every device derives the same round/crash point.
-        // This prevents one phone from being a few seconds ahead/behind because of local clock drift.
+        // Aviator uses Firebase server time and does not start until the clock offset is received.
+        // Every frame derives elapsed flight time from the shared roundStartAt timestamp, not frame count.
         let aviatorServerTimeOffset = 0;
+        let aviatorServerTimeOffsetReady = false;
         let aviatorFirebaseConnected = false;
         let aviatorLoopRunning = false;
 
-        // Do not let cached/local JavaScript keep Aviator running without a live Firebase connection.
+        // Do not start a round or animate until Firebase's server-clock offset has arrived.
+        // This prevents devices with different local clock settings from starting at different points.
         function isAviatorOnline() {
-            return navigator.onLine !== false && aviatorFirebaseConnected === true;
+            return navigator.onLine !== false && aviatorFirebaseConnected === true && aviatorServerTimeOffsetReady === true;
         }
         function setAviatorConnectionUI(online) {
             let overlay = document.getElementById('aviator-offline-overlay');
@@ -1477,23 +1554,79 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         }
         window.addEventListener('offline', stopAviatorLoopForOffline);
         window.addEventListener('online', startAviatorLoopIfOnline);
+        function activateAviatorAfterClockSync() {
+            if (!aviatorFirebaseConnected || navigator.onLine === false || !aviatorServerTimeOffsetReady) {
+                stopAviatorLoopForOffline();
+                return;
+            }
+            // Attach the shared-round listener once; Firebase automatically reconnects it.
+            if (!aviatorRoundStateListener) watchAviatorRoundState();
+            startAviatorLoopIfOnline();
+        }
         db.ref('.info/connected').on('value', function(snapshot) {
             aviatorFirebaseConnected = snapshot.val() === true;
-            if (aviatorFirebaseConnected && navigator.onLine !== false) startAviatorLoopIfOnline();
+            if (aviatorFirebaseConnected && navigator.onLine !== false) activateAviatorAfterClockSync();
             else stopAviatorLoopForOffline();
         });
         db.ref('.info/serverTimeOffset').on('value', function(snapshot) {
             const v = Number(snapshot.val());
-            aviatorServerTimeOffset = Number.isFinite(v) ? v : 0;
+            if (Number.isFinite(v)) {
+                aviatorServerTimeOffset = v;
+                aviatorServerTimeOffsetReady = true;
+                activateAviatorAfterClockSync();
+            }
         });
         function getAviatorServerNow() {
             return Date.now() + aviatorServerTimeOffset;
         }
 
-        // Firebase-backed round state: every device sees the same bet/cashout status.
-        // This is intentionally separate from the visual animation state.
-        function getAviatorRoundKey(roundIndex) {
-            return String(roundIndex);
+        // Shared Firebase round schedule: each new round starts shortly after the previous crash.
+        let aviatorRoundState = null;
+        let aviatorRoundStateListener = null;
+        const AVIATOR_ROUND_STATE_PATH = 'aviatorGame/currentRound';
+
+        function getAviatorRoundKey(roundIndex) { return String(roundIndex); }
+
+        function buildNextAviatorRound(roundIndex, roundStartAt) {
+            const safeRoundIndex = Number(roundIndex) || 1;
+            const startAt = Number(roundStartAt);
+            const crashPoint = getDeterministicCrashPoint(safeRoundIndex);
+            const flightMs = Math.min(100000, Math.max(0, calculateTimeFromMultiplier(crashPoint) * 1000));
+            return { roundIndex:safeRoundIndex, state:'flying', roundStartAt:startAt,
+                crashPoint:Number(crashPoint.toFixed(2)), crashAtMs:startAt+flightMs,
+                createdAt:firebase.database.ServerValue.TIMESTAMP };
+        }
+
+        function ensureAviatorRoundState() {
+            if (!isAviatorOnline()) return;
+            db.ref(AVIATOR_ROUND_STATE_PATH).transaction(function(current) {
+                if (current && Number.isFinite(Number(current.roundIndex)) && Number.isFinite(Number(current.roundStartAt)) && (current.state==='countdown' || Number.isFinite(Number(current.crashAtMs))) ) return;
+                const now=getAviatorServerNow(); const firstRound=Math.floor(now/100000)+1;
+                return {roundIndex:firstRound,state:'countdown',countdownStartAt:now,roundStartAt:now+3000,
+                    crashPoint:Number(getDeterministicCrashPoint(firstRound).toFixed(2)),crashAtMs:null,createdAt:firebase.database.ServerValue.TIMESTAMP};
+            });
+        }
+
+        function advanceAviatorRoundState() {
+            if (!isAviatorOnline()) return; const now=getAviatorServerNow();
+            db.ref(AVIATOR_ROUND_STATE_PATH).transaction(function(current) {
+                if (!current) return; const idx=Number(current.roundIndex); if(!Number.isFinite(idx)) return;
+                if(current.state==='countdown') { const start=Number(current.roundStartAt); if(Number.isFinite(start)&&now>=start) return buildNextAviatorRound(idx,start); return; }
+                if(current.state==='flying') { const crash=Number(current.crashAtMs); if(Number.isFinite(crash)&&now>=crash) return Object.assign({},current,{state:'crashed',crashedAtMs:crash,updatedAt:firebase.database.ServerValue.TIMESTAMP}); return; }
+                if(current.state==='crashed') { const crashed=Number(current.crashedAtMs); if(Number.isFinite(crashed)&&now>=crashed+1000) return {roundIndex:idx+1,state:'countdown',countdownStartAt:crashed+1000,roundStartAt:crashed+4000,crashPoint:Number(getDeterministicCrashPoint(idx+1).toFixed(2)),crashAtMs:null,updatedAt:firebase.database.ServerValue.TIMESTAMP}; }
+                return;
+            });
+        }
+
+        function watchAviatorRoundState() {
+            if(aviatorRoundStateListener) aviatorRoundStateListener.off();
+            aviatorRoundStateListener=db.ref(AVIATOR_ROUND_STATE_PATH);
+            aviatorRoundStateListener.on('value',function(snapshot){
+                aviatorRoundState=snapshot.val()||null;
+                if (aviatorRoundState && aviatorRoundState.state === 'crashed') recordAviatorCrashHistory(aviatorRoundState);
+                if(aviatorRoundState) advanceAviatorRoundState();
+            });
+            ensureAviatorRoundState();
         }
 
         function syncLocalAviatorBet(roundIndex, record) {
@@ -1523,8 +1656,8 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             aviatorBetsListener.on('value', function(snapshot) {
                 if (!currentUser || currentUser.uid !== user.uid) return;
                 const allBets = snapshot.val() || {};
-                const roundIndex = Math.floor(getAviatorServerNow() / 18000);
-                syncLocalAviatorBet(roundIndex, allBets[getAviatorRoundKey(roundIndex)]);
+                const roundIndex = aviatorRoundState ? Number(aviatorRoundState.roundIndex) : -1;
+                if (roundIndex >= 0) syncLocalAviatorBet(roundIndex, allBets[getAviatorRoundKey(roundIndex)]);
             });
         }
 
@@ -1540,16 +1673,30 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         const userEmailDisplay = document.getElementById('user-email-display');
 
         const announceBar = document.getElementById('global-announce-bar');
-        db.ref('adminSettings/announcement').on('value', function(snapshot) {
-            const text = snapshot.val();
-            if (text && text.trim() !== "") {
-                announceBar.innerText = "📢 " + text;
-                announceBar.classList.remove('hidden');
-                document.body.classList.add('announce-visible');
-            } else {
-                announceBar.classList.add('hidden');
-                document.body.classList.remove('announce-visible');
+        const lobbyAnnounceBar = document.getElementById('gz-lobby-announcement');
+        const lobbyAnnounceText = document.getElementById('gz-lobby-announcement-text');
+        let currentAnnouncementText = '';
+        function updateAnnouncementBars() {
+            const message = String(currentAnnouncementText || '').trim();
+            const hasMessage = message.length > 0;
+            const lobbyIsActive = !!document.getElementById('lobby-screen')?.classList.contains('active');
+            if (lobbyAnnounceText && hasMessage) {
+                lobbyAnnounceText.textContent = '✨ ' + message;
+                // Restart the ticker animation when the admin changes the message.
+                lobbyAnnounceText.style.animation = 'none';
+                void lobbyAnnounceText.offsetWidth;
+                lobbyAnnounceText.style.animation = '';
             }
+            if (lobbyAnnounceBar) lobbyAnnounceBar.classList.toggle('hidden', !hasMessage || !lobbyIsActive);
+            if (announceBar) {
+                announceBar.textContent = hasMessage ? '📢 ' + message : '';
+                announceBar.classList.toggle('hidden', !hasMessage || lobbyIsActive);
+            }
+            document.body.classList.toggle('announce-visible', hasMessage && !lobbyIsActive);
+        }
+        db.ref('adminSettings/announcement').on('value', function(snapshot) {
+            currentAnnouncementText = String(snapshot.val() || '').trim();
+            updateAnnouncementBars();
         });
 
         // LIVE Deposit payment numbers — kept compatible with the original User panel.
@@ -1957,6 +2104,8 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         function updateSharedBalanceUI() {
             const lobbyBalEl = document.getElementById('lobby-bal');
             if (lobbyBalEl) lobbyBalEl.innerText = currentBalance.toFixed(2);
+            const aviatorBalEl = document.getElementById('av-game-balance-amount');
+            if (aviatorBalEl) aviatorBalEl.innerText = currentBalance.toFixed(2);
             const kpBalEl = document.getElementById('kp-main-balance');
             if (kpBalEl) kpBalEl.innerText = currentBalance.toFixed(2);
 
@@ -1974,6 +2123,8 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
 
             const cgTopBalEl = document.getElementById('cg-top-balance');
             if (cgTopBalEl) cgTopBalEl.innerText = currentBalance.toFixed(2);
+            const vgBalEl = document.getElementById('vg-top-balance');
+            if (vgBalEl) vgBalEl.innerText = Number(currentBalance || 0).toFixed(2);
         }
 
         const canvas = document.getElementById('game-canvas');
@@ -2110,24 +2261,46 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             }
         });
 
+        // The game round is 100 seconds of flight time plus the 3-second bet window.
+        // The crash point remains deterministic per shared server-time round index,
+        // so connected players see the same target for the same round.
+        // Admin HTML saves an optional maximum cap at config/aviator/maxMultiplier.
+        let aviatorMaxMultiplier = null;
+        db.ref('config/aviator').on('value', function(snapshot) {
+            const cfg = snapshot.val() || {};
+            const rawCap = cfg.maxMultiplier;
+            const cap = Number(rawCap);
+            aviatorMaxMultiplier = rawCap !== null && rawCap !== undefined && rawCap !== '' &&
+                Number.isFinite(cap) && cap >= 1.01 ? Number(cap.toFixed(2)) : null;
+        }, function(error) {
+            console.warn('Aviator maximum multiplier setting unavailable; using random crash logic.', error);
+        });
+
+        // One stable pseudo-random value per shared Firebase round.
+        // With an admin maximum configured, the crash point is randomized BELOW
+        // that ceiling instead of repeatedly sticking at the ceiling.
+        function getDeterministicRandom01(roundIndex) {
+            let x = (Number(roundIndex) >>> 0) ^ 0x9E3779B9;
+            x = Math.imul(x ^ (x >>> 16), 0x7FEB352D);
+            x = Math.imul(x ^ (x >>> 15), 0x846CA68B);
+            x = (x ^ (x >>> 16)) >>> 0;
+            return x / 4294967296;
+        }
+
+        function getDeterministicFlightDuration(roundIndex) {
+            const min = 5;
+            const max = 100;
+            return min + getDeterministicRandom01(roundIndex) * (max - min);
+        }
+
         function getDeterministicCrashPoint(roundIndex) {
-            /*
-             * Keep the same result for a given shared server-time round on every device,
-             * but replace the weak sine-based pattern with a 32-bit integer mixer.
-             * This reduces visibly repeated/predictable sequences; it is still client-side
-             * and should not be treated as cryptographically fair randomness.
-             */
-            let x = (Number(roundIndex) >>> 0) ^ 0x6D2B79F5;
-            x = Math.imul(x ^ (x >>> 15), x | 1);
-            x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
-            x = (x ^ (x >>> 14)) >>> 0;
-            const rand = x / 4294967296;
-            let crash;
-            if (rand < 0.12) crash = 1.00 + (rand / 0.12) * 0.80;
-            else if (rand < 0.65) crash = 1.80 + ((rand - 0.12) / 0.53) * 0.90;
-            else if (rand < 0.90) crash = 2.70 + ((rand - 0.65) / 0.25) * 3.00;
-            else crash = 5.70 + ((rand - 0.90) / 0.10) * 19.30;
-            return Math.max(1.00, parseFloat(crash.toFixed(2)));
+            const rand = getDeterministicRandom01(roundIndex);
+            if (aviatorMaxMultiplier !== null) {
+                const ceiling = Math.max(1.01, aviatorMaxMultiplier);
+                return Number((1.01 + rand * (ceiling - 1.01)).toFixed(2));
+            }
+            return Math.max(1.01,
+                calculateMultiplierFromTime(getDeterministicFlightDuration(roundIndex)));
         }
 
         function calculateMultiplierFromTime(seconds) {
@@ -2138,6 +2311,25 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         function calculateTimeFromMultiplier(mult) {
             if (mult <= 1.00) return 0;
             return Math.pow((mult - 1.00) / 0.12, 1 / 1.25);
+        }
+
+        const AVIATOR_CRASH_HISTORY_PATH = 'aviatorGame/crashHistory';
+
+        function recordAviatorCrashHistory(roundState) {
+            if (!roundState || !Number.isFinite(Number(roundState.roundIndex)) || !Number.isFinite(Number(roundState.crashPoint))) return;
+            const roundKey = String(Number(roundState.roundIndex));
+            const entry = {
+                roundIndex: Number(roundState.roundIndex),
+                crashPoint: Number(Number(roundState.crashPoint).toFixed(2)),
+                crashAtMs: Number(roundState.crashAtMs || roundState.crashedAtMs || 0),
+                recordedAt: firebase.database.ServerValue.TIMESTAMP
+            };
+            // Fixed round key prevents duplicate history rows from multiple players/devices.
+            db.ref(AVIATOR_CRASH_HISTORY_PATH + '/' + roundKey).transaction(function(existing) {
+                return existing || entry;
+            }, function(error) {
+                if (error) console.warn('Aviator crash history write failed:', error);
+            });
         }
 
         function renderHistoryUI() {
@@ -2152,6 +2344,20 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 historyBar.appendChild(badge);
             });
         }
+
+        // All connected players read the same finalized crash records from Firebase.
+        db.ref(AVIATOR_CRASH_HISTORY_PATH).limitToLast(30).on('value', function(snapshot) {
+            const records = [];
+            snapshot.forEach(function(child) {
+                const record = child.val();
+                if (record && Number.isFinite(Number(record.crashPoint))) records.push(record);
+            });
+            records.sort(function(a,b) { return Number(b.roundIndex) - Number(a.roundIndex); });
+            historyArray = records.map(function(record) { return Number(record.crashPoint); });
+            renderHistoryUI();
+        }, function(error) {
+            console.warn('Aviator crash history read failed:', error);
+        });
 
         function renderMyLiveBetUI(currentRoundIndex, isCrashed) {
             const hasActiveBetThisRound = (betRoundIndex === currentRoundIndex);
@@ -2297,34 +2503,27 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
 
         function masterGameLoop() {
             if (!isAviatorOnline()) { stopAviatorLoopForOffline(); return; }
-            const CYCLE_DURATION = 18000;
-            const WAIT_DURATION = 3000;
+            advanceAviatorRoundState();
 
+            const roundState = aviatorRoundState;
+            if (!roundState) {
+                multiplierDisplay.innerText = 'CONNECTING...';
+                if (isAviatorOnline()) requestAnimationFrame(masterGameLoop);
+                return;
+            }
+
+            const currentRoundIndex = Number(roundState.roundIndex);
+            const targetCrashPoint = Number(roundState.crashPoint);
+            const roundStartMs = Number(roundState.roundStartAt);
+            const crashAtMs = Number(roundState.crashAtMs);
             const now = getAviatorServerNow();
-            const currentRoundIndex = Math.floor(now / CYCLE_DURATION);
-            const cycleElapsed = now % CYCLE_DURATION;
-
-            const targetCrashPoint = getDeterministicCrashPoint(currentRoundIndex);
-            const totalFlightTimeNeeded = calculateTimeFromMultiplier(targetCrashPoint);
 
             if (currentRoundIndex !== lastProcessedRound) {
-                if (lastProcessedRound !== -1) {
-                    historyArray.unshift(lastCrashedDisplayValue);
-                    if (historyArray.length > 15) historyArray.pop();
-                    renderHistoryUI();
-                } else {
-                    for(let k = 3; k >= 1; k--) {
-                        historyArray.push(getDeterministicCrashPoint(currentRoundIndex - k));
-                    }
-                    renderHistoryUI();
-                }
-
                 lastProcessedRound = currentRoundIndex;
                 hasCashedOut = false;
                 cashedMultiplier = 0;
                 cashedAmount = 0;
                 cashoutBannerContainer.innerHTML = '';
-                
                 if (betRoundIndex < currentRoundIndex) {
                     betRoundIndex = -1;
                     activeBet = 0;
@@ -2332,71 +2531,69 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             }
 
             const isBetActiveForCurrentRound = (betRoundIndex === currentRoundIndex);
+            // Render the crash locally at the exact shared crashAtMs timestamp instead of
+            // waiting for the Firebase state-change event to reach this device. This keeps
+            // the visible crash boundary tied to the shared schedule on every client.
+            const state = (roundState.state === 'flying' && Number.isFinite(crashAtMs) && now >= crashAtMs)
+                ? 'crashed'
+                : roundState.state;
 
-            if (cycleElapsed < WAIT_DURATION) {
-                let waitLeft = Math.ceil((WAIT_DURATION - cycleElapsed) / 1000);
-                multiplierDisplay.innerText = "NEXT ROUND IN " + waitLeft + "s";
+            if (state === 'countdown') {
+                const countdownEnd = Number(roundState.roundStartAt);
+                const waitLeft = Math.max(0, Math.ceil((countdownEnd - now) / 1000));
+                multiplierDisplay.innerText = 'NEXT ROUND IN ' + waitLeft + 's';
                 multiplierDisplay.classList.remove('crashed');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-
                 renderMyLiveBetUI(currentRoundIndex, false);
-
-                if (isBetActiveForCurrentRound) {
-                    betBtn.innerText = "বেট প্লেসড";
-                    betBtn.className = "av-btn av-btn-action av-btn-waiting";
-                    betBtn.disabled = true;
-                } else {
-                    betBtn.innerText = isProcessingBet ? "প্রসেসিং..." : "পরবর্তী রাউন্ডে বেট দিন";
-                    betBtn.className = "av-btn av-btn-action av-btn-bet";
-                    betBtn.disabled = isProcessingBet;
+                betBtn.innerText = isProcessingBet ? 'প্রসেসিং...' : 'পরবর্তী রাউন্ডে বেট দিন';
+                betBtn.className = 'av-btn av-btn-action av-btn-bet';
+                betBtn.disabled = isProcessingBet;
+            } else if (state === 'crashed') {
+                currentLocalMult = targetCrashPoint;
+                lastCrashedDisplayValue = currentLocalMult;
+                multiplierDisplay.innerText = 'FLEW AWAY!\n' + targetCrashPoint.toFixed(2) + 'x';
+                multiplierDisplay.classList.add('crashed');
+                if (isBetActiveForCurrentRound && !hasCashedOut && currentUser && lastCrashSettlementAttempt !== currentRoundIndex) {
+                    lastCrashSettlementAttempt = currentRoundIndex;
+                    settleAviatorCrash(currentRoundIndex, targetCrashPoint);
                 }
-            } 
-            else {
-                let flyElapsed = (cycleElapsed - WAIT_DURATION) / 1000;
-
-                if (flyElapsed >= totalFlightTimeNeeded) {
-                    currentLocalMult = targetCrashPoint; 
-                    lastCrashedDisplayValue = currentLocalMult;
-
-                    multiplierDisplay.innerText = "FLEW AWAY!\n" + targetCrashPoint.toFixed(2) + "x";
-                    multiplierDisplay.classList.add('crashed');
-
-                    if (isBetActiveForCurrentRound && !hasCashedOut && currentUser && lastCrashSettlementAttempt !== currentRoundIndex) {
-                        lastCrashSettlementAttempt = currentRoundIndex;
-                        settleAviatorCrash(currentRoundIndex, targetCrashPoint);
-                    }
-
-                    renderMyLiveBetUI(currentRoundIndex, true);
-                    drawAviatorFlight(targetCrashPoint, flyElapsed, totalFlightTimeNeeded, currentRoundIndex);
-
-                    betBtn.innerText = "অপেক্ষমাণ...";
-                    betBtn.className = "av-btn av-btn-action av-btn-waiting";
-                    betBtn.disabled = true;
-                } 
-                else {
-                    let calculatedMult = calculateMultiplierFromTime(flyElapsed);
-                    currentLocalMult = Math.min(calculatedMult, targetCrashPoint);
-
-                    multiplierDisplay.innerText = currentLocalMult.toFixed(2) + "x";
-                    multiplierDisplay.classList.remove('crashed');
-
-                    renderMyLiveBetUI(currentRoundIndex, false);
-                    drawAviatorFlight(currentLocalMult, flyElapsed, totalFlightTimeNeeded, currentRoundIndex);
-
-                    if (isBetActiveForCurrentRound && !hasCashedOut) {
-                        const liveWin = (activeBet * currentLocalMult).toFixed(2);
-                        betBtn.innerText = "CASH OUT\n(" + liveWin + " কয়েন)";
-                        betBtn.className = "av-btn av-btn-action av-btn-cashout";
-                        betBtn.disabled = false;
-                    } else if (hasCashedOut) {
-                        betBtn.innerText = "CASHED OUT\n(" + cashedAmount.toFixed(2) + " কয়েন)";
-                        betBtn.className = "av-btn av-btn-action av-btn-waiting";
+                renderMyLiveBetUI(currentRoundIndex, true);
+                drawAviatorFlight(targetCrashPoint, Math.max(0, (crashAtMs - roundStartMs) / 1000), Math.max(0.001, (crashAtMs - roundStartMs) / 1000));
+                betBtn.innerText = 'অপেক্ষমাণ...';
+                betBtn.className = 'av-btn av-btn-action av-btn-waiting';
+                betBtn.disabled = true;
+            } else {
+                const flyElapsed = Math.max(0, (now - roundStartMs) / 1000);
+                const totalFlightTimeNeeded = Math.max(0.001, (crashAtMs - roundStartMs) / 1000);
+                if (now >= crashAtMs) {
+                    advanceAviatorRoundState();
+                }
+                const calculatedMult = calculateMultiplierFromTime(Math.min(flyElapsed, totalFlightTimeNeeded));
+                currentLocalMult = Math.min(calculatedMult, targetCrashPoint);
+                multiplierDisplay.innerText = currentLocalMult.toFixed(2) + 'x';
+                multiplierDisplay.classList.remove('crashed');
+                renderMyLiveBetUI(currentRoundIndex, false);
+                drawAviatorFlight(currentLocalMult, flyElapsed, totalFlightTimeNeeded);
+                if (isBetActiveForCurrentRound && !hasCashedOut) {
+                    const liveWin = (activeBet * currentLocalMult).toFixed(2);
+                    if (isProcessingBet) {
+                        betBtn.innerText = 'CASHING OUT...\n(' + liveWin + ' কয়েন)';
+                        betBtn.className = 'av-btn av-btn-action av-btn-waiting';
                         betBtn.disabled = true;
                     } else {
-                        betBtn.innerText = "পরবর্তী রাউন্ডে বেট দিন";
-                        betBtn.className = "av-btn av-btn-action av-btn-bet";
+                        betBtn.innerText = 'CASH OUT\n(' + liveWin + ' কয়েন)';
+                        betBtn.className = 'av-btn av-btn-action av-btn-cashout';
                         betBtn.disabled = false;
                     }
+                } else if (hasCashedOut) {
+                    betBtn.innerText = 'CASHED OUT\n(' + cashedAmount.toFixed(2) + ' কয়েন)';
+                    betBtn.className = 'av-btn av-btn-action av-btn-waiting';
+                    betBtn.disabled = true;
+                } else {
+                    // Betting closes as soon as the flight starts, like a normal Aviator round.
+                    betBtn.innerText = 'বেটিং বন্ধ';
+                    betBtn.className = 'av-btn av-btn-action av-btn-waiting';
+                    betBtn.disabled = true;
                 }
             }
 
@@ -2404,98 +2601,86 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             else stopAviatorLoopForOffline();
         }
 
+        
         betBtn.addEventListener('click', function() {
-            if (!isAviatorOnline()) return alert("ইন্টারনেট সংযোগ নেই। সংযোগ ফিরে এলে আবার চেষ্টা করুন।");
-            if (!currentUser) return alert("প্রথমে Login করুন!");
+            if (!isAviatorOnline()) return alert('ইন্টারনেট সংযোগ নেই। সংযোগ ফিরে এলে আবার চেষ্টা করুন।');
+            if (!currentUser) return alert('প্রথমে Login করুন!');
+            const state = aviatorRoundState;
+            if (!state) return alert('রাউন্ড প্রস্তুত হচ্ছে, একটু অপেক্ষা করুন।');
 
-            const CYCLE_DURATION = 18000;
-            const WAIT_DURATION = 3000;
-            const now = getAviatorServerNow();
-            const cycleElapsed = now % CYCLE_DURATION;
-            const currentRoundIndex = Math.floor(now / CYCLE_DURATION);
+            const currentRoundIndex = Number(state.roundIndex);
             const roundKey = getAviatorRoundKey(currentRoundIndex);
+            const now = getAviatorServerNow();
+            const roundStartMs = Number(state.roundStartAt);
+            const crashAtMs = Number(state.crashAtMs);
 
-            if (cycleElapsed < WAIT_DURATION) {
-                const targetRoundIndex = currentRoundIndex;
-                if (betRoundIndex === targetRoundIndex || isProcessingBet) return;
-
+            if (state.state === 'countdown') {
+                if (betRoundIndex === currentRoundIndex || isProcessingBet) return;
                 const betAmt = parseFloat(betInput.value);
-                if (isNaN(betAmt) || betAmt < 10) return alert("সর্বনিম্ন বেট পরিমাণ ১০ কয়েন");
-                if (betAmt > currentBalance) return alert("পর্যাপ্ত কয়েন ব্যালেন্স নেই!");
-
+                if (isNaN(betAmt) || betAmt < 10) return alert('সর্বনিম্ন বেট পরিমাণ ১০ কয়েন');
+                // The Firebase transaction below is the authority for the real balance.
+                // Do not block the BET button using a possibly stale local balance.
                 isProcessingBet = true;
-                betBtn.innerText = "প্রসেসিং...";
+                betBtn.innerText = 'প্রসেসিং...';
                 betBtn.disabled = true;
-
-                const targetCrashPoint = getDeterministicCrashPoint(targetRoundIndex);
-                const totalFlightTimeNeeded = calculateTimeFromMultiplier(targetCrashPoint);
-
+                const targetCrashPoint = Number(state.crashPoint);
+                const predictedFlightMs = Math.min(100000, Math.max(0, calculateTimeFromMultiplier(targetCrashPoint) * 1000));
+                const betCrashAtMs = Number.isFinite(crashAtMs) ? crashAtMs : (roundStartMs + predictedFlightMs);
+                const totalFlightTimeNeeded = predictedFlightMs / 1000;
                 db.ref('users/' + currentUser.uid).transaction(function(data) {
                     if (!data) return;
                     const balance = Number(data.balance) || 0;
                     const bets = data.aviatorBets || {};
                     const existing = bets[roundKey];
-
-                    // One account can have only one authoritative bet per round.
                     if (existing && (existing.status === 'active' || existing.status === 'cashed' || existing.status === 'lost')) return;
                     if (balance < betAmt) return;
-
                     data.balance = balance - betAmt;
                     bets[roundKey] = {
-                        roundIndex: targetRoundIndex,
+                        roundIndex: currentRoundIndex,
                         amount: Number(betAmt.toFixed(2)),
                         status: 'active',
                         placedAt: firebase.database.ServerValue.TIMESTAMP,
                         crashPoint: Number(targetCrashPoint.toFixed(2)),
-                        crashAtMs: (targetRoundIndex * CYCLE_DURATION) + WAIT_DURATION + (totalFlightTimeNeeded * 1000)
+                        crashAtMs: betCrashAtMs,
+                        roundStartAt: roundStartMs,
+                        flightTimeSeconds: totalFlightTimeNeeded
                     };
                     data.aviatorBets = bets;
                     return data;
                 }).then(function(result) {
                     isProcessingBet = false;
                     if (result.committed) {
-                        syncLocalAviatorBet(targetRoundIndex, (result.snapshot.val().aviatorBets || {})[roundKey]);
-                        betBtn.innerText = "বেট প্লেসড";
-                        betBtn.className = "av-btn av-btn-action av-btn-waiting";
+                        syncLocalAviatorBet(currentRoundIndex, (result.snapshot.val().aviatorBets || {})[roundKey]);
+                        betBtn.innerText = 'বেট প্লেসড';
+                        betBtn.className = 'av-btn av-btn-action av-btn-waiting';
                         betBtn.disabled = true;
-                        renderMyLiveBetUI(targetRoundIndex, false);
+                        renderMyLiveBetUI(currentRoundIndex, false);
                     } else {
+                        betBtn.innerText = 'বেট দিন';
+                        betBtn.className = 'av-btn av-btn-action av-btn-bet';
                         betBtn.disabled = false;
-                        alert("এই রাউন্ডে বেট নেওয়া যায়নি। ইতিমধ্যে বেট/লেনদেন থাকতে পারে।");
+                        alert('এই রাউন্ডে বেট নেওয়া যায়নি। ইতিমধ্যে বেট/লেনদেন থাকতে পারে বা ব্যালেন্স কম থাকতে পারে।');
                     }
                 }).catch(function(error) {
                     isProcessingBet = false;
                     betBtn.disabled = false;
-                    alert("লেনদেন ব্যর্থ হয়েছে: " + error.message);
+                    alert('লেনদেন ব্যর্থ হয়েছে: ' + error.message);
                 });
-            }
-            else if (cycleElapsed >= WAIT_DURATION && betRoundIndex === currentRoundIndex && !hasCashedOut) {
-                const targetCrashPoint = getDeterministicCrashPoint(currentRoundIndex);
-                const totalFlightTimeNeeded = calculateTimeFromMultiplier(targetCrashPoint);
-                const serverNowAtClick = getAviatorServerNow();
-                const flyElapsed = (serverNowAtClick - (currentRoundIndex * CYCLE_DURATION + WAIT_DURATION)) / 1000;
-
-                if (flyElapsed >= totalFlightTimeNeeded) return;
-                if (isProcessingBet) return;
-
+            } else if (state.state === 'flying' && betRoundIndex === currentRoundIndex && !hasCashedOut) {
+                if (!Number.isFinite(crashAtMs) || now >= crashAtMs || isProcessingBet) return;
                 isProcessingBet = true;
-                betBtn.innerText = "CASHING OUT...";
+                betBtn.innerText = 'CASHING OUT...';
                 betBtn.disabled = true;
-
                 const uid = currentUser.uid;
                 const userRef = db.ref('users/' + uid);
-
                 userRef.transaction(function(data) {
                     if (!data) return;
                     const bets = data.aviatorBets || {};
                     const bet = bets[roundKey];
                     if (!bet || bet.status !== 'active') return;
-
-                    // The transaction is the single source of truth for cashout.
-                    // If Firebase/server time is already at/after crash, this request is rejected and the bet is lost.
                     const authoritativeNow = getAviatorServerNow();
-                    const crashAtMs = Number(bet.crashAtMs);
-                    if (!Number.isFinite(crashAtMs) || authoritativeNow >= crashAtMs) {
+                    const authoritativeCrashAt = Number(bet.crashAtMs);
+                    if (!Number.isFinite(authoritativeCrashAt) || authoritativeNow >= authoritativeCrashAt) {
                         bet.status = 'lost';
                         bet.settledAt = firebase.database.ServerValue.TIMESTAMP;
                         bets[roundKey] = bet;
@@ -2503,18 +2688,16 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                         data.games = (Number(data.games) || 0) + 1;
                         return data;
                     }
-
-                    const roundStartMs = currentRoundIndex * CYCLE_DURATION + WAIT_DURATION;
-                    const elapsedSec = Math.max(0, (authoritativeNow - roundStartMs) / 1000);
+                    const authoritativeStart = Number(bet.roundStartAt || roundStartMs);
+                    const elapsedSec = Math.max(0, (authoritativeNow - authoritativeStart) / 1000);
+                    const targetCrashPoint = Number(bet.crashPoint || state.crashPoint);
                     const liveMultiplier = Math.min(calculateMultiplierFromTime(elapsedSec), targetCrashPoint);
                     const payout = Number(((Number(bet.amount) || 0) * liveMultiplier).toFixed(2));
-
                     bet.status = 'cashed';
                     bet.multiplier = Number(liveMultiplier.toFixed(2));
                     bet.payout = payout;
                     bet.cashedAt = firebase.database.ServerValue.TIMESTAMP;
                     bets[roundKey] = bet;
-
                     data.balance = (Number(data.balance) || 0) + payout;
                     data.wins = (Number(data.wins) || 0) + 1;
                     data.games = (Number(data.games) || 0) + 1;
@@ -2524,25 +2707,25 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     isProcessingBet = false;
                     const data = result.snapshot.val() || {};
                     const bet = (data.aviatorBets || {})[roundKey];
-
                     if (result.committed && bet && bet.status === 'cashed') {
                         syncLocalAviatorBet(currentRoundIndex, bet);
                         cashoutBannerContainer.innerHTML = '<div class="av-cashout-banner">CASHED OUT ' + Number(bet.payout).toFixed(2) + ' কয়েন (' + Number(bet.multiplier).toFixed(2) + 'x)</div>';
                     } else if (bet && bet.status === 'lost') {
                         syncLocalAviatorBet(currentRoundIndex, bet);
-                        alert("CASH OUT নেওয়ার আগেই রাউন্ড শেষ হয়েছে।");
+                        alert('CASH OUT নেওয়ার আগেই রাউন্ড শেষ হয়েছে।');
                     } else {
-                        alert("CASH OUT নেওয়া যায়নি—রাউন্ডটি ইতিমধ্যে settle হয়ে গেছে।");
+                        alert('CASH OUT নেওয়া যায়নি—রাউন্ডটি ইতিমধ্যে settle হয়ে গেছে।');
                     }
                     renderMyLiveBetUI(currentRoundIndex, false);
                 }).catch(function(error) {
                     isProcessingBet = false;
                     betBtn.disabled = false;
                     console.error('Aviator cashout failed:', error);
-                    alert("CASH OUT ব্যর্থ হয়েছে: " + error.message);
+                    alert('CASH OUT ব্যর্থ হয়েছে: ' + error.message);
                 });
             }
         });
+
 
         const BK_ITEMS = ['🥊', '👑', '🔥', '⚡', '👊', '💎', '🥇'];
         const BK_SYMBOL_VALUES = {
@@ -4031,6 +4214,35 @@ function rbLockAndSpin(){
       .gz-record-top{display:flex;justify-content:space-between;gap:8px;font-weight:800}
       .gz-record-meta{font-size:12px;color:#bceee4;margin-top:6px;line-height:1.6}
       .gz-win{color:#45f2a9}.gz-loss{color:#ff8585}
+
+        /* VEGAS 3D integrated game screen */
+        #vegas3d-game-screen{background:radial-gradient(ellipse at 50% 28%,#15142d 0,#070914 58%,#03050c 100%);overflow:hidden;color:#fff;isolation:isolate}
+        #vegas3d-game-screen .vg-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;display:block;touch-action:pan-y}
+        #vegas3d-game-screen .vg-ui{position:relative;z-index:2;width:100%;height:100dvh;min-height:100vh;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));}
+        #vegas3d-game-screen .vg-ui button{pointer-events:auto;touch-action:manipulation;border:1px solid #ffffff24;color:#fff;cursor:pointer}
+        #vegas3d-game-screen .vg-top,#vegas3d-game-screen .vg-top-left,#vegas3d-game-screen .vg-actions{display:flex;align-items:center;gap:8px}
+        #vegas3d-game-screen .vg-glass{background:linear-gradient(145deg,rgba(21,28,52,.96),rgba(5,8,19,.96));border:1px solid rgba(255,212,92,.35);border-radius:13px;box-shadow:0 8px 24px #0008;backdrop-filter:blur(8px)}
+        #vegas3d-game-screen .vg-brand{padding:8px 10px;font-size:12px;font-weight:1000;letter-spacing:1px;color:#ffdf7c}
+        #vegas3d-game-screen .vg-balance{padding:8px 10px;font-size:11px;color:#5cecff;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
+        #vegas3d-game-screen .vg-small-btn{padding:8px 10px;border-radius:10px;background:#141a2e;font-size:11px;font-weight:800}
+        #vegas3d-game-screen .vg-machine-label{position:absolute;z-index:1;top:16%;left:50%;transform:translateX(-50%);font-size:clamp(14px,4vw,21px);font-weight:1000;letter-spacing:2px;color:#ffdb72;text-shadow:0 0 14px #ff9d00aa;white-space:nowrap;pointer-events:none}
+        #vegas3d-game-screen .vg-bottom{pointer-events:auto;width:100%;max-width:440px;margin:0 auto}
+        #vegas3d-game-screen .vg-panel{padding:11px;border-radius:18px}
+        #vegas3d-game-screen .vg-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+        #vegas3d-game-screen .vg-muted{font-size:10px;color:#a5afc7}
+        #vegas3d-game-screen .vg-result{padding:7px 10px;border-radius:9px;background:#0009;border:1px solid #26304a;font-size:17px;letter-spacing:2px}
+        #vegas3d-game-screen .vg-controls{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;margin-top:9px}
+        #vegas3d-game-screen .vg-control{min-height:58px;border-radius:12px;background:#0a1020;padding:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+        #vegas3d-game-screen .vg-control strong{font-size:14px;color:#ffdf7c}
+        #vegas3d-game-screen .vg-spin{background:linear-gradient(135deg,#ff174f,#ff633c)!important;border:1px solid #ffab8b!important;box-shadow:0 0 18px #ff174f55;font-weight:1000;letter-spacing:2px;font-size:15px}
+        #vegas3d-game-screen .vg-spin:disabled{opacity:.5}
+        #vegas3d-game-screen .vg-status{font-size:11px;text-align:center;color:#d2d9e9;min-height:17px;margin-top:8px}
+        #vegas3d-game-screen .vg-modal{position:absolute;z-index:10;inset:0;background:#000c;display:none;align-items:center;justify-content:center;padding:18px;pointer-events:auto}
+        #vegas3d-game-screen .vg-modal.open{display:flex}
+        #vegas3d-game-screen .vg-modal-card{width:min(100%,360px);max-height:75dvh;overflow:auto;padding:16px;border-radius:16px}
+        #vegas3d-game-screen .vg-payrow{display:flex;justify-content:space-between;padding:9px;margin-top:7px;border-radius:9px;background:#0005;font-size:12px}
+        @media(max-height:680px){#vegas3d-game-screen .vg-machine-label{top:12%}#vegas3d-game-screen .vg-panel{padding:8px}#vegas3d-game-screen .vg-controls{margin-top:6px}#vegas3d-game-screen .vg-control{min-height:48px}}
+
     </style>
     <section class="gz-detail-modal" id="gz-account-modal" aria-label="My Account details">
       <div class="gz-detail-card">
@@ -4179,6 +4391,49 @@ function rbLockAndSpin(){
  };
  function start(){if(timer)clearInterval(timer);timer=setInterval(()=>window.gzPromoShow(index+1),5000);}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+</script>
+
+
+<script id="vegas3d-integrated-logic">
+(function(){
+ 'use strict';
+ const symbols=[
+  {bn:'চেরি',emoji:'🍒',color:'#ff2a5f',bg:'#260711',mult:.4},
+  {bn:'ঘণ্টা',emoji:'🔔',color:'#f59e0b',bg:'#261703',mult:.8},
+  {bn:'তারা',emoji:'⭐',color:'#fbbf24',bg:'#2b2105',mult:1.5},
+  {bn:'ক্রাউন',emoji:'👑',color:'#ffd700',bg:'#2d2404',mult:3},
+  {bn:'সেভেন',emoji:'7️⃣',color:'#ef4444',bg:'#300707',mult:5},
+  {bn:'হীরা',emoji:'💎',color:'#06b6d4',bg:'#03262d',mult:10}
+ ];
+ const betSteps=[1,2,5,10,20,50];let betIndex=0,bet=betSteps[0],spinning=false,auto=false,muted=false,scene,camera,renderer,clock,drums=[],machine,raycaster,mouse,leverPivot,leverKnob,leverAngle=0,leverTarget=0,lastWin=0;
+ const $=id=>document.getElementById('vg-'+id);
+ const canvas=$('webgl-canvas');
+ const money=n=>Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+ function setStatus(t){$('status').textContent=t}
+ function refreshBalance(){if(typeof currentBalance!=='undefined')$('top-balance').textContent=money(currentBalance)}
+ window.vegas3dRefreshBalance=refreshBalance;
+ function audio(freq=440,dur=.07){if(muted)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!window.__vgAudio)window.__vgAudio=new C();const c=window.__vgAudio;if(c.state==='suspended')c.resume();const o=c.createOscillator(),g=c.createGain();o.frequency.value=freq;g.gain.value=.035;o.connect(g);g.connect(c.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,c.currentTime+dur);o.stop(c.currentTime+dur)}catch(e){}}
+ function makeReelTexture(){const c=document.createElement('canvas');c.width=1024;c.height=512;const x=c.getContext('2d'),w=c.width/6;symbols.forEach((s,i)=>{let a=i*w;const g=x.createLinearGradient(a,0,a+w,0);g.addColorStop(0,'#05070d');g.addColorStop(.5,s.bg);g.addColorStop(1,'#121a30');x.fillStyle=g;x.fillRect(a,0,w,512);x.strokeStyle=s.color;x.lineWidth=7;x.strokeRect(a+8,10,w-16,492);x.textAlign='center';x.textBaseline='middle';x.shadowColor=s.color;x.shadowBlur=15;x.font='82px sans-serif';x.fillText(s.emoji,a+w/2,210);x.shadowBlur=0;x.fillStyle='#fff';x.font='bold 23px sans-serif';x.fillText(s.bn,a+w/2,390)});const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=THREE.ClampToEdgeWrapping;t.wrapT=THREE.RepeatWrapping;t.anisotropy=2;return t}
+ function init3D(){if(!window.THREE||!canvas)return;scene=new THREE.Scene();scene.background=new THREE.Color('#03050c');camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,100);renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;scene.add(new THREE.AmbientLight(0xffffff,1.6));const l=new THREE.PointLight(0xffcf69,2.2,30);l.position.set(0,4,5);scene.add(l);const bl=new THREE.PointLight(0x00d9ff,1.1,20);bl.position.set(-4,1,3);scene.add(bl);const gl=new THREE.PointLight(0xff8800,1.1,20);gl.position.set(4,1,3);scene.add(gl);buildMachine();resize();raycaster=new THREE.Raycaster();mouse=new THREE.Vector2();window.addEventListener('resize',resize);window.addEventListener('orientationchange',()=>setTimeout(resize,150));canvas.addEventListener('pointerdown',tapScene);clock=new THREE.Clock();renderLoop()}
+ function buildMachine(){machine=new THREE.Group();scene.add(machine);const caseMat=new THREE.MeshStandardMaterial({color:0x090d18,metalness:.75,roughness:.3}),gold=new THREE.MeshStandardMaterial({color:0xc9a43b,metalness:.85,roughness:.22});const body=new THREE.Mesh(new THREE.BoxGeometry(3.05,3.45,.75),caseMat);body.position.set(0,.45,-.25);machine.add(body);const bezel=new THREE.Mesh(new THREE.BoxGeometry(3.12,2.6,.14),gold);bezel.position.set(0,.35,.2);machine.add(bezel);const inner=new THREE.Mesh(new THREE.BoxGeometry(2.92,2.38,.12),new THREE.MeshStandardMaterial({color:0x080b13,metalness:.25,roughness:.4}));inner.position.set(0,.35,.29);machine.add(inner);const mc=document.createElement('canvas');mc.width=768;mc.height=160;const x=mc.getContext('2d');x.fillStyle='#070914';x.fillRect(0,0,768,160);x.strokeStyle='#d6a93c';x.lineWidth=6;x.strokeRect(8,8,752,144);x.textAlign='center';x.textBaseline='middle';x.font='900 58px sans-serif';x.fillStyle='#ffe07a';x.shadowColor='#ff9d00';x.shadowBlur=18;x.fillText('VEGAS 3D',384,80);const marquee=new THREE.Mesh(new THREE.PlaneGeometry(2.45,.48),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(mc)}));marquee.position.set(0,1.85,.32);machine.add(marquee);const tex=makeReelTexture(),radius=.70,width=.78,spacing=.82;for(let i=0;i<3;i++){const drum=new THREE.Group();drum.position.set((i-1)*spacing,.32,.5);machine.add(drum);const cyl=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,width,96,1,false),new THREE.MeshStandardMaterial({map:tex,metalness:.12,roughness:.3}));cyl.rotation.z=-Math.PI/2;drum.add(cyl);drums.push({mesh:drum,rolling:false,stopping:false,target:0,velocity:15,lastTick:0});}const base=new THREE.Mesh(new THREE.BoxGeometry(2.3,.4,.25),gold);base.position.set(0,-1.25,.22);machine.add(base);const mount=new THREE.Group();mount.position.set(1.68,.15,.4);machine.add(mount);const ball=new THREE.Mesh(new THREE.SphereGeometry(.18,16,16),gold);ball.position.set(0,-.35,0);mount.add(ball);leverPivot=new THREE.Group();mount.add(leverPivot);const arm=new THREE.Mesh(new THREE.CylinderGeometry(.035,.05,.82,12),new THREE.MeshStandardMaterial({color:0xd6dce5,metalness:.9,roughness:.2}));arm.position.y=.34;leverPivot.add(arm);leverKnob=new THREE.Mesh(new THREE.SphereGeometry(.14,20,20),new THREE.MeshStandardMaterial({color:0xff2854,emissive:0x4b0010,metalness:.2}));leverKnob.position.y=.78;leverPivot.add(leverKnob);const line=new THREE.Mesh(new THREE.BoxGeometry(2.5,.018,.018),new THREE.MeshBasicMaterial({color:0xff2871}));line.position.set(0,.32,1.215);machine.add(line)}
+ function resize(){if(!renderer||!camera)return;const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;const portrait=w/h<.72;camera.fov=portrait?39:42;const vh=portrait?4.95:4.4,dist=(vh/2)/Math.tan(THREE.MathUtils.degToRad(camera.fov/2));camera.position.set(0,.15,Math.max(6.5,dist*1.03));camera.lookAt(0,.25,0);camera.updateProjectionMatrix();if(machine){const scale=portrait?Math.min(1,h/760):Math.min(1,h/650);machine.scale.setScalar(scale)}}
+ window.vegas3dResize=resize;
+ function tapScene(e){if(e.target.closest('button')||!raycaster)return;mouse.x=e.clientX/innerWidth*2-1;mouse.y=-(e.clientY/innerHeight)*2+1;raycaster.setFromCamera(mouse,camera);if(leverKnob&&raycaster.intersectObject(leverKnob,true).length)spin()}
+ function renderLoop(){requestAnimationFrame(renderLoop);if(!renderer)return;const dt=Math.min(clock.getDelta(),.06);drums.forEach((d,i)=>{if(!d.rolling)return;if(!d.stopping){d.mesh.rotation.x-=d.velocity*dt}else{const diff=d.target-d.mesh.rotation.x;if(Math.abs(diff)>.025)d.mesh.rotation.x-=Math.sign(diff)*Math.min(Math.abs(diff)*Math.min(7*dt,1),d.velocity*dt);else{d.mesh.rotation.x=d.target;d.rolling=false;d.stopping=false;audio(110,.08);if(i===2)finishSpin()}}});if(leverPivot){leverAngle+=(leverTarget-leverAngle)*Math.min(1,15*dt);leverPivot.rotation.x=leverAngle}renderer.render(scene,camera)}
+ function showSymbols(out){out.forEach((n,i)=>{$('strip-'+i).textContent=symbols[n].emoji})}
+ async function deductBet(){if(!currentUser||!db)throw Error('প্রথমে লগইন করুন');const ref=db.ref('users/'+currentUser.uid+'/balance');const result=await ref.transaction(v=>{v=Number(v||0);if(v<bet)return;return Math.round((v-bet)*100)/100});if(!result.committed)throw Error('পর্যাপ্ত মেইন ব্যালেন্স নেই');currentBalance=Number(result.snapshot.val()||0);if(typeof updateSharedBalanceUI==='function')updateSharedBalanceUI();refreshBalance()}
+ async function addWin(win){if(!currentUser||!db)return;const ref=db.ref('users/'+currentUser.uid+'/balance');const result=await ref.transaction(v=>Math.round((Number(v||0)+win)*100)/100);if(result.committed){currentBalance=Number(result.snapshot.val()||0);if(typeof updateSharedBalanceUI==='function')updateSharedBalanceUI();refreshBalance()}}
+ async function spin(){if(spinning)return;try{if(!currentUser)throw Error('প্রথমে লগইন করুন');spinning=true;$('spin-btn').disabled=true;setStatus('বেট যাচাই হচ্ছে…');await deductBet();setStatus('ড্রাম ঘুরছে…');lastWin=0;$('last-win').textContent='0.00';let out=[Math.floor(Math.random()*6),Math.floor(Math.random()*6),Math.floor(Math.random()*6)];const luck=Math.random();if(luck<.12){const n=Math.floor(Math.random()*6);out=[n,n,n]}else if(luck<.36){const n=Math.floor(Math.random()*6);out[0]=n;out[1]=n}drums.forEach(d=>{d.rolling=true;d.stopping=false;d.velocity=15+Math.random()*3});[1050,1550,2050].forEach((ms,i)=>setTimeout(()=>stopDrum(i,out[i]),ms));}catch(e){spinning=false;$('spin-btn').disabled=false;setStatus(e.message||'স্পিন করা যায়নি');if(auto)toggleAuto()}}
+ function stopDrum(i,sym){const d=drums[i],step=Math.PI*2/6,turn=Math.PI*2,current=d.mesh.rotation.x;let target=-sym*step+Math.floor((current+sym*step)/turn)*turn;while(target>current)target-=turn;target-=turn*4;d.target=target;d.stopping=true}
+ async function finishSpin(){const out=drums.map((d,i)=>symbols.findIndex((s,j)=>j===window.__vgLastOut?.[i]));/* actual outcomes stored below */const results=window.__vgResults||[0,0,0];showSymbols(results);let mult=0;if(results[0]===results[1]&&results[1]===results[2])mult=symbols[results[0]].mult;let win=Math.round(bet*mult*100)/100;if(win>0){try{await addWin(win);$('last-win').textContent=money(win);setStatus('🎉 জয়! +'+money(win));audio(660,.22)}catch(e){setStatus('জয় যোগ করা যায়নি—সংযোগ পরীক্ষা করুন')}}else setStatus('মিল নেই · আবার চেষ্টা করুন');spinning=false;$('spin-btn').disabled=false;if(auto)setTimeout(()=>{if(auto&&!spinning)spin()},900)}
+ function toggleAuto(){auto=!auto;$('auto-btn').textContent=auto?'⚡ অটো: চালু':'⚡ অটো: বন্ধ';if(auto&&!spinning)spin()}
+ function renderPaytable(){$('paytable-rows').innerHTML=symbols.slice().reverse().map(s=>`<div class="vg-payrow"><span>${s.emoji} ${s.bn} × 3</span><b style="color:#ffdf7c">${s.mult}x</b></div>`).join('')+'<div class="vg-payrow"><span>শুধু ২টি মিললে</span><b>০x</b></div>'}
+ function bind(){ $('spin-btn').addEventListener('click',()=>{leverTarget=.6;spin();setTimeout(()=>leverTarget=0,180)});$('minus').addEventListener('click',()=>{if(spinning)return;if(betIndex>0)bet=betSteps[--betIndex];$('bet-value').textContent=money(bet);audio(260)});$('plus').addEventListener('click',()=>{if(spinning)return;if(betIndex<betSteps.length-1)bet=betSteps[++betIndex];$('bet-value').textContent=money(bet);audio(440)});$('auto-btn').addEventListener('click',toggleAuto);$('sound-btn').addEventListener('click',()=>{muted=!muted;$('sound-btn').textContent=muted?'🔇':'🔊';if(!muted)audio()});$('paytable-btn').addEventListener('click',()=>$('paytable-modal').classList.add('open'));$('close-paytable').addEventListener('click',()=>$('paytable-modal').classList.remove('open'));$('paytable-modal').addEventListener('click',e=>{if(e.target===$('paytable-modal'))$('paytable-modal').classList.remove('open')});renderPaytable();$('bet-value').textContent=money(bet);refreshBalance()}
+ // Save outcome for the stop/settlement callback without exposing a global game state.
+ const originalSpin=spin;
+ spin=async function(){const prior=window.__vgResults;try{if(spinning)return; if(!currentUser)throw Error('প্রথমে লগইন করুন');spinning=true;$('spin-btn').disabled=true;setStatus('বেট যাচাই হচ্ছে…');await deductBet();setStatus('ড্রাম ঘুরছে…');lastWin=0;$('last-win').textContent='0.00';let out=[0,1,2].map(()=>Math.floor(Math.random()*6));const luck=Math.random();if(luck<.12){const n=Math.floor(Math.random()*6);out=[n,n,n]}else if(luck<.36){const n=Math.floor(Math.random()*6);out[0]=n;out[1]=n}window.__vgResults=out;drums.forEach(d=>{d.rolling=true;d.stopping=false;d.velocity=15+Math.random()*3});[1050,1550,2050].forEach((ms,i)=>setTimeout(()=>stopDrum(i,out[i]),ms));}catch(e){spinning=false;$('spin-btn').disabled=false;setStatus(e.message||'স্পিন করা যায়নি');if(auto)toggleAuto()}};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{init3D();bind()});else{init3D();bind()}
 })();
 </script>
 
