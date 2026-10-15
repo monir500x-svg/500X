@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gaming Zone - Professional Game Lobby</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">\n
@@ -1000,6 +999,10 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
 @keyframes gzPromoFade{from{opacity:.45;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 </style>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Hind+Siliguri:wght@500;600;700;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -1351,27 +1354,6 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         </div>
     </div>
 
-
-    <!-- PAGE: VEGAS 3D SLOT -->
-    <div class="page-screen" id="vegas3d-game-screen">
-      <canvas class="vg-canvas" id="vg-webgl-canvas"></canvas>
-      <div class="vg-machine-label">★ VEGAS 3D ★</div>
-      <div class="vg-ui">
-        <div class="vg-top">
-          <div class="vg-top-left"><div class="vg-glass vg-brand">👑 VEGAS 3D</div><div class="vg-glass vg-balance">🪙 <span id="vg-top-balance">0.00</span></div></div>
-          <div class="vg-actions"><button type="button" class="vg-small-btn vg-glass" id="vg-paytable-btn">🏆 পুরস্কার</button><button type="button" class="vg-small-btn vg-glass" id="vg-sound-btn" aria-label="Sound">🔊</button></div>
-        </div>
-        <div class="vg-bottom"><div class="vg-glass vg-panel">
-          <div class="vg-row" style="border-bottom:1px solid #ffffff18;padding-bottom:8px"><div><div class="vg-muted">ফলাফল</div><div class="vg-result"><span id="vg-strip-0">🍒</span> <span style="color:#536078">|</span> <span id="vg-strip-1">🔔</span> <span style="color:#536078">|</span> <span id="vg-strip-2">⭐</span></div></div><div style="text-align:right"><div class="vg-muted">সর্বশেষ জয়</div><strong id="vg-last-win" style="color:#ffdf7c;font-size:15px">0.00</strong></div></div>
-          <div class="vg-controls"><button class="vg-control" id="vg-minus"><span>বেট কমান</span><strong>−</strong></button><div class="vg-control"><span class="vg-muted">বেটের পরিমাণ</span><strong id="vg-bet-value">1.00</strong></div><button class="vg-control" id="vg-plus"><span>বেট বাড়ান</span><strong>＋</strong></button></div>
-          <button type="button" class="vg-spin" id="vg-spin-btn" style="width:100%;padding:14px;border-radius:12px;margin-top:9px">🎰 SPIN</button>
-          <div class="vg-row" style="margin-top:8px"><span class="vg-muted">ডেমো ফলাফল নয় · মেইন ব্যালেন্স</span><button class="vg-small-btn" id="vg-auto-btn">⚡ অটো: বন্ধ</button></div>
-          <div class="vg-status" id="vg-status">স্পিন করতে বোতাম চাপুন</div>
-        </div></div>
-      </div>
-      <div class="vg-modal" id="vg-paytable-modal"><div class="vg-modal-card vg-glass"><div class="vg-row"><b style="color:#ffdf7c">পুরস্কারের তালিকা</b><button class="vg-small-btn" id="vg-close-paytable">✕</button></div><div id="vg-paytable-rows"></div><p class="vg-muted" style="margin-top:10px">ফলাফল ও পেআউট বর্তমান ক্লায়েন্ট-সাইড গেম লজিক দ্বারা তৈরি হয়।</p></div></div>
-    </div>
-
     <!-- JAVASCRIPT LOGIC -->
     <script>
         const GAME_CONFIGS = [
@@ -1417,7 +1399,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             },
             {
                 id: 'vegas3d',
-                name: 'ভেগাস 3D (VEGAS 3D)',
+                name: 'সেভেন থ্রি (VEGAS 3D)',
                 provider: 'Gaming Zone',
                 screenId: 'vegas3d-game-screen',
                 svgBg: 'linear-gradient(135deg, #16132d, #5b1839)',
@@ -1451,6 +1433,10 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             document.querySelectorAll('.page-screen').forEach(scr => scr.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
             if (typeof updateAnnouncementBars === 'function') updateAnnouncementBars();
+            if (screenId === 'vegas3d-game-screen' && window.vegas3dResize) {
+                setTimeout(window.vegas3dResize, 100);
+                setTimeout(window.vegas3dResize, 250);
+            }
             document.getElementById('global-back-btn').classList.remove('hidden');
             // Hide (do not remove) the lobby navigation only while inside a game.
             document.querySelector('.gz-bottom-nav')?.classList.add('game-hidden');
@@ -1459,11 +1445,6 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 setTimeout(resizeCanvas, 150);
                 // Recalculate after the navigation has been hidden so the canvas gets the extra space.
                 setTimeout(resizeCanvas, 250);
-            }
-            if (screenId === 'vegas3d-game-screen' && window.vegas3dResize) {
-                setTimeout(window.vegas3dResize, 100);
-                setTimeout(window.vegas3dResize, 250);
-                window.vegas3dRefreshBalance && window.vegas3dRefreshBalance();
             }
         }
 
@@ -2125,6 +2106,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             if (cgTopBalEl) cgTopBalEl.innerText = currentBalance.toFixed(2);
             const vgBalEl = document.getElementById('vg-top-balance');
             if (vgBalEl) vgBalEl.innerText = Number(currentBalance || 0).toFixed(2);
+            if (window.vegas3dRefreshBalance) window.vegas3dRefreshBalance();
         }
 
         const canvas = document.getElementById('game-canvas');
@@ -4214,35 +4196,6 @@ function rbLockAndSpin(){
       .gz-record-top{display:flex;justify-content:space-between;gap:8px;font-weight:800}
       .gz-record-meta{font-size:12px;color:#bceee4;margin-top:6px;line-height:1.6}
       .gz-win{color:#45f2a9}.gz-loss{color:#ff8585}
-
-        /* VEGAS 3D integrated game screen */
-        #vegas3d-game-screen{background:radial-gradient(ellipse at 50% 28%,#15142d 0,#070914 58%,#03050c 100%);overflow:hidden;color:#fff;isolation:isolate}
-        #vegas3d-game-screen .vg-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;display:block;touch-action:pan-y}
-        #vegas3d-game-screen .vg-ui{position:relative;z-index:2;width:100%;height:100dvh;min-height:100vh;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));}
-        #vegas3d-game-screen .vg-ui button{pointer-events:auto;touch-action:manipulation;border:1px solid #ffffff24;color:#fff;cursor:pointer}
-        #vegas3d-game-screen .vg-top,#vegas3d-game-screen .vg-top-left,#vegas3d-game-screen .vg-actions{display:flex;align-items:center;gap:8px}
-        #vegas3d-game-screen .vg-glass{background:linear-gradient(145deg,rgba(21,28,52,.96),rgba(5,8,19,.96));border:1px solid rgba(255,212,92,.35);border-radius:13px;box-shadow:0 8px 24px #0008;backdrop-filter:blur(8px)}
-        #vegas3d-game-screen .vg-brand{padding:8px 10px;font-size:12px;font-weight:1000;letter-spacing:1px;color:#ffdf7c}
-        #vegas3d-game-screen .vg-balance{padding:8px 10px;font-size:11px;color:#5cecff;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
-        #vegas3d-game-screen .vg-small-btn{padding:8px 10px;border-radius:10px;background:#141a2e;font-size:11px;font-weight:800}
-        #vegas3d-game-screen .vg-machine-label{position:absolute;z-index:1;top:16%;left:50%;transform:translateX(-50%);font-size:clamp(14px,4vw,21px);font-weight:1000;letter-spacing:2px;color:#ffdb72;text-shadow:0 0 14px #ff9d00aa;white-space:nowrap;pointer-events:none}
-        #vegas3d-game-screen .vg-bottom{pointer-events:auto;width:100%;max-width:440px;margin:0 auto}
-        #vegas3d-game-screen .vg-panel{padding:11px;border-radius:18px}
-        #vegas3d-game-screen .vg-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
-        #vegas3d-game-screen .vg-muted{font-size:10px;color:#a5afc7}
-        #vegas3d-game-screen .vg-result{padding:7px 10px;border-radius:9px;background:#0009;border:1px solid #26304a;font-size:17px;letter-spacing:2px}
-        #vegas3d-game-screen .vg-controls{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;margin-top:9px}
-        #vegas3d-game-screen .vg-control{min-height:58px;border-radius:12px;background:#0a1020;padding:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
-        #vegas3d-game-screen .vg-control strong{font-size:14px;color:#ffdf7c}
-        #vegas3d-game-screen .vg-spin{background:linear-gradient(135deg,#ff174f,#ff633c)!important;border:1px solid #ffab8b!important;box-shadow:0 0 18px #ff174f55;font-weight:1000;letter-spacing:2px;font-size:15px}
-        #vegas3d-game-screen .vg-spin:disabled{opacity:.5}
-        #vegas3d-game-screen .vg-status{font-size:11px;text-align:center;color:#d2d9e9;min-height:17px;margin-top:8px}
-        #vegas3d-game-screen .vg-modal{position:absolute;z-index:10;inset:0;background:#000c;display:none;align-items:center;justify-content:center;padding:18px;pointer-events:auto}
-        #vegas3d-game-screen .vg-modal.open{display:flex}
-        #vegas3d-game-screen .vg-modal-card{width:min(100%,360px);max-height:75dvh;overflow:auto;padding:16px;border-radius:16px}
-        #vegas3d-game-screen .vg-payrow{display:flex;justify-content:space-between;padding:9px;margin-top:7px;border-radius:9px;background:#0005;font-size:12px}
-        @media(max-height:680px){#vegas3d-game-screen .vg-machine-label{top:12%}#vegas3d-game-screen .vg-panel{padding:8px}#vegas3d-game-screen .vg-controls{margin-top:6px}#vegas3d-game-screen .vg-control{min-height:48px}}
-
     </style>
     <section class="gz-detail-modal" id="gz-account-modal" aria-label="My Account details">
       <div class="gz-detail-card">
@@ -4394,48 +4347,508 @@ function rbLockAndSpin(){
 })();
 </script>
 
+<!-- Original VEGAS 3D game embedded; original reel visuals and spin rules retained -->
+<div class="page-screen" id="vegas3d-game-screen">
 
-<script id="vegas3d-integrated-logic">
-(function(){
- 'use strict';
- const symbols=[
-  {bn:'চেরি',emoji:'🍒',color:'#ff2a5f',bg:'#260711',mult:.4},
-  {bn:'ঘণ্টা',emoji:'🔔',color:'#f59e0b',bg:'#261703',mult:.8},
-  {bn:'তারা',emoji:'⭐',color:'#fbbf24',bg:'#2b2105',mult:1.5},
-  {bn:'ক্রাউন',emoji:'👑',color:'#ffd700',bg:'#2d2404',mult:3},
-  {bn:'সেভেন',emoji:'7️⃣',color:'#ef4444',bg:'#300707',mult:5},
-  {bn:'হীরা',emoji:'💎',color:'#06b6d4',bg:'#03262d',mult:10}
- ];
- const betSteps=[1,2,5,10,20,50];let betIndex=0,bet=betSteps[0],spinning=false,auto=false,muted=false,scene,camera,renderer,clock,drums=[],machine,raycaster,mouse,leverPivot,leverKnob,leverAngle=0,leverTarget=0,lastWin=0;
- const $=id=>document.getElementById('vg-'+id);
- const canvas=$('webgl-canvas');
- const money=n=>Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
- function setStatus(t){$('status').textContent=t}
- function refreshBalance(){if(typeof currentBalance!=='undefined')$('top-balance').textContent=money(currentBalance)}
- window.vegas3dRefreshBalance=refreshBalance;
- function audio(freq=440,dur=.07){if(muted)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!window.__vgAudio)window.__vgAudio=new C();const c=window.__vgAudio;if(c.state==='suspended')c.resume();const o=c.createOscillator(),g=c.createGain();o.frequency.value=freq;g.gain.value=.035;o.connect(g);g.connect(c.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,c.currentTime+dur);o.stop(c.currentTime+dur)}catch(e){}}
- function makeReelTexture(){const c=document.createElement('canvas');c.width=1024;c.height=512;const x=c.getContext('2d'),w=c.width/6;symbols.forEach((s,i)=>{let a=i*w;const g=x.createLinearGradient(a,0,a+w,0);g.addColorStop(0,'#05070d');g.addColorStop(.5,s.bg);g.addColorStop(1,'#121a30');x.fillStyle=g;x.fillRect(a,0,w,512);x.strokeStyle=s.color;x.lineWidth=7;x.strokeRect(a+8,10,w-16,492);x.textAlign='center';x.textBaseline='middle';x.shadowColor=s.color;x.shadowBlur=15;x.font='82px sans-serif';x.fillText(s.emoji,a+w/2,210);x.shadowBlur=0;x.fillStyle='#fff';x.font='bold 23px sans-serif';x.fillText(s.bn,a+w/2,390)});const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=THREE.ClampToEdgeWrapping;t.wrapT=THREE.RepeatWrapping;t.anisotropy=2;return t}
- function init3D(){if(!window.THREE||!canvas)return;scene=new THREE.Scene();scene.background=new THREE.Color('#03050c');camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,100);renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;scene.add(new THREE.AmbientLight(0xffffff,1.6));const l=new THREE.PointLight(0xffcf69,2.2,30);l.position.set(0,4,5);scene.add(l);const bl=new THREE.PointLight(0x00d9ff,1.1,20);bl.position.set(-4,1,3);scene.add(bl);const gl=new THREE.PointLight(0xff8800,1.1,20);gl.position.set(4,1,3);scene.add(gl);buildMachine();resize();raycaster=new THREE.Raycaster();mouse=new THREE.Vector2();window.addEventListener('resize',resize);window.addEventListener('orientationchange',()=>setTimeout(resize,150));canvas.addEventListener('pointerdown',tapScene);clock=new THREE.Clock();renderLoop()}
- function buildMachine(){machine=new THREE.Group();scene.add(machine);const caseMat=new THREE.MeshStandardMaterial({color:0x090d18,metalness:.75,roughness:.3}),gold=new THREE.MeshStandardMaterial({color:0xc9a43b,metalness:.85,roughness:.22});const body=new THREE.Mesh(new THREE.BoxGeometry(3.05,3.45,.75),caseMat);body.position.set(0,.45,-.25);machine.add(body);const bezel=new THREE.Mesh(new THREE.BoxGeometry(3.12,2.6,.14),gold);bezel.position.set(0,.35,.2);machine.add(bezel);const inner=new THREE.Mesh(new THREE.BoxGeometry(2.92,2.38,.12),new THREE.MeshStandardMaterial({color:0x080b13,metalness:.25,roughness:.4}));inner.position.set(0,.35,.29);machine.add(inner);const mc=document.createElement('canvas');mc.width=768;mc.height=160;const x=mc.getContext('2d');x.fillStyle='#070914';x.fillRect(0,0,768,160);x.strokeStyle='#d6a93c';x.lineWidth=6;x.strokeRect(8,8,752,144);x.textAlign='center';x.textBaseline='middle';x.font='900 58px sans-serif';x.fillStyle='#ffe07a';x.shadowColor='#ff9d00';x.shadowBlur=18;x.fillText('VEGAS 3D',384,80);const marquee=new THREE.Mesh(new THREE.PlaneGeometry(2.45,.48),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(mc)}));marquee.position.set(0,1.85,.32);machine.add(marquee);const tex=makeReelTexture(),radius=.70,width=.78,spacing=.82;for(let i=0;i<3;i++){const drum=new THREE.Group();drum.position.set((i-1)*spacing,.32,.5);machine.add(drum);const cyl=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,width,96,1,false),new THREE.MeshStandardMaterial({map:tex,metalness:.12,roughness:.3}));cyl.rotation.z=-Math.PI/2;drum.add(cyl);drums.push({mesh:drum,rolling:false,stopping:false,target:0,velocity:15,lastTick:0});}const base=new THREE.Mesh(new THREE.BoxGeometry(2.3,.4,.25),gold);base.position.set(0,-1.25,.22);machine.add(base);const mount=new THREE.Group();mount.position.set(1.68,.15,.4);machine.add(mount);const ball=new THREE.Mesh(new THREE.SphereGeometry(.18,16,16),gold);ball.position.set(0,-.35,0);mount.add(ball);leverPivot=new THREE.Group();mount.add(leverPivot);const arm=new THREE.Mesh(new THREE.CylinderGeometry(.035,.05,.82,12),new THREE.MeshStandardMaterial({color:0xd6dce5,metalness:.9,roughness:.2}));arm.position.y=.34;leverPivot.add(arm);leverKnob=new THREE.Mesh(new THREE.SphereGeometry(.14,20,20),new THREE.MeshStandardMaterial({color:0xff2854,emissive:0x4b0010,metalness:.2}));leverKnob.position.y=.78;leverPivot.add(leverKnob);const line=new THREE.Mesh(new THREE.BoxGeometry(2.5,.018,.018),new THREE.MeshBasicMaterial({color:0xff2871}));line.position.set(0,.32,1.215);machine.add(line)}
- function resize(){if(!renderer||!camera)return;const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;const portrait=w/h<.72;camera.fov=portrait?39:42;const vh=portrait?4.95:4.4,dist=(vh/2)/Math.tan(THREE.MathUtils.degToRad(camera.fov/2));camera.position.set(0,.15,Math.max(6.5,dist*1.03));camera.lookAt(0,.25,0);camera.updateProjectionMatrix();if(machine){const scale=portrait?Math.min(1,h/760):Math.min(1,h/650);machine.scale.setScalar(scale)}}
- window.vegas3dResize=resize;
- function tapScene(e){if(e.target.closest('button')||!raycaster)return;mouse.x=e.clientX/innerWidth*2-1;mouse.y=-(e.clientY/innerHeight)*2+1;raycaster.setFromCamera(mouse,camera);if(leverKnob&&raycaster.intersectObject(leverKnob,true).length)spin()}
- function renderLoop(){requestAnimationFrame(renderLoop);if(!renderer)return;const dt=Math.min(clock.getDelta(),.06);drums.forEach((d,i)=>{if(!d.rolling)return;if(!d.stopping){d.mesh.rotation.x-=d.velocity*dt}else{const diff=d.target-d.mesh.rotation.x;if(Math.abs(diff)>.025)d.mesh.rotation.x-=Math.sign(diff)*Math.min(Math.abs(diff)*Math.min(7*dt,1),d.velocity*dt);else{d.mesh.rotation.x=d.target;d.rolling=false;d.stopping=false;audio(110,.08);if(i===2)finishSpin()}}});if(leverPivot){leverAngle+=(leverTarget-leverAngle)*Math.min(1,15*dt);leverPivot.rotation.x=leverAngle}renderer.render(scene,camera)}
- function showSymbols(out){out.forEach((n,i)=>{$('strip-'+i).textContent=symbols[n].emoji})}
- async function deductBet(){if(!currentUser||!db)throw Error('প্রথমে লগইন করুন');const ref=db.ref('users/'+currentUser.uid+'/balance');const result=await ref.transaction(v=>{v=Number(v||0);if(v<bet)return;return Math.round((v-bet)*100)/100});if(!result.committed)throw Error('পর্যাপ্ত মেইন ব্যালেন্স নেই');currentBalance=Number(result.snapshot.val()||0);if(typeof updateSharedBalanceUI==='function')updateSharedBalanceUI();refreshBalance()}
- async function addWin(win){if(!currentUser||!db)return;const ref=db.ref('users/'+currentUser.uid+'/balance');const result=await ref.transaction(v=>Math.round((Number(v||0)+win)*100)/100);if(result.committed){currentBalance=Number(result.snapshot.val()||0);if(typeof updateSharedBalanceUI==='function')updateSharedBalanceUI();refreshBalance()}}
- async function spin(){if(spinning)return;try{if(!currentUser)throw Error('প্রথমে লগইন করুন');spinning=true;$('spin-btn').disabled=true;setStatus('বেট যাচাই হচ্ছে…');await deductBet();setStatus('ড্রাম ঘুরছে…');lastWin=0;$('last-win').textContent='0.00';let out=[Math.floor(Math.random()*6),Math.floor(Math.random()*6),Math.floor(Math.random()*6)];const luck=Math.random();if(luck<.12){const n=Math.floor(Math.random()*6);out=[n,n,n]}else if(luck<.36){const n=Math.floor(Math.random()*6);out[0]=n;out[1]=n}drums.forEach(d=>{d.rolling=true;d.stopping=false;d.velocity=15+Math.random()*3});[1050,1550,2050].forEach((ms,i)=>setTimeout(()=>stopDrum(i,out[i]),ms));}catch(e){spinning=false;$('spin-btn').disabled=false;setStatus(e.message||'স্পিন করা যায়নি');if(auto)toggleAuto()}}
- function stopDrum(i,sym){const d=drums[i],step=Math.PI*2/6,turn=Math.PI*2,current=d.mesh.rotation.x;let target=-sym*step+Math.floor((current+sym*step)/turn)*turn;while(target>current)target-=turn;target-=turn*4;d.target=target;d.stopping=true}
- async function finishSpin(){const out=drums.map((d,i)=>symbols.findIndex((s,j)=>j===window.__vgLastOut?.[i]));/* actual outcomes stored below */const results=window.__vgResults||[0,0,0];showSymbols(results);let mult=0;if(results[0]===results[1]&&results[1]===results[2])mult=symbols[results[0]].mult;let win=Math.round(bet*mult*100)/100;if(win>0){try{await addWin(win);$('last-win').textContent=money(win);setStatus('🎉 জয়! +'+money(win));audio(660,.22)}catch(e){setStatus('জয় যোগ করা যায়নি—সংযোগ পরীক্ষা করুন')}}else setStatus('মিল নেই · আবার চেষ্টা করুন');spinning=false;$('spin-btn').disabled=false;if(auto)setTimeout(()=>{if(auto&&!spinning)spin()},900)}
- function toggleAuto(){auto=!auto;$('auto-btn').textContent=auto?'⚡ অটো: চালু':'⚡ অটো: বন্ধ';if(auto&&!spinning)spin()}
- function renderPaytable(){$('paytable-rows').innerHTML=symbols.slice().reverse().map(s=>`<div class="vg-payrow"><span>${s.emoji} ${s.bn} × 3</span><b style="color:#ffdf7c">${s.mult}x</b></div>`).join('')+'<div class="vg-payrow"><span>শুধু ২টি মিললে</span><b>০x</b></div>'}
- function bind(){ $('spin-btn').addEventListener('click',()=>{leverTarget=.6;spin();setTimeout(()=>leverTarget=0,180)});$('minus').addEventListener('click',()=>{if(spinning)return;if(betIndex>0)bet=betSteps[--betIndex];$('bet-value').textContent=money(bet);audio(260)});$('plus').addEventListener('click',()=>{if(spinning)return;if(betIndex<betSteps.length-1)bet=betSteps[++betIndex];$('bet-value').textContent=money(bet);audio(440)});$('auto-btn').addEventListener('click',toggleAuto);$('sound-btn').addEventListener('click',()=>{muted=!muted;$('sound-btn').textContent=muted?'🔇':'🔊';if(!muted)audio()});$('paytable-btn').addEventListener('click',()=>$('paytable-modal').classList.add('open'));$('close-paytable').addEventListener('click',()=>$('paytable-modal').classList.remove('open'));$('paytable-modal').addEventListener('click',e=>{if(e.target===$('paytable-modal'))$('paytable-modal').classList.remove('open')});renderPaytable();$('bet-value').textContent=money(bet);refreshBalance()}
- // Save outcome for the stop/settlement callback without exposing a global game state.
- const originalSpin=spin;
- spin=async function(){const prior=window.__vgResults;try{if(spinning)return; if(!currentUser)throw Error('প্রথমে লগইন করুন');spinning=true;$('spin-btn').disabled=true;setStatus('বেট যাচাই হচ্ছে…');await deductBet();setStatus('ড্রাম ঘুরছে…');lastWin=0;$('last-win').textContent='0.00';let out=[0,1,2].map(()=>Math.floor(Math.random()*6));const luck=Math.random();if(luck<.12){const n=Math.floor(Math.random()*6);out=[n,n,n]}else if(luck<.36){const n=Math.floor(Math.random()*6);out[0]=n;out[1]=n}window.__vgResults=out;drums.forEach(d=>{d.rolling=true;d.stopping=false;d.velocity=15+Math.random()*3});[1050,1550,2050].forEach((ms,i)=>setTimeout(()=>stopDrum(i,out[i]),ms));}catch(e){spinning=false;$('spin-btn').disabled=false;setStatus(e.message||'স্পিন করা যায়নি');if(auto)toggleAuto()}};
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{init3D();bind()});else{init3D();bind()}
-})();
+<canvas id="vg-webgl-canvas"></canvas>
+<div id="vg-app">
+<header class="absolute top-0 left-0 w-full px-3 flex justify-between items-center gap-2">
+ <div class="flex items-center gap-2">
+  <div class="glass rounded-xl px-2.5 py-1.5 flex items-center gap-1.5"><i class="fa-solid fa-crown text-amber-300 text-xs"></i><span class="font-cinzel text-[11px] font-black">VEGAS 3D</span></div>
+  <div class="glass rounded-xl px-2.5 py-1.5 flex items-center gap-1.5"><i class="fa-solid fa-coins text-amber-300 text-xs"></i><span id="vg-top-balance" class="font-orbitron text-xs text-cyan-200">1,000</span></div>
+ </div>
+ <div class="flex gap-1.5">
+  <button id="vg-btn-paytable" class="glass rounded-xl px-2.5 py-1.5 text-[11px] text-amber-200"><i class="fa-solid fa-gift mr-1"></i>পুরস্কার</button>
+  <button id="vg-btn-fullscreen" class="glass rounded-xl px-2 py-1.5 text-[11px] text-amber-200 whitespace-nowrap" aria-label="ফুলস্ক্রিন"><i class="fa-solid fa-expand mr-1"></i><span id="vg-fullscreen-label">ফুলস্ক্রিন</span></button>
+  <button id="vg-btn-sound" class="glass rounded-xl w-9 h-9 text-amber-200"><i id="vg-sound-icon" class="fa-solid fa-volume-high"></i></button>
+ </div>
+</header>
+<div id="vg-machine-label">★ VEGAS 3D ★</div>
+<div id="vg-win-modal" class="hidden-toast glass rounded-2xl p-3 border-2 border-amber-400 text-center">
+ <div id="vg-win-tag" class="text-amber-300 font-bold text-xs">দারুণ মিল!</div>
+ <div id="vg-win-icons-box" class="my-1 text-2xl">💎　|　💎　|　💎</div>
+ <p id="vg-win-message" class="text-xs">৩টি হীরা মিলেছে</p><div id="vg-win-amount" class="font-orbitron text-xl text-amber-300">+১,০০০</div>
+</div>
+<div id="vg-floating-win" aria-live="polite" role="status"><div class="float-value" id="vg-floating-win-amount">+৩০</div><div class="float-label">🎉 আপনি জিতেছেন!</div></div>
+<footer class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[94%] max-w-[420px]">
+ <div class="glass rounded-2xl p-2.5 compact-pad">
+  <div class="flex items-center justify-between gap-2 border-b border-slate-700/70 pb-1.5 mb-1.5">
+   <div class="flex items-center gap-1.5 shrink-0"><span class="text-slate-400 text-[10px]">ফলাফল</span><div class="bg-black/60 border border-slate-700 rounded-lg px-2 py-1 text-sm flex gap-1"><span id="vg-strip-0">🍒</span><span class="text-slate-600">|</span><span id="vg-strip-1">🔔</span><span class="text-slate-600">|</span><span id="vg-strip-2">⭐</span></div></div>
+   <div id="vg-status-text" class="text-[10px] text-right text-slate-300">স্পিন করতে বোতাম চাপুন</div>
+  </div>
+  <div class="grid grid-cols-3 gap-2 items-stretch">
+   <div class="bg-black/50 rounded-xl p-1.5 border border-slate-800 flex flex-col items-center justify-center"><span class="text-[9px] text-slate-400">সর্বশেষ জয়</span><span id="vg-hud-win" class="font-orbitron text-sm text-amber-300">0</span></div>
+   <div class="bg-black/50 rounded-xl p-1.5 border border-slate-800 flex flex-col items-center justify-center"><span class="text-[9px] text-slate-400">বেট কয়েন</span><div class="flex items-center gap-2 mt-0.5"><button id="vg-btn-minus" class="w-6 h-6 rounded-md bg-slate-800 text-amber-200"><i class="fa-solid fa-minus text-[10px]"></i></button><span id="vg-hud-bet" class="font-orbitron text-xs w-7 text-center">20</span><button id="vg-btn-plus" class="w-6 h-6 rounded-md bg-slate-800 text-amber-200"><i class="fa-solid fa-plus text-[10px]"></i></button></div></div>
+   <button id="vg-btn-auto" class="rounded-xl bg-slate-800 border border-amber-500/40 text-amber-200 flex flex-col items-center justify-center"><i class="fa-solid fa-bolt text-xs"></i><span id="vg-auto-label" class="text-[9px]">অটো স্পিন</span></button>
+  </div>
+  <button id="vg-btn-spin" class="spin w-full rounded-xl py-3 mt-2 font-orbitron font-black text-sm tracking-widest"><i class="fa-solid fa-rotate mr-2"></i>SPIN</button>
+  <div class="guide mt-1.5 flex justify-between text-[9px] text-slate-400"><span><i class="fa-solid fa-hand-pointer text-amber-300 mr-1"></i>লিভার টাচ করেও স্পিন</span><span id="vg-state-status" class="text-emerald-300">● প্রস্তুত</span></div>
+ </div>
+</footer>
+</div>
+<div id="vg-paytable-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 p-4">
+ <div class="glass rounded-2xl p-4 w-full max-w-sm max-h-[80dvh] overflow-y-auto">
+  <div class="flex justify-between items-center border-b border-amber-500/30 pb-2"><b class="text-sm">পে-টেবিল · ডেমো কয়েন</b><button id="vg-btn-close-paytable" class="text-lg px-2"><i class="fa-solid fa-xmark"></i></button></div>
+  <div id="vg-paytable-rows" class="mt-3 space-y-2 text-xs"></div>
+ </div>
+</div>
+<script>
+class AudioFX{
+ constructor(){this.ctx=null;this.muted=false}
+ ensure(){const AC=window.AudioContext||window.webkitAudioContext;if(!this.ctx&&AC)this.ctx=new AC();if(this.ctx?.state==='suspended')this.ctx.resume()}
+ tone(freq=440,duration=.08,type='triangle',volume=.06){if(this.muted||!this.ctx)return;let o=this.ctx.createOscillator(),g=this.ctx.createGain(),t=this.ctx.currentTime;o.type=type;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(volume,t);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+duration)}
+ tick(){this.tone(260,.025,'triangle',.04)} thump(){this.tone(110,.08,'sine',.1)} win(big){[440,554,659,880].forEach((f,i)=>setTimeout(()=>this.tone(f,.25,big?'square':'triangle',.07),i*65))}
+}
+const sound=new AudioFX();
+const SYMBOLS=[
+{id:0,name:'Cherry',bn:'চেরি',emoji:'🍒',color:'#ff2a5f',bg:'#260711',mult:0.4},
+{id:1,name:'Bell',bn:'স্বর্ণঘণ্টা',emoji:'🔔',color:'#f59e0b',bg:'#261703',mult:0.8},
+{id:2,name:'Star',bn:'তারা',emoji:'⭐',color:'#fbbf24',bg:'#2b2105',mult:1.5},
+{id:3,name:'Crown',bn:'ক্রাউন',emoji:'👑',color:'#ffd700',bg:'#2d2404',mult:3},
+{id:4,name:'Seven',bn:'সেভেন',emoji:'7️⃣',color:'#ef4444',bg:'#300707',mult:5},
+{id:5,name:'Diamond',bn:'হীরা',emoji:'💎',color:'#06b6d4',bg:'#03262d',mult:10}];
+const state={balance:1000,bet:1,betSteps:[1,2,5,10,20,50],betIdx:0,isSpinning:false,isAuto:false,results:[0,1,2]};
+let scene,camera,renderer,raycaster,mouse,drums=[],frames=[],leverKnob,leverPivot,leverMount,coins=[],machine;
+const canvas=document.getElementById('webgl-canvas'), clock=new THREE.Clock();
+function makeStripTexture(){
+ const c=document.createElement('canvas');c.width=512;c.height=1536;const ctx=c.getContext('2d'),cellH=c.height/6;
+ SYMBOLS.forEach((s,i)=>{let y=i*cellH;const g=ctx.createLinearGradient(0,y,0,y+cellH);g.addColorStop(0,s.bg);g.addColorStop(1,'#05070d');ctx.fillStyle=g;ctx.fillRect(0,y,512,cellH);ctx.strokeStyle=s.color;ctx.lineWidth=7;ctx.strokeRect(12,y+10,488,cellH-20);
+ ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor=s.color;ctx.shadowBlur=14;ctx.font='112px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';ctx.fillText(s.emoji,256,y+cellH*.43);ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='bold 25px "Hind Siliguri",sans-serif';ctx.fillText(s.bn,256,y+cellH*.78)});
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=THREE.RepeatWrapping;tex.wrapT=THREE.RepeatWrapping;tex.minFilter=THREE.LinearFilter;tex.magFilter=THREE.LinearFilter;tex.generateMipmaps=false;return tex;
+}
+function setupScene(){
+ scene=new THREE.Scene();scene.background=new THREE.Color('#03050c');
+ camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,100);
+ renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
+ renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+ scene.add(new THREE.AmbientLight(0xffffff,1.7));
+ const light=new THREE.PointLight(0xffcf69,2.2,30);light.position.set(0,4,5);scene.add(light);
+ const blue=new THREE.PointLight(0x00d9ff,1.2,20);blue.position.set(-4,1,3);scene.add(blue);
+ const gold=new THREE.PointLight(0xff8800,1.2,20);gold.position.set(4,1,3);scene.add(gold);
+ buildMachine();fitScene();raycaster=new THREE.Raycaster();mouse=new THREE.Vector2();addEventListener('resize',fitScene);addEventListener('orientationchange',()=>setTimeout(fitScene,150));addEventListener('pointerdown',handleSceneTap);
+}
+function buildMachine(){
+ machine=new THREE.Group();scene.add(machine);
+ const caseMat=new THREE.MeshStandardMaterial({color:0x090d18,metalness:.75,roughness:.3});
+ const goldMat=new THREE.MeshStandardMaterial({color:0xc9a43b,metalness:.85,roughness:.22});
+ const body=new THREE.Mesh(new THREE.BoxGeometry(3.05,3.45,.75),caseMat);body.position.set(0,.45,-.25);machine.add(body);
+ const bezel=new THREE.Mesh(new THREE.BoxGeometry(3.12,2.6,.14),goldMat);bezel.position.set(0,.35,.2);machine.add(bezel);
+ const inner=new THREE.Mesh(new THREE.BoxGeometry(2.92,2.38,.12),new THREE.MeshStandardMaterial({color:0x080b13,metalness:.25,roughness:.4}));inner.position.set(0,.35,.29);machine.add(inner);
+ // Marquee
+ const mc=document.createElement('canvas');mc.width=768;mc.height=160;let x=mc.getContext('2d');x.fillStyle='#070914';x.fillRect(0,0,768,160);x.strokeStyle='#d6a93c';x.lineWidth=6;x.strokeRect(8,8,752,144);x.textAlign='center';x.textBaseline='middle';x.font='900 58px Orbitron';x.fillStyle='#ffe07a';x.shadowColor='#ff9d00';x.shadowBlur=18;x.fillText('VEGAS 3D',384,80);
+ const marquee=new THREE.Mesh(new THREE.PlaneGeometry(2.45,.48),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(mc)}));marquee.position.set(0,1.85,.32);machine.add(marquee);
+ const radius=.70,width=.78,spacing=.82,segments=6,step=Math.PI*2/segments;
+ // Use one textured cylindrical reel per column. No opaque flat panels cover the symbols.
+ for(let i=0;i<3;i++){
+  const drum=new THREE.Group();drum.position.set((i-1)*spacing,.32,.5);machine.add(drum);
+  // Texture is laid out horizontally because cylinder UV-U follows the reel circumference.
+  const strip=document.createElement('canvas');strip.width=3072;strip.height=512;
+  const ctx=strip.getContext('2d'),cellW=strip.width/segments;
+  SYMBOLS.forEach((sym,j)=>{
+   const x=j*cellW,grad=ctx.createLinearGradient(x,0,x+cellW,0);
+   grad.addColorStop(0,'#05070d');grad.addColorStop(.45,sym.bg);grad.addColorStop(1,'#121a30');
+   ctx.fillStyle=grad;ctx.fillRect(x,0,cellW,strip.height);
+   ctx.strokeStyle=sym.color;ctx.lineWidth=8;ctx.strokeRect(x+12,12,cellW-24,strip.height-24);
+   ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=3;ctx.strokeRect(x+25,25,cellW-50,strip.height-50);
+   ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor=sym.color;ctx.shadowBlur=22;
+   ctx.font='145px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+   ctx.fillText(sym.emoji,x+cellW/2,205);ctx.shadowBlur=0;
+   ctx.fillStyle='#fff';ctx.font='bold 35px sans-serif';ctx.fillText(sym.bn,x+cellW/2,400);
+  });
+  const tex=new THREE.CanvasTexture(strip);tex.colorSpace=THREE.SRGBColorSpace;
+  tex.wrapS=THREE.ClampToEdgeWrapping;tex.wrapT=THREE.RepeatWrapping;
+  tex.minFilter=THREE.LinearMipmapLinearFilter;tex.magFilter=THREE.LinearFilter;
+  tex.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);
+  const cylinder=new THREE.Mesh(
+   new THREE.CylinderGeometry(radius,radius,width,96,1,false),
+   new THREE.MeshStandardMaterial({map:tex,metalness:.12,roughness:.3})
+  );
+  // CylinderGeometry is built on Y; make its axis horizontal, along X.
+  cylinder.rotation.z=-Math.PI/2;
+  drum.add(cylinder);
+  const rimGeo=new THREE.CylinderGeometry(radius*1.015,radius*1.015,.055,64);
+  rimGeo.rotateZ(Math.PI/2);
+  const rimMat=new THREE.MeshStandardMaterial({color:0xd0ad4b,metalness:.92,roughness:.18});
+  const l=new THREE.Mesh(rimGeo,rimMat);l.position.x=-width*.51;drum.add(l);
+  const r=new THREE.Mesh(rimGeo,rimMat);r.position.x=width*.51;drum.add(r);
+  drums.push({mesh:drum,velocity:0,rolling:false,stopping:false,target:0,idx:i,lastTick:0});
+  const edgeMat=new THREE.MeshStandardMaterial({color:0xd2ad4d,metalness:.9,roughness:.22});
+  [-.405,.405].forEach(dx=>{
+   const edge=new THREE.Mesh(new THREE.BoxGeometry(.025,.86,.055),edgeMat);
+   edge.position.set((i-1)*spacing+dx,.32,1.205);machine.add(edge);
+  });
+
+ }
+
+ // front panel bottom decoration
+ const base=new THREE.Mesh(new THREE.BoxGeometry(2.3,.4,.25),goldMat);base.position.set(0,-1.25,.22);machine.add(base);
+ // lever at right, within mobile framing
+ leverMount=new THREE.Group();leverMount.position.set(1.68,.15,.4);machine.add(leverMount);
+ const mountball=new THREE.Mesh(new THREE.SphereGeometry(.18,16,16),goldMat);mountball.position.set(0,-.35,0);leverMount.add(mountball);
+ leverPivot=new THREE.Group();leverMount.add(leverPivot);
+ const arm=new THREE.Mesh(new THREE.CylinderGeometry(.035,.05,.82,12),new THREE.MeshStandardMaterial({color:0xd6dce5,metalness:.9,roughness:.2}));arm.position.y=.34;leverPivot.add(arm);
+ leverKnob=new THREE.Mesh(new THREE.SphereGeometry(.14,20,20),new THREE.MeshStandardMaterial({color:0xff2854,emissive:0x4b0010,metalness:.2}));leverKnob.position.y=.78;leverPivot.add(leverKnob);
+ const payline=new THREE.Mesh(new THREE.BoxGeometry(2.50,.018,.018),new THREE.MeshBasicMaterial({color:0xff2871}));payline.position.set(0,.32,1.215);machine.add(payline);
+}
+function fitScene(){
+ if(!renderer||!camera)return;const w=innerWidth,h=innerHeight,aspect=w/h;renderer.setSize(w,h,false);camera.aspect=aspect;
+ const portrait=aspect<.72;camera.fov=portrait?39:42;
+ // fit machine to the open central viewport between header and controls
+ const visibleHeight=portrait?4.95:4.4;const dist=(visibleHeight/2)/Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+ camera.position.set(0,portrait?.15:.15,Math.max(6.5,dist*1.03));camera.lookAt(0,.25,0);camera.updateProjectionMatrix();
+ const scale=portrait?Math.min(1.0,h/760):Math.min(1.0,h/650);machine.scale.setScalar(scale);
+}
+function handleSceneTap(e){
+ if(e.target.closest('button')||e.target.closest('#paytable-modal'))return;
+ if(!raycaster||!camera)return;
+ mouse.x=e.clientX/innerWidth*2-1;mouse.y=-(e.clientY/innerHeight)*2+1;raycaster.setFromCamera(mouse,camera);
+ if(raycaster.intersectObject(leverKnob,true).length)pullLever();
+}
+let leverAngle=0,leverTarget=0,leverBusy=false,toastTimer;
+function pullLever(){sound.ensure();if(leverBusy||state.isSpinning)return;leverBusy=true;leverTarget=.6;sound.tone(180,.1,'sawtooth',.07);setTimeout(()=>{leverTarget=0;setTimeout(()=>leverBusy=false,220)},160);startSpin()}
+function startSpin(){
+ if(state.isSpinning)return;if(state.balance<state.bet){document.getElementById('status-text').textContent='পর্যাপ্ত ডেমো কয়েন নেই';if(state.isAuto)toggleAuto();return}
+ state.balance-=state.bet;updateHUD();state.isSpinning=true;document.getElementById('btn-spin').disabled=true;document.getElementById('status-text').textContent='ড্রাম ঘুরছে…';document.getElementById('state-status').textContent='● ঘুরছে';
+
+ let out=[rand(),rand(),rand()];const luck=Math.random();if(luck<.12){let s=rand();out=[s,s,s]}else if(luck<.36){let s=rand();out[0]=s;out[1]=s}
+ state.results=out;drums.forEach(d=>{d.rolling=true;d.stopping=false;d.velocity=15+Math.random()*3});
+ [1050,1550,2050].forEach((ms,i)=>setTimeout(()=>stopDrum(i,out[i]),ms));
+}
+function rand(){return Math.floor(Math.random()*SYMBOLS.length)}
+function stopDrum(i,sym){const d=drums[i];d.stopping=true;const step=Math.PI*2/6,turn=Math.PI*2,current=d.mesh.rotation.x;
+ // The visible center is aligned to the selected symbol after whole extra turns.
+ let target=-sym*step+Math.floor((current+sym*step)/turn)*turn;
+ while(target>current)target-=turn;
+ target-=turn*4;d.target=target}
+function updateDrums(dt){
+ drums.forEach((d,i)=>{if(!d.rolling)return;if(!d.stopping){d.mesh.rotation.x-=d.velocity*dt;if(Math.abs(d.mesh.rotation.x-d.lastTick)>Math.PI/3){sound.tick();d.lastTick=d.mesh.rotation.x}}else{let diff=d.target-d.mesh.rotation.x;if(Math.abs(diff)>.025){d.mesh.rotation.x-=Math.min(Math.abs(diff)*Math.min(7*dt,1),d.velocity*dt);if(Math.abs(d.mesh.rotation.x-d.lastTick)>Math.PI/3){sound.tick();d.lastTick=d.mesh.rotation.x}}else{d.mesh.rotation.x=d.target;d.rolling=false;d.stopping=false;sound.thump();if(i===2)finishSpin()}}})
+}
+function finishSpin(){state.isSpinning=false;document.getElementById('btn-spin').disabled=false;document.getElementById('state-status').textContent='● প্রস্তুত';evaluate();if(state.isAuto)setTimeout(()=>{if(state.isAuto&&!state.isSpinning)startSpin()},1100)}
+function evaluate(){
+ const [a,b,c]=state.results.map(i=>SYMBOLS[i]);['strip-0','strip-1','strip-2'].forEach((id,i)=>document.getElementById(id).textContent=state.results[i]===undefined?'—':SYMBOLS[state.results[i]].emoji);
+ let mult=0,ids=[],title='কোনো মিল নেই',detail='এটি ডেমো স্পিন। আবার চেষ্টা করুন।',big=false;
+ if(a.id===b.id&&b.id===c.id){mult=a.mult;ids=[0,1,2];big=a.id===5;title=big?'মেগা মিল!':'তিনটি মিলেছে!';detail=`৩টি ${a.bn} মিলেছে · ${mult}x`}
+ else if(a.id===b.id||b.id===c.id||a.id===c.id){
+   // Exactly two matching symbols are a cancelled result: no payout.
+   ids=(a.id===b.id)?[0,1]:(b.id===c.id)?[1,2]:[0,2];
+   title='বাতিল';detail='শুধু ২টি প্রতীক মিলেছে · জয় বা পেআউট নেই';
+ }
+ let win=0;if(mult){win=Math.round(state.bet*mult*100)/100;state.balance=Math.round((state.balance+win)*100)/100;document.getElementById('hud-win').textContent=win.toLocaleString('en-US');document.getElementById('status-text').textContent=`${title} · +${win} কয়েন`;sound.win(big);showToast(title,detail,'+'+win.toLocaleString('bn-BD')+' কয়েন',[a.emoji,b.emoji,c.emoji])}
+ else{document.getElementById('hud-win').textContent='0';document.getElementById('status-text').textContent=(title==='বাতিল'?`বাতিল · ২টি মিলেছে, কোনো জয় নেই`:`মিল নেই · ${a.emoji} | ${b.emoji} | ${c.emoji}`);if(title==='বাতিল')showToast('বাতিল',detail,'০ কয়েন',[a.emoji,b.emoji,c.emoji])}
+ updateHUD()
+}
+function showToast(title,msg,amount,emojis){
+ const m=document.getElementById('win-modal');
+ const floating=document.getElementById('floating-win');
+ const amountNode=document.getElementById('floating-win-amount');
+ if(!m||!floating||!amountNode)return;
+ // Restart both animations cleanly on every new win; never leave an old toast stuck.
+ clearTimeout(toastTimer);
+ document.getElementById('win-tag').textContent=title;
+ document.getElementById('win-message').textContent=msg;
+ document.getElementById('win-amount').textContent=amount;
+ document.getElementById('win-icons-box').textContent=emojis.join('  |  ');
+ amountNode.textContent=amount.replace(' কয়েন','');
+ m.classList.add('hidden-toast');
+ floating.classList.remove('float-active');
+ void m.offsetWidth; void floating.offsetWidth;
+ m.classList.remove('hidden-toast');
+ floating.classList.add('float-active');
+ toastTimer=setTimeout(()=>{
+   m.classList.add('hidden-toast');
+   floating.classList.remove('float-active');
+ },2200);
+}
+function updateHUD(){document.getElementById('top-balance').textContent=state.balance.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});document.getElementById('hud-bet').textContent=state.bet}
+function toggleAuto(){state.isAuto=!state.isAuto;const b=document.getElementById('btn-auto');document.getElementById('auto-label').textContent=state.isAuto?'বন্ধ করুন':'অটো স্পিন';b.classList.toggle('bg-amber-500',state.isAuto);b.classList.toggle('text-black',state.isAuto);if(state.isAuto&&!state.isSpinning)startSpin()}
+function controls(){
+ document.getElementById('btn-spin').onclick=pullLever;document.getElementById('btn-auto').onclick=()=>{sound.ensure();toggleAuto()};
+ document.getElementById('btn-plus').onclick=()=>{if(state.isSpinning)return;if(state.betIdx<state.betSteps.length-1){state.bet=state.betSteps[++state.betIdx];updateHUD();sound.ensure();sound.tick()}};
+ document.getElementById('btn-minus').onclick=()=>{if(state.isSpinning)return;if(state.betIdx>0){state.bet=state.betSteps[--state.betIdx];updateHUD();sound.ensure();sound.tick()}};
+ const modal=document.getElementById('paytable-modal');document.getElementById('btn-paytable').onclick=()=>{modal.classList.remove('hidden');modal.classList.add('flex')};function close(){modal.classList.add('hidden');modal.classList.remove('flex')};document.getElementById('btn-close-paytable').onclick=close;modal.onclick=e=>{if(e.target===modal)close()};
+ document.getElementById('btn-sound').onclick=()=>{sound.ensure();sound.muted=!sound.muted;document.getElementById('sound-icon').className=sound.muted?'fa-solid fa-volume-xmark text-rose-400':'fa-solid fa-volume-high text-amber-200'};
+ document.getElementById('paytable-rows').innerHTML=SYMBOLS.slice().reverse().map(s=>`<div class="flex items-center justify-between rounded-xl bg-black/50 border border-amber-500/20 p-2"><span class="text-xl">${s.emoji}</span><span>${s.bn} × 3</span><b class="text-amber-300 font-orbitron">${s.mult}x</b></div>`).join('')+`<div class="rounded-xl bg-black/50 border border-rose-500/20 p-2 flex justify-between"><span>শুধু ২টি মিললে</span><b class="text-rose-300">বাতিল · ০x</b></div>`;
+}
+function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.06);updateDrums(dt);if(leverPivot){leverAngle+=(leverTarget-leverAngle)*Math.min(1,15*dt);leverPivot.rotation.x=leverAngle}renderer.render(scene,camera)}
+window.addEventListener('load',()=>{try{setupScene();controls();updateHUD();loop()}catch(e){console.error(e);document.getElementById('status-text').textContent='3D লোড হয়নি—ইন্টারনেট সংযোগ দেখুন'}});
 </script>
 
+</div>
+
+<style id="vg-original-game-css">
+#vegas3d-game-screen{position:relative;overflow:hidden;background:#03050c;color:#fff;isolation:isolate}
+#vegas3d-game-screen:fullscreen{width:100vw;height:100dvh;min-height:100dvh;background:#03050c}
+#vegas3d-game-screen:-webkit-full-screen{width:100vw;height:100dvh;background:#03050c}
+#vg-app{position:relative;z-index:2;width:100%;height:100dvh;pointer-events:none}
+#vg-app header,#vg-app footer,#vg-paytable-modal,#vg-win-modal{pointer-events:auto}
+#vg-app .glass{background:linear-gradient(160deg,rgba(18,25,47,.96),rgba(5,8,18,.97));border:1px solid rgba(255,212,92,.35);box-shadow:0 10px 32px #0009;backdrop-filter:blur(12px)}
+#vg-app button{touch-action:manipulation;cursor:pointer}
+#vg-app button:active:not(:disabled){transform:scale(.97)}
+#vg-app button:disabled{opacity:.5}
+#vg-webgl-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}
+#vg-app header{padding-top:max(8px,env(safe-area-inset-top))}
+#vg-app footer{padding-bottom:max(8px,env(safe-area-inset-bottom))}
+#vg-machine-label{position:absolute;left:50%;top:15%;transform:translateX(-50%);white-space:nowrap;font:900 clamp(14px,4vw,21px) Orbitron,sans-serif;color:#ffdb72;text-shadow:0 0 14px #ff9d00aa;letter-spacing:2px;pointer-events:none}
+#vg-win-modal{position:fixed;z-index:30;top:46%;left:50%;transform:translate(-50%,-50%) scale(.82);width:min(88vw,340px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,transform .22s ease,visibility .22s}
+#vg-win-modal.hidden-toast{opacity:0;visibility:hidden;transform:translate(-50%,-50%) scale(.82)}
+#vg-win-modal:not(.hidden-toast){opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
+#vg-floating-win{position:fixed;z-index:31;left:50%;top:52%;transform:translate(-50%,-50%);opacity:0;visibility:hidden;pointer-events:none;white-space:nowrap;text-align:center}
+#vg-floating-win.float-active{visibility:visible;animation:vgWinFloat 1.8s cubic-bezier(.18,.7,.25,1) forwards}
+#vg-floating-win .float-value{font:900 clamp(28px,8vw,44px) Orbitron,monospace;color:#ffe66d;text-shadow:0 0 8px #ffb300,0 0 22px #ff7b00,2px 3px 0 #7a2600}
+#vg-floating-win .float-label{font-weight:800;font-size:clamp(13px,3.6vw,18px);color:#fff;text-shadow:0 2px 6px #000,0 0 12px #ffba00}
+@keyframes vgWinFloat{0%{opacity:0;transform:translate(-50%,-20%) scale(.55)}12%{opacity:1;transform:translate(-50%,0) scale(1.12)}25%{transform:translate(-50%,0) scale(1)}70%{opacity:1;transform:translate(-50%,-55px) scale(1)}100%{opacity:0;transform:translate(-50%,-105px) scale(.92)}}
+#vg-app .spin{background:linear-gradient(135deg,#ff174f,#ff633c);border:1px solid #ffab8b;box-shadow:0 0 20px #ff174f66,inset 0 2px 4px #fff6}
+#vg-paytable-modal{overscroll-behavior:contain}
+@media(max-height:700px){#vg-machine-label{top:12%} #vg-app footer .compact-pad{padding:7px} #vg-app footer .guide{display:none} #vg-win-modal{top:36%}}
+@media(min-width:600px){#vg-app footer{max-width:430px!important} #vg-machine-label{top:14%}}
+
+/* Scoped utility subset used by the original mobile game UI (does not reset the host app). */
+#vg-app .absolute{position:absolute} #vg-app .fixed{position:fixed} #vg-app .relative{position:relative}
+#vg-app .top-0{top:0} #vg-app .bottom-0{bottom:0} #vg-app .left-0{left:0} #vg-app .left-1\/2{left:50%}
+#vg-app .inset-0{inset:0} #vg-app .-translate-x-1\/2{transform:translateX(-50%)}
+#vg-app .z-50{z-index:50} #vg-app .w-full{width:100%} #vg-app .w-9{width:2.25rem} #vg-app .w-7{width:1.75rem} #vg-app .w-6{width:1.5rem}
+#vg-app .w-\[94\%\]{width:94%} #vg-app .max-w-\[420px\]{max-width:420px} #vg-app .max-w-sm{max-width:24rem}
+#vg-app .h-9{height:2.25rem} #vg-app .h-6{height:1.5rem} #vg-app .max-h-\[80dvh\]{max-height:80dvh}
+#vg-app .flex{display:flex} #vg-app .grid{display:grid} #vg-app .hidden{display:none!important}
+#vg-app .flex-col{flex-direction:column} #vg-app .items-center{align-items:center} #vg-app .items-stretch{align-items:stretch}
+#vg-app .justify-between{justify-content:space-between} #vg-app .justify-center{justify-content:center} #vg-app .grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+#vg-app .gap-1{gap:.25rem} #vg-app .gap-1\.5{gap:.375rem} #vg-app .gap-2{gap:.5rem} #vg-app .shrink-0{flex-shrink:0}
+#vg-app .overflow-y-auto{overflow-y:auto} #vg-app .rounded-2xl{border-radius:1rem} #vg-app .rounded-xl{border-radius:.75rem}
+#vg-app .rounded-lg{border-radius:.5rem} #vg-app .rounded-md{border-radius:.375rem}
+#vg-app .border{border-width:1px;border-style:solid} #vg-app .border-2{border-width:2px;border-style:solid}
+#vg-app .border-b{border-bottom-width:1px;border-bottom-style:solid}
+#vg-app .border-amber-400{border-color:#fbbf24} #vg-app .border-amber-500\/20{border-color:rgba(245,158,11,.2)}
+#vg-app .border-amber-500\/30{border-color:rgba(245,158,11,.3)} #vg-app .border-amber-500\/40{border-color:rgba(245,158,11,.4)}
+#vg-app .border-rose-500\/20{border-color:rgba(244,63,94,.2)} #vg-app .border-slate-700{border-color:#334155}
+#vg-app .border-slate-700\/70{border-color:rgba(51,65,85,.7)} #vg-app .border-slate-800{border-color:#1e293b}
+#vg-app .bg-black\/50{background:rgba(0,0,0,.5)} #vg-app .bg-black\/60{background:rgba(0,0,0,.6)} #vg-app .bg-black\/85{background:rgba(0,0,0,.85)}
+#vg-app .bg-slate-800{background:#1e293b}
+#vg-app .p-1\.5{padding:.375rem} #vg-app .p-2{padding:.5rem} #vg-app .p-2\.5{padding:.625rem} #vg-app .p-3{padding:.75rem} #vg-app .p-4{padding:1rem}
+#vg-app .px-2{padding-left:.5rem;padding-right:.5rem} #vg-app .px-2\.5{padding-left:.625rem;padding-right:.625rem} #vg-app .px-3{padding-left:.75rem;padding-right:.75rem}
+#vg-app .py-1{padding-top:.25rem;padding-bottom:.25rem} #vg-app .py-1\.5{padding-top:.375rem;padding-bottom:.375rem} #vg-app .py-3{padding-top:.75rem;padding-bottom:.75rem}
+#vg-app .pb-1\.5{padding-bottom:.375rem} #vg-app .pb-2{padding-bottom:.5rem}
+#vg-app .mt-0\.5{margin-top:.125rem} #vg-app .mt-1\.5{margin-top:.375rem} #vg-app .mt-2{margin-top:.5rem} #vg-app .mt-3{margin-top:.75rem}
+#vg-app .mb-1\.5{margin-bottom:.375rem} #vg-app .my-1{margin-top:.25rem;margin-bottom:.25rem} #vg-app .mr-1{margin-right:.25rem} #vg-app .mr-2{margin-right:.5rem}
+#vg-app .space-y-2>*+*{margin-top:.5rem}
+#vg-app .text-center{text-align:center} #vg-app .text-right{text-align:right}
+#vg-app .text-\[9px\]{font-size:9px} #vg-app .text-\[10px\]{font-size:10px} #vg-app .text-\[11px\]{font-size:11px}
+#vg-app .text-xs{font-size:.75rem} #vg-app .text-sm{font-size:.875rem} #vg-app .text-lg{font-size:1.125rem} #vg-app .text-xl{font-size:1.25rem} #vg-app .text-2xl{font-size:1.5rem}
+#vg-app .font-bold{font-weight:700} #vg-app .font-black{font-weight:900} #vg-app .tracking-widest{letter-spacing:.1em}
+#vg-app .text-amber-200{color:#fde68a} #vg-app .text-amber-300{color:#fcd34d} #vg-app .text-cyan-200{color:#a5f3fc}
+#vg-app .text-emerald-300{color:#6ee7b7} #vg-app .text-rose-300{color:#fda4af} #vg-app .text-slate-300{color:#cbd5e1}
+#vg-app .text-slate-400{color:#94a3b8} #vg-app .text-slate-600{color:#475569}
+#vg-app .font-orbitron{font-family:Orbitron,monospace} #vg-app .font-cinzel{font-family:Cinzel,serif}
+#vg-app .rounded-xl,#vg-app .rounded-2xl{overflow:hidden}
+#vg-app .glass{overflow:visible}
+#vg-app .bg-black\/85{background:rgba(0,0,0,.85)}
+
+</style>
+<script id="vg-original-game-script">
+(function(){
+
+class AudioFX{
+ constructor(){this.ctx=null;this.muted=false}
+ ensure(){const AC=window.AudioContext||window.webkitAudioContext;if(!this.ctx&&AC)this.ctx=new AC();if(this.ctx?.state==='suspended')this.ctx.resume()}
+ tone(freq=440,duration=.08,type='triangle',volume=.06){if(this.muted||!this.ctx)return;let o=this.ctx.createOscillator(),g=this.ctx.createGain(),t=this.ctx.currentTime;o.type=type;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(volume,t);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+duration)}
+ tick(){this.tone(260,.025,'triangle',.04)} thump(){this.tone(110,.08,'sine',.1)} win(big){[440,554,659,880].forEach((f,i)=>setTimeout(()=>this.tone(f,.25,big?'square':'triangle',.07),i*65))}
+}
+const sound=new AudioFX();
+const SYMBOLS=[
+{id:0,name:'Cherry',bn:'চেরি',emoji:'🍒',color:'#ff2a5f',bg:'#260711',mult:0.4},
+{id:1,name:'Bell',bn:'স্বর্ণঘণ্টা',emoji:'🔔',color:'#f59e0b',bg:'#261703',mult:0.8},
+{id:2,name:'Star',bn:'তারা',emoji:'⭐',color:'#fbbf24',bg:'#2b2105',mult:1.5},
+{id:3,name:'Crown',bn:'ক্রাউন',emoji:'👑',color:'#ffd700',bg:'#2d2404',mult:3},
+{id:4,name:'Seven',bn:'সেভেন',emoji:'7️⃣',color:'#ef4444',bg:'#300707',mult:5},
+{id:5,name:'Diamond',bn:'হীরা',emoji:'💎',color:'#06b6d4',bg:'#03262d',mult:10}];
+const state={balance:1000,bet:1,betSteps:[1,2,5,10,20,50],betIdx:0,isSpinning:false,isAuto:false,results:[0,1,2]};
+let scene,camera,renderer,raycaster,mouse,drums=[],frames=[],leverKnob,leverPivot,leverMount,coins=[],machine;
+const canvas=document.getElementById('vg-webgl-canvas'), clock=new THREE.Clock();
+function makeStripTexture(){
+ const c=document.createElement('canvas');c.width=512;c.height=1536;const ctx=c.getContext('2d'),cellH=c.height/6;
+ SYMBOLS.forEach((s,i)=>{let y=i*cellH;const g=ctx.createLinearGradient(0,y,0,y+cellH);g.addColorStop(0,s.bg);g.addColorStop(1,'#05070d');ctx.fillStyle=g;ctx.fillRect(0,y,512,cellH);ctx.strokeStyle=s.color;ctx.lineWidth=7;ctx.strokeRect(12,y+10,488,cellH-20);
+ ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor=s.color;ctx.shadowBlur=14;ctx.font='112px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';ctx.fillText(s.emoji,256,y+cellH*.43);ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='bold 25px "Hind Siliguri",sans-serif';ctx.fillText(s.bn,256,y+cellH*.78)});
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=THREE.RepeatWrapping;tex.wrapT=THREE.RepeatWrapping;tex.minFilter=THREE.LinearFilter;tex.magFilter=THREE.LinearFilter;tex.generateMipmaps=false;return tex;
+}
+function setupScene(){
+ scene=new THREE.Scene();scene.background=new THREE.Color('#03050c');
+ camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,100);
+ renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
+ renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+ scene.add(new THREE.AmbientLight(0xffffff,1.7));
+ const light=new THREE.PointLight(0xffcf69,2.2,30);light.position.set(0,4,5);scene.add(light);
+ const blue=new THREE.PointLight(0x00d9ff,1.2,20);blue.position.set(-4,1,3);scene.add(blue);
+ const gold=new THREE.PointLight(0xff8800,1.2,20);gold.position.set(4,1,3);scene.add(gold);
+ buildMachine();fitScene();raycaster=new THREE.Raycaster();mouse=new THREE.Vector2();addEventListener('resize',fitScene);addEventListener('orientationchange',()=>setTimeout(fitScene,150));addEventListener('pointerdown',handleSceneTap);
+}
+function buildMachine(){
+ machine=new THREE.Group();scene.add(machine);
+ const caseMat=new THREE.MeshStandardMaterial({color:0x090d18,metalness:.75,roughness:.3});
+ const goldMat=new THREE.MeshStandardMaterial({color:0xc9a43b,metalness:.85,roughness:.22});
+ const body=new THREE.Mesh(new THREE.BoxGeometry(3.05,3.45,.75),caseMat);body.position.set(0,.45,-.25);machine.add(body);
+ const bezel=new THREE.Mesh(new THREE.BoxGeometry(3.12,2.6,.14),goldMat);bezel.position.set(0,.35,.2);machine.add(bezel);
+ const inner=new THREE.Mesh(new THREE.BoxGeometry(2.92,2.38,.12),new THREE.MeshStandardMaterial({color:0x080b13,metalness:.25,roughness:.4}));inner.position.set(0,.35,.29);machine.add(inner);
+ // Marquee
+ const mc=document.createElement('canvas');mc.width=768;mc.height=160;let x=mc.getContext('2d');x.fillStyle='#070914';x.fillRect(0,0,768,160);x.strokeStyle='#d6a93c';x.lineWidth=6;x.strokeRect(8,8,752,144);x.textAlign='center';x.textBaseline='middle';x.font='900 58px Orbitron';x.fillStyle='#ffe07a';x.shadowColor='#ff9d00';x.shadowBlur=18;x.fillText('VEGAS 3D',384,80);
+ const marquee=new THREE.Mesh(new THREE.PlaneGeometry(2.45,.48),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(mc)}));marquee.position.set(0,1.85,.32);machine.add(marquee);
+ const radius=.70,width=.78,spacing=.82,segments=6,step=Math.PI*2/segments;
+ // Use one textured cylindrical reel per column. No opaque flat panels cover the symbols.
+ for(let i=0;i<3;i++){
+  const drum=new THREE.Group();drum.position.set((i-1)*spacing,.32,.5);machine.add(drum);
+  // Texture is laid out horizontally because cylinder UV-U follows the reel circumference.
+  const strip=document.createElement('canvas');strip.width=3072;strip.height=512;
+  const ctx=strip.getContext('2d'),cellW=strip.width/segments;
+  SYMBOLS.forEach((sym,j)=>{
+   const x=j*cellW,grad=ctx.createLinearGradient(x,0,x+cellW,0);
+   grad.addColorStop(0,'#05070d');grad.addColorStop(.45,sym.bg);grad.addColorStop(1,'#121a30');
+   ctx.fillStyle=grad;ctx.fillRect(x,0,cellW,strip.height);
+   ctx.strokeStyle=sym.color;ctx.lineWidth=8;ctx.strokeRect(x+12,12,cellW-24,strip.height-24);
+   ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=3;ctx.strokeRect(x+25,25,cellW-50,strip.height-50);
+   ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor=sym.color;ctx.shadowBlur=22;
+   ctx.font='145px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+   ctx.fillText(sym.emoji,x+cellW/2,205);ctx.shadowBlur=0;
+   ctx.fillStyle='#fff';ctx.font='bold 35px sans-serif';ctx.fillText(sym.bn,x+cellW/2,400);
+  });
+  const tex=new THREE.CanvasTexture(strip);tex.colorSpace=THREE.SRGBColorSpace;
+  tex.wrapS=THREE.ClampToEdgeWrapping;tex.wrapT=THREE.RepeatWrapping;
+  tex.minFilter=THREE.LinearMipmapLinearFilter;tex.magFilter=THREE.LinearFilter;
+  tex.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);
+  const cylinder=new THREE.Mesh(
+   new THREE.CylinderGeometry(radius,radius,width,96,1,false),
+   new THREE.MeshStandardMaterial({map:tex,metalness:.12,roughness:.3})
+  );
+  // CylinderGeometry is built on Y; make its axis horizontal, along X.
+  cylinder.rotation.z=-Math.PI/2;
+  drum.add(cylinder);
+  const rimGeo=new THREE.CylinderGeometry(radius*1.015,radius*1.015,.055,64);
+  rimGeo.rotateZ(Math.PI/2);
+  const rimMat=new THREE.MeshStandardMaterial({color:0xd0ad4b,metalness:.92,roughness:.18});
+  const l=new THREE.Mesh(rimGeo,rimMat);l.position.x=-width*.51;drum.add(l);
+  const r=new THREE.Mesh(rimGeo,rimMat);r.position.x=width*.51;drum.add(r);
+  drums.push({mesh:drum,velocity:0,rolling:false,stopping:false,target:0,idx:i,lastTick:0});
+  const edgeMat=new THREE.MeshStandardMaterial({color:0xd2ad4d,metalness:.9,roughness:.22});
+  [-.405,.405].forEach(dx=>{
+   const edge=new THREE.Mesh(new THREE.BoxGeometry(.025,.86,.055),edgeMat);
+   edge.position.set((i-1)*spacing+dx,.32,1.205);machine.add(edge);
+  });
+
+ }
+
+ // front panel bottom decoration
+ const base=new THREE.Mesh(new THREE.BoxGeometry(2.3,.4,.25),goldMat);base.position.set(0,-1.25,.22);machine.add(base);
+ // lever at right, within mobile framing
+ leverMount=new THREE.Group();leverMount.position.set(1.68,.15,.4);machine.add(leverMount);
+ const mountball=new THREE.Mesh(new THREE.SphereGeometry(.18,16,16),goldMat);mountball.position.set(0,-.35,0);leverMount.add(mountball);
+ leverPivot=new THREE.Group();leverMount.add(leverPivot);
+ const arm=new THREE.Mesh(new THREE.CylinderGeometry(.035,.05,.82,12),new THREE.MeshStandardMaterial({color:0xd6dce5,metalness:.9,roughness:.2}));arm.position.y=.34;leverPivot.add(arm);
+ leverKnob=new THREE.Mesh(new THREE.SphereGeometry(.14,20,20),new THREE.MeshStandardMaterial({color:0xff2854,emissive:0x4b0010,metalness:.2}));leverKnob.position.y=.78;leverPivot.add(leverKnob);
+ const payline=new THREE.Mesh(new THREE.BoxGeometry(2.50,.018,.018),new THREE.MeshBasicMaterial({color:0xff2871}));payline.position.set(0,.32,1.215);machine.add(payline);
+}
+function fitScene(){
+ if(!renderer||!camera)return;const w=innerWidth,h=innerHeight,aspect=w/h;renderer.setSize(w,h,false);camera.aspect=aspect;
+ const portrait=aspect<.72;camera.fov=portrait?39:42;
+ // fit machine to the open central viewport between header and controls
+ const visibleHeight=portrait?4.95:4.4;const dist=(visibleHeight/2)/Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+ camera.position.set(0,portrait?.15:.15,Math.max(6.5,dist*1.03));camera.lookAt(0,.25,0);camera.updateProjectionMatrix();
+ const scale=portrait?Math.min(1.0,h/760):Math.min(1.0,h/650);machine.scale.setScalar(scale);
+}
+function handleSceneTap(e){
+ if(e.target.closest('button')||e.target.closest('#paytable-modal'))return;
+ if(!raycaster||!camera)return;
+ mouse.x=e.clientX/innerWidth*2-1;mouse.y=-(e.clientY/innerHeight)*2+1;raycaster.setFromCamera(mouse,camera);
+ if(raycaster.intersectObject(leverKnob,true).length)pullLever();
+}
+let leverAngle=0,leverTarget=0,leverBusy=false,toastTimer;
+function pullLever(){sound.ensure();if(leverBusy||state.isSpinning)return;leverBusy=true;leverTarget=.6;sound.tone(180,.1,'sawtooth',.07);setTimeout(()=>{leverTarget=0;setTimeout(()=>leverBusy=false,220)},160);startSpin()}
+async function startSpin(){
+ if(state.isSpinning)return;
+ if(!currentUser||!userDbRef){document.getElementById('vg-status-text').textContent='প্রথমে লগইন করুন';if(state.isAuto)toggleAuto();return}
+ const betAmount=Number(state.bet)||0;
+ if(betAmount<=0||Number(currentBalance||0)<betAmount){document.getElementById('vg-status-text').textContent='পর্যাপ্ত মেইন ব্যালেন্স নেই';if(state.isAuto)toggleAuto();return}
+ const debit=await userDbRef.child('balance').transaction(v=>{v=Number(v)||0;if(v<betAmount)return;return Math.round((v-betAmount)*100)/100;});
+ if(!debit.committed){state.balance=Number(currentBalance||0);updateHUD();document.getElementById('vg-status-text').textContent='ব্যালেন্স পরিবর্তিত হয়েছে—আবার চেষ্টা করুন';if(state.isAuto)toggleAuto();return}
+ currentBalance=Number(debit.snapshot.val()||0);state.balance=currentBalance;updateSharedBalanceUI();updateHUD();
+ state.isSpinning=true;document.getElementById('vg-btn-spin').disabled=true;document.getElementById('vg-status-text').textContent='ড্রাম ঘুরছে…';document.getElementById('vg-state-status').textContent='● ঘুরছে';
+
+ let out=[rand(),rand(),rand()];const luck=Math.random();if(luck<.12){let s=rand();out=[s,s,s]}else if(luck<.36){let s=rand();out[0]=s;out[1]=s}
+ state.results=out;drums.forEach(d=>{d.rolling=true;d.stopping=false;d.velocity=15+Math.random()*3});
+ [1050,1550,2050].forEach((ms,i)=>setTimeout(()=>stopDrum(i,out[i]),ms));
+}
+function rand(){return Math.floor(Math.random()*SYMBOLS.length)}
+function stopDrum(i,sym){const d=drums[i];d.stopping=true;const step=Math.PI*2/6,turn=Math.PI*2,current=d.mesh.rotation.x;
+ // The visible center is aligned to the selected symbol after whole extra turns.
+ let target=-sym*step+Math.floor((current+sym*step)/turn)*turn;
+ while(target>current)target-=turn;
+ target-=turn*4;d.target=target}
+function updateDrums(dt){
+ drums.forEach((d,i)=>{if(!d.rolling)return;if(!d.stopping){d.mesh.rotation.x-=d.velocity*dt;if(Math.abs(d.mesh.rotation.x-d.lastTick)>Math.PI/3){sound.tick();d.lastTick=d.mesh.rotation.x}}else{let diff=d.target-d.mesh.rotation.x;if(Math.abs(diff)>.025){d.mesh.rotation.x-=Math.min(Math.abs(diff)*Math.min(7*dt,1),d.velocity*dt);if(Math.abs(d.mesh.rotation.x-d.lastTick)>Math.PI/3){sound.tick();d.lastTick=d.mesh.rotation.x}}else{d.mesh.rotation.x=d.target;d.rolling=false;d.stopping=false;sound.thump();if(i===2)finishSpin()}}})
+}
+async function finishSpin(){document.getElementById('vg-state-status').textContent='● ফলাফল যাচাই হচ্ছে';await evaluate();state.isSpinning=false;document.getElementById('vg-btn-spin').disabled=false;document.getElementById('vg-state-status').textContent='● প্রস্তুত';if(state.isAuto)setTimeout(()=>{if(state.isAuto&&!state.isSpinning)startSpin()},1100)}
+async function evaluate(){
+ const [a,b,c]=state.results.map(i=>SYMBOLS[i]);['vg-strip-0','vg-strip-1','vg-strip-2'].forEach((id,i)=>document.getElementById(id).textContent=state.results[i]===undefined?'—':SYMBOLS[state.results[i]].emoji);
+ let mult=0,ids=[],title='কোনো মিল নেই',detail='এটি ডেমো স্পিন। আবার চেষ্টা করুন।',big=false;
+ if(a.id===b.id&&b.id===c.id){mult=a.mult;ids=[0,1,2];big=a.id===5;title=big?'মেগা মিল!':'তিনটি মিলেছে!';detail=`৩টি ${a.bn} মিলেছে · ${mult}x`}
+ else if(a.id===b.id||b.id===c.id||a.id===c.id){
+   // Exactly two matching symbols are a cancelled result: no payout.
+   ids=(a.id===b.id)?[0,1]:(b.id===c.id)?[1,2]:[0,2];
+   title='বাতিল';detail='শুধু ২টি প্রতীক মিলেছে · জয় বা পেআউট নেই';
+ }
+ let win=0;if(mult){
+    win=Math.round(state.bet*mult*100)/100;
+    const credit=await userDbRef.child('balance').transaction(v=>Math.round(((Number(v)||0)+win)*100)/100);
+    if(credit.committed){currentBalance=Number(credit.snapshot.val()||0);state.balance=currentBalance;updateSharedBalanceUI();}
+    else {win=0;document.getElementById('vg-status-text').textContent='জয়ের ব্যালেন্স যোগ করা যায়নি—সহায়তা নিন';}
+    document.getElementById('vg-hud-win').textContent=win.toLocaleString('en-US');document.getElementById('vg-status-text').textContent=`${title} · +${win} কয়েন`;sound.win(big);showToast(title,detail,'+'+win.toLocaleString('bn-BD')+' কয়েন',[a.emoji,b.emoji,c.emoji])}
+ else{document.getElementById('vg-hud-win').textContent='0';document.getElementById('vg-status-text').textContent=(title==='বাতিল'?`বাতিল · ২টি মিলেছে, কোনো জয় নেই`:`মিল নেই · ${a.emoji} | ${b.emoji} | ${c.emoji}`);if(title==='বাতিল')showToast('বাতিল',detail,'০ কয়েন',[a.emoji,b.emoji,c.emoji])}
+ updateHUD()
+}
+function showToast(title,msg,amount,emojis){
+ const m=document.getElementById('vg-win-modal');
+ const floating=document.getElementById('vg-floating-win');
+ const amountNode=document.getElementById('vg-floating-win-amount');
+ if(!m||!floating||!amountNode)return;
+ // Restart both animations cleanly on every new win; never leave an old toast stuck.
+ clearTimeout(toastTimer);
+ document.getElementById('vg-win-tag').textContent=title;
+ document.getElementById('vg-win-message').textContent=msg;
+ document.getElementById('vg-win-amount').textContent=amount;
+ document.getElementById('vg-win-icons-box').textContent=emojis.join('  |  ');
+ amountNode.textContent=amount.replace(' কয়েন','');
+ m.classList.add('hidden-toast');
+ floating.classList.remove('float-active');
+ void m.offsetWidth; void floating.offsetWidth;
+ m.classList.remove('hidden-toast');
+ floating.classList.add('float-active');
+ toastTimer=setTimeout(()=>{
+   m.classList.add('hidden-toast');
+   floating.classList.remove('float-active');
+ },2200);
+}
+function updateHUD(){state.balance=Number(currentBalance||0);document.getElementById('vg-top-balance').textContent=state.balance.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});document.getElementById('vg-hud-bet').textContent=state.bet}
+function toggleAuto(){state.isAuto=!state.isAuto;const b=document.getElementById('vg-btn-auto');document.getElementById('vg-auto-label').textContent=state.isAuto?'বন্ধ করুন':'অটো স্পিন';b.classList.toggle('bg-amber-500',state.isAuto);b.classList.toggle('text-black',state.isAuto);if(state.isAuto&&!state.isSpinning)startSpin()}
+function controls(){
+ document.getElementById('vg-btn-spin').onclick=pullLever;document.getElementById('vg-btn-auto').onclick=()=>{sound.ensure();toggleAuto()};
+ document.getElementById('vg-btn-plus').onclick=()=>{if(state.isSpinning)return;if(state.betIdx<state.betSteps.length-1){state.bet=state.betSteps[++state.betIdx];updateHUD();sound.ensure();sound.tick()}};
+ document.getElementById('vg-btn-minus').onclick=()=>{if(state.isSpinning)return;if(state.betIdx>0){state.bet=state.betSteps[--state.betIdx];updateHUD();sound.ensure();sound.tick()}};
+ const modal=document.getElementById('vg-paytable-modal');document.getElementById('vg-btn-paytable').onclick=()=>{modal.classList.remove('hidden');modal.classList.add('flex')};function close(){modal.classList.add('hidden');modal.classList.remove('flex')};document.getElementById('vg-btn-close-paytable').onclick=close;modal.onclick=e=>{if(e.target===modal)close()};
+ document.getElementById('vg-btn-sound').onclick=()=>{sound.ensure();sound.muted=!sound.muted;document.getElementById('vg-sound-icon').className=sound.muted?'fa-solid fa-volume-xmark text-rose-400':'fa-solid fa-volume-high text-amber-200'};
+ const fsBtn=document.getElementById('vg-btn-fullscreen');
+ async function toggleVgFullScreen(){const target=document.getElementById('vegas3d-game-screen');const active=document.fullscreenElement||document.webkitFullscreenElement;if(active){if(document.exitFullscreen)await document.exitFullscreen().catch(()=>{});else if(document.webkitExitFullscreen)document.webkitExitFullscreen();}else{try{if(target.requestFullscreen)await target.requestFullscreen();else if(target.webkitRequestFullscreen)target.webkitRequestFullscreen();}catch(e){document.getElementById('vg-status-text').textContent='এই ব্রাউজারে ফুলস্ক্রিন চালু করা যায়নি';}}}
+ fsBtn.onclick=toggleVgFullScreen;
+ function updateVgFullscreenLabel(){const active=(document.fullscreenElement||document.webkitFullscreenElement)===document.getElementById('vegas3d-game-screen');document.getElementById('vg-fullscreen-label').textContent=active?'বের হন':'ফুলস্ক্রিন';const icon=fsBtn.querySelector('i');if(icon)icon.className=active?'fa-solid fa-compress mr-1':'fa-solid fa-expand mr-1';if(window.vegas3dResize)window.vegas3dResize();}
+ document.addEventListener('fullscreenchange',updateVgFullscreenLabel);document.addEventListener('webkitfullscreenchange',updateVgFullscreenLabel);
+ document.getElementById('vg-paytable-rows').innerHTML=SYMBOLS.slice().reverse().map(s=>`<div class="flex items-center justify-between rounded-xl bg-black/50 border border-amber-500/20 p-2"><span class="text-xl">${s.emoji}</span><span>${s.bn} × 3</span><b class="text-amber-300 font-orbitron">${s.mult}x</b></div>`).join('')+`<div class="rounded-xl bg-black/50 border border-rose-500/20 p-2 flex justify-between"><span>শুধু ২টি মিললে</span><b class="text-rose-300">বাতিল · ০x</b></div>`;
+}
+function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.06);updateDrums(dt);if(leverPivot){leverAngle+=(leverTarget-leverAngle)*Math.min(1,15*dt);leverPivot.rotation.x=leverAngle}renderer.render(scene,camera)}
+window.addEventListener('load',()=>{try{setupScene();controls();updateHUD();loop()}catch(e){console.error(e);document.getElementById('vg-status-text').textContent='3D লোড হয়নি—ইন্টারনেট সংযোগ দেখুন'}});
+
+window.vegas3dRefreshBalance=function(){
+  state.balance=Number(currentBalance||0);
+  const el=document.getElementById('vg-top-balance');
+  if(el)el.textContent=state.balance.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});
+};
+window.vegas3dResize=function(){try{fitScene();}catch(e){}};
+})();
+
+</script>
 </body>
 </html>
