@@ -163,7 +163,7 @@
   <section id="games" class="page">
     <div class="bk-control-card">
       <h2 class="bk-title">🥊 বক্সিং কিং কন্ট্রোল <span style="font-size:14px;color:#aab4c1">(Settings)</span></h2>
-      <div class="notice" style="margin-bottom:6px">এই কন্ট্রোলগুলো সরাসরি <code>config/boxingKing</code>-এ সেভ হবে। Win-rate/RTP দিয়ে খেলোয়াড়ের ফলাফল গোপনে নিয়ন্ত্রণ করার অপশন রাখা হয়নি।</div>
+      <div class="notice" style="margin-bottom:6px">এই কন্ট্রোলগুলো শুধু Boxing King-এর জন্য <code>config/boxingKing</code>-এ সেভ হবে। Flag King ও Color Gems-এর RTP/reference factor আলাদা সেটিংসে রাখা হয়েছে।</div>
 
       <div class="bk-row">
         <div><div class="bk-label">গেম চালু/বন্ধ (Enable/Disable)</div><div class="bk-help">বন্ধ করলে Boxing King-এর spin শুরু করা যাবে না।</div></div>
@@ -203,6 +203,25 @@
         <div id="avConfigMsg" class="bk-status"></div>
       </div>
 
+      <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(255,204,0,.25);">
+        <h3 class="bk-title" style="font-size:17px;">🏁 Flag King — আলাদা RTP / Reference Factor</h3>
+        <div class="notice" style="margin-bottom:10px">Flag King-এর সেটিং আলাদাভাবে <code>config/flagKing/rtpFactor</code>-এ সেভ হবে। এটি Boxing King ও Color Gems-এর সেটিং থেকে পৃথক reference/configuration value; এটি নিজে থেকে game outcome নিয়ন্ত্রণ করে না।</div>
+        <div class="bk-preset-wrap">
+          <div class="bk-preset-title">Flag King RTP / Reference Factor</div>
+          <select id="fkRtpFactor" class="bk-input">
+            <option value="0.4">0.4x</option>
+            <option value="0.5">0.5x</option>
+            <option value="0.6">0.6x</option>
+            <option value="0.7">0.7x</option>
+            <option value="1.0" selected>1.0x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2.0">2.0x</option>
+          </select>
+        </div>
+        <button id="saveFkConfig" class="bk-save" type="button" style="margin-top:10px;">Flag King RTP সেভ করুন</button>
+        <div id="fkConfigMsg" class="bk-status"></div>
+      </div>
+
       <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(116,180,255,.25);">
         <h3 class="bk-title" style="font-size:17px;">💎 Color Gems — আলাদা RTP Factor</h3>
         <div class="notice" style="margin-bottom:10px">Color Gems-এর RTP Factor আলাদা। এটি <code>config/colorGems/rtpFactor</code>-এ সেভ হবে এবং Boxing King/Flag King-এর RTP Factor পরিবর্তন করবে না।</div>
@@ -234,7 +253,7 @@
 <script>
 const firebaseConfig={apiKey:"AIzaSyAyTOnCm5IuPcB-yvGjFl3KbwRVxNrcNSY",authDomain:"ff-to-gaming-4ea1b.firebaseapp.com",databaseURL:"https://ff-to-gaming-4ea1b-default-rtdb.firebaseio.com",projectId:"ff-to-gaming-4ea1b",storageBucket:"ff-to-gaming-4ea1b.appspot.com",messagingSenderId:"816776130875",appId:"1:816776130875:web:c3e7984e0de53cbd89871e"};
 firebase.initializeApp(firebaseConfig);const auth=firebase.auth(),db=firebase.database();
-let users={},deposits={},withdrawals={},boxingConfig={},colorGemsConfig={},aviatorConfig={};
+let users={},deposits={},withdrawals={},boxingConfig={},flagKingConfig={},colorGemsConfig={},aviatorConfig={};
 const $=id=>document.getElementById(id);
 function toast(m){$("toast").textContent=m;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),2800)}
 function esc(v){return String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
@@ -276,11 +295,12 @@ async function resetEverythingKeepBalance(){
 $("resetAllBtn").onclick=resetEverythingKeepBalance;
 
 async function loadAll(){
- const [u,dep,wd,c,cg,av,auditSnap]=await Promise.all([
+ const [u,dep,wd,c,fk,cg,av,auditSnap]=await Promise.all([
    db.ref("users").once("value"),
    db.ref("adminRequests/deposits").once("value"),
    db.ref("adminRequests/withdrawals").once("value"),
    db.ref("config/boxingKing").once("value"),
+   db.ref("config/flagKing").once("value"),
    db.ref("config/colorGems").once("value"),
    db.ref("config/aviator").once("value"),
    db.ref("adminAudit").limitToLast(100).once("value")
@@ -289,6 +309,7 @@ async function loadAll(){
  deposits=dep.val()||{};
  withdrawals=wd.val()||{};
  boxingConfig=c.val()||{};
+ flagKingConfig=fk.val()||{};
  colorGemsConfig=cg.val()||{};
  aviatorConfig=av.val()||{};
  render();
@@ -485,6 +506,8 @@ function renderConfig(){
   const bets=Array.isArray(c.betOptions)?c.betOptions:(typeof c.betOptions==="string"?c.betOptions.split(",").map(Number).filter(Number.isFinite):[1,2,3,5,10]);
   $("bkBetOptions").value=bets.join(", ");
   $("bkRtpFactor").value=c.rtpFactor!=null?String(c.rtpFactor):"1.0";
+  const fk=flagKingConfig||{};
+  $("fkRtpFactor").value=fk.rtpFactor!=null?String(fk.rtpFactor):"1.0";
   const cg=colorGemsConfig||{};
   $("cgRtpFactor").value=cg.rtpFactor!=null?String(cg.rtpFactor):"1.0";
   const av=aviatorConfig||{};
@@ -522,6 +545,19 @@ $("saveAvConfig").onclick=async()=>{
     $("avConfigMsg").textContent=maxMultiplier===null?"Saved — Random crash logic restored":"Saved — Maximum multiplier: "+maxMultiplier.toFixed(2)+"x";
     toast(maxMultiplier===null?"Aviator random crash restored":"Aviator maximum multiplier saved");
   }catch(e){$("avConfigMsg").textContent="Save failed: "+e.message;toast(e.message)}
+};
+
+$("saveFkConfig").onclick=async()=>{
+  const rtpFactor=Number($("fkRtpFactor").value);
+  if(!Number.isFinite(rtpFactor)||rtpFactor<=0){toast("Valid Flag King RTP/reference factor নির্বাচন করুন");return}
+  const out={rtpFactor};
+  try{
+    await db.ref("config/flagKing").update(out);
+    flagKingConfig=Object.assign({},flagKingConfig,out);
+    await audit("update_flag_king_config","config/flagKing",JSON.stringify(out));
+    $("fkConfigMsg").textContent="Saved successfully";
+    toast("Flag King RTP settings saved");
+  }catch(e){$("fkConfigMsg").textContent="Save failed: "+e.message;toast(e.message)}
 };
 
 $("saveCgConfig").onclick=async()=>{
