@@ -59,7 +59,7 @@
     <button data-page="users">👥 Users</button>
     <button data-page="requests">💳 Requests</button>
     <button data-page="support">🆘 Help Center</button>
-    <button data-page="games">🎮 Games & Config</button><button data-page="gameLogs">📋 Game Logs</button>
+    <button data-page="games">🎮 Games & Config</button>
     <button data-page="announcement">📢 Announcement</button>
     <button data-page="audit">🛡️ Audit Log</button>
   </div>
@@ -102,9 +102,6 @@
         <div class="field"><label>Select user</label><select id="bonusUser"><option value="">Select a user…</option></select></div>
         <div class="field"><label>Bonus Name / Type</label><input id="bonusTitle" type="text" maxlength="80" placeholder="e.g. Free Bonus / Login Bonus"></div>
         <div class="field"><label>Bonus coins</label><input id="bonusAmount" type="number" min="1" step="1" placeholder="e.g. 500"></div>
-        <div class="field"><label>Bonus condition</label><select id="bonusCondition"><option value="free">ফ্রি বোনাস</option><option value="deposit">ডিপোজিট করলে</option></select></div>
-        <div class="field"><label>Minimum deposit (৳)</label><input id="bonusRequiredDeposit" type="number" min="0" step="1" value="0" placeholder="e.g. 500"></div>
-        <div class="field" style="grid-column:1/-1"><label>বোনাসের শর্ত / বিবরণ</label><textarea id="bonusDescription" maxlength="500" placeholder="যেমন: কমপক্ষে ৳৫০০ ডিপোজিট করলে এই বোনাস নিতে পারবেন।"></textarea></div>
       </div>
       <div class="row" style="margin-top:12px">
         <button id="giveBonusBtn" class="btn primary">Give Bonus</button>
@@ -166,7 +163,7 @@
   <section id="games" class="page">
     <div class="bk-control-card">
       <h2 class="bk-title">🥊 বক্সিং কিং কন্ট্রোল <span style="font-size:14px;color:#aab4c1">(Settings)</span></h2>
-      <div class="notice" style="margin-bottom:6px">এই কন্ট্রোলগুলো সরাসরি <code>config/boxingKing</code>-এ সেভ হবে। Win-rate/RTP দিয়ে খেলোয়াড়ের ফলাফল গোপনে নিয়ন্ত্রণ করার অপশন রাখা হয়নি।</div>
+      <div class="notice" style="margin-bottom:6px">এই কন্ট্রোলগুলো শুধু Boxing King-এর জন্য <code>config/boxingKing</code>-এ সেভ হবে। Flag King ও Color Gems-এর RTP/reference factor আলাদা সেটিংসে রাখা হয়েছে।</div>
 
       <div class="bk-row">
         <div><div class="bk-label">গেম চালু/বন্ধ (Enable/Disable)</div><div class="bk-help">বন্ধ করলে Boxing King-এর spin শুরু করা যাবে না।</div></div>
@@ -183,6 +180,8 @@
         <div class="bk-help" style="margin-bottom:8px">এটি configuration/reference value হিসেবে সেভ হবে; এটি player-এর win/lose outcome গোপনে নিয়ন্ত্রণ করে না।</div>
         <select id="bkRtpFactor" class="bk-input">
           <option value="0.4">0.4x</option>
+          <option value="0.5">0.5x</option>
+          <option value="0.6">0.6x</option>
           <option value="0.7">0.7x</option>
           <option value="1.0" selected>1.0x</option>
           <option value="1.5">1.5x</option>
@@ -193,6 +192,36 @@
       <button id="saveConfig" class="bk-save" type="button">বক্সিং কিং সেটিংস সেভ করুন</button>
       <div id="configMsg" class="bk-status"></div>
 
+      <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(255,204,0,.25);">
+        <h3 class="bk-title" style="font-size:17px;">✈️ Aviator — Maximum Multiplier</h3>
+        <div class="notice" style="margin-bottom:10px">এটি একটি স্বচ্ছ maximum cap। উদাহরণ: <b>5x</b> দিলে random crash point 5x-এর বেশি হবে না। ঘরটি খালি রাখলে স্বাভাবিক random crash logic ব্যবহার হবে। এটি কোনো গোপন exact crash-point override নয়।</div>
+        <div class="bk-preset-wrap">
+          <div class="bk-preset-title">Maximum Multiplier (x)</div>
+          <input id="avMaxMultiplier" class="bk-input" type="number" min="1.01" max="100000" step="0.01" placeholder="খালি = Random">
+        </div>
+        <button id="saveAvConfig" class="bk-save" type="button" style="margin-top:10px;">Aviator সেটিংস সেভ করুন</button>
+        <div id="avConfigMsg" class="bk-status"></div>
+      </div>
+
+      <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(255,204,0,.25);">
+        <h3 class="bk-title" style="font-size:17px;">🏁 Flag King — আলাদা RTP / Reference Factor</h3>
+        <div class="notice" style="margin-bottom:10px">Flag King-এর সেটিং আলাদাভাবে <code>config/flagKing/rtpFactor</code>-এ সেভ হবে। এটি Boxing King ও Color Gems-এর সেটিং থেকে পৃথক reference/configuration value; এটি নিজে থেকে game outcome নিয়ন্ত্রণ করে না।</div>
+        <div class="bk-preset-wrap">
+          <div class="bk-preset-title">Flag King RTP / Reference Factor</div>
+          <select id="fkRtpFactor" class="bk-input">
+            <option value="0.4">0.4x</option>
+            <option value="0.5">0.5x</option>
+            <option value="0.6">0.6x</option>
+            <option value="0.7">0.7x</option>
+            <option value="1.0" selected>1.0x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2.0">2.0x</option>
+          </select>
+        </div>
+        <button id="saveFkConfig" class="bk-save" type="button" style="margin-top:10px;">Flag King RTP সেভ করুন</button>
+        <div id="fkConfigMsg" class="bk-status"></div>
+      </div>
+
       <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(116,180,255,.25);">
         <h3 class="bk-title" style="font-size:17px;">💎 Color Gems — আলাদা RTP Factor</h3>
         <div class="notice" style="margin-bottom:10px">Color Gems-এর RTP Factor আলাদা। এটি <code>config/colorGems/rtpFactor</code>-এ সেভ হবে এবং Boxing King/Flag King-এর RTP Factor পরিবর্তন করবে না।</div>
@@ -200,6 +229,8 @@
           <div class="bk-preset-title">Color Gems RTP / Reference Factor</div>
           <select id="cgRtpFactor" class="bk-input">
             <option value="0.4">0.4x</option>
+            <option value="0.5">0.5x</option>
+            <option value="0.6">0.6x</option>
             <option value="0.7">0.7x</option>
             <option value="1.0" selected>1.0x</option>
             <option value="1.5">1.5x</option>
@@ -212,7 +243,6 @@
     </div>
   </section>
 
-  <section id="gameLogs" class="page"><div class="card"><h2>📋 Game Activity Logs</h2><div class="notice">User কোন game খেলেছে, কত bet করেছে, win/loss ও payout এখানে দেখা যাবে।</div><div class="row" style="margin:12px 0"><input id="gameLogSearch" class="search" placeholder="Search email, UID or game…"><button class="btn primary" id="refreshGameLogs">Refresh Logs</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Time</th><th>User</th><th>Game</th><th>Bet</th><th>Result</th><th>Payout</th><th>Details</th></tr></thead><tbody id="gameLogsBody"></tbody></table></div></div></section>
   <section id="announcement" class="page"><div class="card"><h2>Global announcement</h2><div class="field"><label>Message</label><textarea id="announcementText" placeholder="Announcement shown in the main app…"></textarea></div><div class="row" style="margin-top:12px"><button class="btn primary" id="saveAnnouncement">Publish</button><button class="btn" id="clearAnnouncement">Clear</button></div></div></section>
 
   <section id="audit" class="page"><div class="card"><h2>Admin audit log</h2><div class="notice">Every dashboard action made by this console is recorded under <code>adminAudit</code>.</div><div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody id="auditBody"></tbody></table></div></div></section>
@@ -223,7 +253,7 @@
 <script>
 const firebaseConfig={apiKey:"AIzaSyAyTOnCm5IuPcB-yvGjFl3KbwRVxNrcNSY",authDomain:"ff-to-gaming-4ea1b.firebaseapp.com",databaseURL:"https://ff-to-gaming-4ea1b-default-rtdb.firebaseio.com",projectId:"ff-to-gaming-4ea1b",storageBucket:"ff-to-gaming-4ea1b.appspot.com",messagingSenderId:"816776130875",appId:"1:816776130875:web:c3e7984e0de53cbd89871e"};
 firebase.initializeApp(firebaseConfig);const auth=firebase.auth(),db=firebase.database();
-let users={},deposits={},withdrawals={},boxingConfig={},colorGemsConfig={},gameLogs=[];
+let users={},deposits={},withdrawals={},boxingConfig={},flagKingConfig={},colorGemsConfig={},aviatorConfig={};
 const $=id=>document.getElementById(id);
 function toast(m){$("toast").textContent=m;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),2800)}
 function esc(v){return String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
@@ -265,29 +295,26 @@ async function resetEverythingKeepBalance(){
 $("resetAllBtn").onclick=resetEverythingKeepBalance;
 
 async function loadAll(){
- const [u,dep,wd,c,cg,a]=await Promise.all([
+ const [u,dep,wd,c,fk,cg,av,auditSnap]=await Promise.all([
    db.ref("users").once("value"),
    db.ref("adminRequests/deposits").once("value"),
    db.ref("adminRequests/withdrawals").once("value"),
    db.ref("config/boxingKing").once("value"),
+   db.ref("config/flagKing").once("value"),
    db.ref("config/colorGems").once("value"),
+   db.ref("config/aviator").once("value"),
    db.ref("adminAudit").limitToLast(100).once("value")
  ]);
  users=u.val()||{};
  deposits=dep.val()||{};
  withdrawals=wd.val()||{};
  boxingConfig=c.val()||{};
+ flagKingConfig=fk.val()||{};
  colorGemsConfig=cg.val()||{};
- gameLogs=[];
- Object.entries(users).forEach(([uid,u])=>{
-   Object.entries(u?.gameLogs||{}).forEach(([logId,l])=>{
-     if(l && typeof l === 'object') gameLogs.push(Object.assign({id:logId,uid:uid,email:u.email||''},l));
-   });
- });
- gameLogs.sort((x,y)=>Number(y.timestamp||0)-Number(x.timestamp||0));
+ aviatorConfig=av.val()||{};
  render();
  renderConfig();
- renderAudit(a.val()||{});
+ renderAudit(auditSnap.val()||{});
 }
 
 function populateBonusUsers(){
@@ -302,15 +329,11 @@ function populateBonusUsers(){
 async function giveBonus(uid, amount, title){
   const n=Number(amount);
   const bonusTitle=String(title||"").trim();
-  const conditionType=$("bonusCondition").value;
-  const requiredDeposit=Number($("bonusRequiredDeposit").value||0);
-  const description=String($("bonusDescription").value||"").trim();
   if(!bonusTitle){toast("Bonus Name / Type লিখুন");return}
   if(!uid||!Number.isFinite(n)||n<=0){toast("Valid user and positive bonus amount required");return}
-  if(conditionType==="deposit"&&(!Number.isFinite(requiredDeposit)||requiredDeposit<=0)){toast("ডিপোজিট বোনাসের জন্য ন্যূনতম ডিপোজিট লিখুন");return}
   const bonusId=db.ref("users/"+uid+"/bonuses").push().key;
   const now=Date.now();
-  const bonus={title:bonusTitle,amount:n,conditionType,requiredDeposit:conditionType==="deposit"?requiredDeposit:0,description,createdAt:now,expiresAt:now+(5*60*60*1000),status:"pending",grantedBy:auth.currentUser?.email||"admin"};
+  const bonus={title:bonusTitle,amount:n,createdAt:now,expiresAt:now+(5*60*60*1000),status:"pending",grantedBy:auth.currentUser?.email||"admin"};
   await db.ref("users/"+uid+"/bonuses/"+bonusId).set(bonus);
   await audit("grant_bonus",uid,JSON.stringify({title:bonusTitle,amount:n,bonusId,expiresAt:bonus.expiresAt}));
   await loadAll();
@@ -323,19 +346,15 @@ $("giveBonusBtn").onclick=async()=>{
 $("giveAllBonusBtn").onclick=async()=>{
   const n=Number($("bonusAmount").value);
   const bonusTitle=String($("bonusTitle").value||"").trim();
-  const conditionType=$("bonusCondition").value;
-  const requiredDeposit=Number($("bonusRequiredDeposit").value||0);
-  const description=String($("bonusDescription").value||"").trim();
   if(!bonusTitle){toast("Bonus Name / Type লিখুন");return}
   if(!Number.isFinite(n)||n<=0){toast("Enter a positive bonus amount");return}
-  if(conditionType==="deposit"&&(!Number.isFinite(requiredDeposit)||requiredDeposit<=0)){toast("ডিপোজিট বোনাসের জন্য ন্যূনতম ডিপোজিট লিখুন");return}
   const entries=Object.keys(users);
   if(!entries.length){toast("No users found");return}
   if(!confirm(`Give ${n} bonus coins to all ${entries.length} users?`))return;
   const now=Date.now(), updates={};
   entries.forEach(uid=>{
     const bonusId=db.ref("users/"+uid+"/bonuses").push().key;
-    updates["users/"+uid+"/bonuses/"+bonusId]={title:bonusTitle,amount:n,conditionType,requiredDeposit:conditionType==="deposit"?requiredDeposit:0,description,createdAt:now,expiresAt:now+(5*60*60*1000),status:"pending",grantedBy:auth.currentUser?.email||"admin"};
+    updates["users/"+uid+"/bonuses/"+bonusId]={title:bonusTitle,amount:n,createdAt:now,expiresAt:now+(5*60*60*1000),status:"pending",grantedBy:auth.currentUser?.email||"admin"};
   });
   await db.ref().update(updates);
   await audit("grant_bonus_all","all_users",JSON.stringify({title:bonusTitle,amount:n,userCount:entries.length,expiresInHours:5}));
@@ -349,7 +368,6 @@ function render(){
  const games=arr.reduce((s,[,u])=>s+Number(u.games||0),0),wins=arr.reduce((s,[,u])=>s+Number(u.wins||0),0),bg=arr.reduce((s,[,u])=>s+Number(u.boxingKingGames||0),0),bw=arr.reduce((s,[,u])=>s+Number(u.boxingKingWins||0),0);$("gameStats").innerHTML=`Aviator games: <b>${games}</b> · wins: <b>${wins}</b><br>Boxing King games: <b>${bg}</b> · wins: <b>${bw}</b>`;
  const q=$("userSearch").value.toLowerCase();$("usersBody").innerHTML=arr.filter(([uid,u])=>(uid+" "+(u.email||"")).toLowerCase().includes(q)).map(([uid,u])=>{const ts=getLastActivity(u);return `<tr><td><b>${esc(u.email||"—")}</b><br><small>${esc(uid)}</small></td><td>${money(u.balance)}</td><td>${u.games||0}</td><td>${u.wins||0}</td><td>${u.boxingKingWins||0}/${u.boxingKingGames||0}</td><td>${ts?esc(new Date(ts).toLocaleString()):"—"}</td><td><button class="btn" onclick="viewUser('${esc(uid)}')">View</button> <button class="btn danger" onclick="removeUser('${esc(uid)}')">Remove</button></td></tr>`}).join("")||`<tr><td colspan="7">No users found.</td></tr>`;
  renderRequests();
- renderGameLogs();
 }
 $("userSearch").oninput=render;
 function getLastActivity(u){
@@ -382,23 +400,9 @@ window.removeUser=async uid=>{
 };
 
 window.viewUser=uid=>{const u=users[uid]||{};$("userDetails").innerHTML=`<div class="notice"><b>${esc(u.email||"—")}</b><br>UID: ${esc(uid)}<br>Balance: ${money(u.balance)}<br>Aviator: ${u.wins||0} wins / ${u.games||0} games<br>Boxing King: ${u.boxingKingWins||0} wins / ${u.boxingKingGames||0} games</div>`;$("userModal").classList.remove("hidden")};
-function renderGameLogs(){const q=String($("gameLogSearch")?.value||'').toLowerCase();const rows=gameLogs.filter(l=>(String(l.email||'')+' '+String(l.uid||'')+' '+String(l.game||'')).toLowerCase().includes(q)).slice(0,300);$("gameLogsBody").innerHTML=rows.map(l=>{const r=String(l.result||'');const rh=r==='win'?'<span class="badge ok">WIN</span>':r==='loss'?'<span class="badge bad">LOSS</span>':'<span class="badge warn">'+esc(r||'—')+'</span>';const d=[];if(l.multiplier)d.push(esc(l.multiplier)+'x');if(l.crashPoint)d.push('Crash '+esc(l.crashPoint)+'x');if(l.selectedColor)d.push('Picked '+esc(l.selectedColor));if(l.winningColor)d.push('Result '+esc(l.winningColor));if(l.roundIndex!==undefined)d.push('Round '+esc(l.roundIndex));if(l.testMode)d.push('TEST');return `<tr><td>${l.timestamp?esc(new Date(Number(l.timestamp)).toLocaleString()):'—'}</td><td><b>${esc(l.email||'—')}</b><br><small>${esc(l.uid||'')}</small></td><td>${esc(l.game||'—')}</td><td>${money(l.betAmount)}</td><td>${rh}</td><td>${money(l.payout)}</td><td>${d.join(' · ')||'—'}</td></tr>`}).join('')||'<tr><td colspan="7">কোনো game log পাওয়া যায়নি।</td></tr>';}
-$("gameLogSearch").oninput=renderGameLogs;$("refreshGameLogs").onclick=loadAll;
 function renderRequests(){
- const dep=Object.entries(deposits).reverse();
- $("depositsBody").innerHTML=dep.map(([id,r])=>{
-   const matched=r.matchedWithdrawalId ? (withdrawals[r.matchedWithdrawalId]||{}) : null;
-   const matchLabel=r.paymentSource==='matched_withdrawal'
-     ? `<div style="margin-top:4px;font-size:11px;color:#81c784;">🔗 Matched Withdrawal: ${esc(matched.email||matched.uid||r.matchedWithdrawalId)} · ${money(r.matchedWithdrawalAmount||r.amount)} · ${esc(r.matchedWithdrawalMethod||r.method)}<br>📱 ${esc(matched.accountNo||"—")}</div>`
-     : `<div style="margin-top:4px;font-size:11px;color:#a0aec0;">🏦 Admin Number</div>`;
-   return `<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.trxId||"—")} ${matchLabel}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','rejected')">Reject</button>`}</td></tr>`;
- }).join("")||`<tr><td colspan="6">No deposit requests.</td></tr>`;
- const wd=Object.entries(withdrawals).reverse();
- $("withdrawalsBody").innerHTML=wd.map(([id,r])=>{
-   const linked=Object.entries(deposits).find(([,d])=>d && d.matchedWithdrawalId===id);
-   const linkLabel=linked ? `<div style="margin-top:4px;font-size:11px;color:#81c784;">🔗 Matched Deposit: ${esc(linked[1].email||linked[1].uid||linked[0])} · ${money(linked[1].amount)} · TrxID: ${esc(linked[1].trxId||"—")}</div>` : '';
-   return `<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.accountNo||"—")}${linkLabel}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','rejected')">Reject</button>`}</td></tr>`;
- }).join("")||`<tr><td colspan="6">No withdrawal requests.</td></tr>`;
+ const dep=Object.entries(deposits).reverse();$("depositsBody").innerHTML=dep.map(([id,r])=>`<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.trxId||"—")}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','rejected')">Reject</button>`}</td></tr>`).join("")||`<tr><td colspan="6">No deposit requests.</td></tr>`;
+ const wd=Object.entries(withdrawals).reverse();$("withdrawalsBody").innerHTML=wd.map(([id,r])=>`<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.accountNo||"—")}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','rejected')">Reject</button>`}</td></tr>`).join("")||`<tr><td colspan="6">No withdrawal requests.</td></tr>`;
 }
 window.requestAction=async(type,id,status)=>{
   if(status!=="approved" && status!=="rejected"){toast("Invalid request action");return}
@@ -456,17 +460,6 @@ window.requestAction=async(type,id,status)=>{
       await db.ref(path+"/balanceCredited").set(true);
     }
 
-    // If a deposit was rejected, release the linked withdrawal so it can be matched again.
-    // On approval, keep the withdrawal link visible for the admin to settle separately.
-    if(type==="deposits" && status==="rejected" && processed.matchedWithdrawalId){
-      const wr=db.ref(`adminRequests/withdrawals/${processed.matchedWithdrawalId}`);
-      const ws=await wr.once("value");
-      const w=ws.val();
-      if(w && w.status==="pending" && w.matchedDepositId===id){
-        await wr.update({matchedDepositId:null,matchedAt:null,matchedDepositAt:null});
-      }
-    }
-
     // IMPORTANT: remove the actual request node directly.
     // This is the operation that makes it disappear from the admin queue.
     await db.ref(path).remove();
@@ -513,8 +506,12 @@ function renderConfig(){
   const bets=Array.isArray(c.betOptions)?c.betOptions:(typeof c.betOptions==="string"?c.betOptions.split(",").map(Number).filter(Number.isFinite):[1,2,3,5,10]);
   $("bkBetOptions").value=bets.join(", ");
   $("bkRtpFactor").value=c.rtpFactor!=null?String(c.rtpFactor):"1.0";
+  const fk=flagKingConfig||{};
+  $("fkRtpFactor").value=fk.rtpFactor!=null?String(fk.rtpFactor):"1.0";
   const cg=colorGemsConfig||{};
   $("cgRtpFactor").value=cg.rtpFactor!=null?String(cg.rtpFactor):"1.0";
+  const av=aviatorConfig||{};
+  $("avMaxMultiplier").value=av.maxMultiplier!=null?String(av.maxMultiplier):"";
 }
 
 $("saveConfig").onclick=async()=>{
@@ -530,6 +527,37 @@ $("saveConfig").onclick=async()=>{
     $("configMsg").textContent="Saved successfully";
     toast("Boxing King settings saved");
   }catch(e){$("configMsg").textContent="Save failed: "+e.message;toast(e.message)}
+};
+
+$("saveAvConfig").onclick=async()=>{
+  const raw=String($("avMaxMultiplier").value||"").trim();
+  let maxMultiplier=null;
+  if(raw!==""){
+    const n=Number(raw);
+    if(!Number.isFinite(n)||n<1.01||n>100000){toast("Aviator Max Multiplier 1.01x থেকে 100000x-এর মধ্যে দিন, অথবা খালি রাখুন");return}
+    maxMultiplier=Number(n.toFixed(2));
+  }
+  const out={maxMultiplier};
+  try{
+    await db.ref("config/aviator").update(out);
+    aviatorConfig=Object.assign({},aviatorConfig,out);
+    await audit("update_aviator_max_multiplier","config/aviator",JSON.stringify(out));
+    $("avConfigMsg").textContent=maxMultiplier===null?"Saved — Random crash logic restored":"Saved — Maximum multiplier: "+maxMultiplier.toFixed(2)+"x";
+    toast(maxMultiplier===null?"Aviator random crash restored":"Aviator maximum multiplier saved");
+  }catch(e){$("avConfigMsg").textContent="Save failed: "+e.message;toast(e.message)}
+};
+
+$("saveFkConfig").onclick=async()=>{
+  const rtpFactor=Number($("fkRtpFactor").value);
+  if(!Number.isFinite(rtpFactor)||rtpFactor<=0){toast("Valid Flag King RTP/reference factor নির্বাচন করুন");return}
+  const out={rtpFactor};
+  try{
+    await db.ref("config/flagKing").update(out);
+    flagKingConfig=Object.assign({},flagKingConfig,out);
+    await audit("update_flag_king_config","config/flagKing",JSON.stringify(out));
+    $("fkConfigMsg").textContent="Saved successfully";
+    toast("Flag King RTP settings saved");
+  }catch(e){$("fkConfigMsg").textContent="Save failed: "+e.message;toast(e.message)}
 };
 
 $("saveCgConfig").onclick=async()=>{
