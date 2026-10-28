@@ -1073,7 +1073,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 আপনার ব্যালেন্স থেকে কয়েন উইথড্র করুন।
             </div>
             <div id="withdraw-cooldown-notice" class="withdraw-cooldown-notice hidden">
-                🔒 Withdraw সাময়িকভাবে বন্ধ। সর্বশেষ approved deposit-এর <strong>৬ ঘণ্টা</strong> পূর্ণ হতে বাকি: <strong id="withdraw-countdown">06ঘ 00মি 00সে</strong>
+                🔒 টার্নওভার বাকি থাকলে অথবা ডিপোজিটের ৬ ঘণ্টা পূর্ণ না হলে Withdraw বন্ধ। <strong id="withdraw-countdown"></strong>
             </div>
             <div class="form-group">
                 <select id="withdraw-method">
@@ -1861,6 +1861,35 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             })();
         });
 
+        // Shared countdown formatter used by the deposit cooldown checks and turnover UI.
+        window.gzFormatRemaining = function(ms){
+            ms=Math.max(0,Number(ms)||0);
+            const total=Math.floor(ms/1000), h=Math.floor(total/3600), m=Math.floor((total%3600)/60), sec=total%60;
+            return `${h}ঘ ${String(m).padStart(2,"0")}মি ${String(sec).padStart(2,"0")}সে`;
+        };
+
+        // Turnover policy: if the user's main balance drops below ৳1, close any outstanding bonus turnover.
+        // Main balance is never added to the turnover requirement.
+        window.gzApplyLowBalanceTurnoverRule = async function(uid){
+            if(!uid) return null;
+            const userRef=db.ref('users/'+uid);
+            try{
+                const result=await userRef.transaction(function(user){
+                    if(!user) return;
+                    const balance=Number(user.balance||0);
+                    const t=user.bonusTurnover||{};
+                    const required=Math.max(0,Number(t.required||0));
+                    const completed=Math.min(required,Math.max(0,Number(t.completed||0)));
+                    if(balance < 1 && required > completed){
+                        user.bonusTurnover=Object.assign({},t,{completed:required,remaining:0,status:'complete',completedByLowBalance:true,updatedAt:Date.now()});
+                        return user;
+                    }
+                    return; // No change needed.
+                });
+                return result && result.snapshot ? result.snapshot.val() : null;
+            }catch(err){ console.warn('Low-balance turnover rule could not be saved:',err); return null; }
+        };
+
         let withdrawRequestBusy = false;
 
         document.getElementById('withdraw-btn').addEventListener('click', async () => {
@@ -1871,25 +1900,31 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             const countdown = document.getElementById('withdraw-countdown');
             if (notice) notice.classList.add('hidden');
             try {
-                const snap = await db.ref('users/' + currentUser.uid).once('value');
-                const u = snap.val() || {};
+                let snap = await db.ref('users/' + currentUser.uid).once('value');
+                let u = snap.val() || {};
+                if (Number(u.balance || 0) < 1 && typeof window.gzApplyLowBalanceTurnoverRule === 'function') {
+                    u = (await window.gzApplyLowBalanceTurnoverRule(currentUser.uid)) || u;
+                }
                 const turnover = u.bonusTurnover || {};
                 const turnoverLeft = Math.max(0, Number(turnover.required || 0) - Number(turnover.completed || 0));
                 if (turnover.status === 'pending' && turnoverLeft > 0) {
-                    alert('বোনাস টার্নওভার সম্পূর্ণ হয়নি। আরও ৳' + turnoverLeft.toFixed(2) + ' যোগ্য বেট বাকি। এ সময় কোনো ব্যালেন্স Withdraw করা যাবে না।');
-                    updateBonusTurnoverUI();
-                    withdrawRequestBusy = false;
-                    const preflightButton = document.getElementById('withdraw-confirm-btn');
-                    if (preflightButton) preflightButton.disabled = false;
+                    if (notice) notice.classList.remove('hidden');
+                    if (countdown) countdown.textContent = 'টার্নওভার বাকি ৳' + turnoverLeft.toFixed(2);
+                    alert('বোনাস টার্নওভার সম্পূর্ণ হয়নি। আরও ৳' + turnoverLeft.toFixed(2) + ' যোগ্য বেট বাকি। এ সময় Withdraw করা যাবে না।');
+                    updateBonusTurnoverUI(); updateWithdrawLockUI();
                     return;
                 }
                 const last = Number(u.lastDepositAt || 0);
-                const left = last ? (last + 6 * 60 * 60 * 1000 - (Date.now() + ((typeof aviatorServerTimeOffset === 'number') ? aviatorServerTimeOffset : 0))) : 0;
+                const offset = (typeof aviatorServerTimeOffset === 'number') ? aviatorServerTimeOffset : 0;
+                const left = last ? (last + 6 * 60 * 60 * 1000 - (Date.now() + offset)) : 0;
                 if (left > 0) {
                     if (notice) notice.classList.remove('hidden');
-                    if (countdown) countdown.textContent = fmtRemaining(left);
+                    if (countdown) countdown.textContent = window.gzFormatRemaining(left);
+                    alert('সর্বশেষ ডিপোজিটের ৬ ঘণ্টা পূর্ণ হয়নি। আরও ' + window.gzFormatRemaining(left) + ' অপেক্ষা করুন।');
+                    updateWithdrawLockUI();
+                    return;
                 }
-            } catch (e) {}
+            } catch (e) { console.warn('Withdrawal pre-check failed:',e); alert('উইথড্রের নিয়ম যাচাই করা যায়নি। ইন্টারনেট/Firebase সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।'); return; }
             withdrawModal.classList.remove('hidden');
         });
         document.getElementById('close-withdraw-btn').onclick = () => withdrawModal.classList.add('hidden');
@@ -1902,27 +1937,33 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             const withdrawConfirmButton = document.getElementById('withdraw-confirm-btn');
             if (withdrawConfirmButton) withdrawConfirmButton.disabled = true;
             try {
-                const snap = await db.ref('users/' + currentUser.uid).once('value');
-                const u = snap.val() || {};
+                let snap = await db.ref('users/' + currentUser.uid).once('value');
+                let u = snap.val() || {};
+                if (Number(u.balance || 0) < 1 && typeof window.gzApplyLowBalanceTurnoverRule === 'function') {
+                    u = (await window.gzApplyLowBalanceTurnoverRule(currentUser.uid)) || u;
+                }
                 const turnover = u.bonusTurnover || {};
                 const turnoverLeft = Math.max(0, Number(turnover.required || 0) - Number(turnover.completed || 0));
                 if (turnover.status === 'pending' && turnoverLeft > 0) {
                     e.preventDefault();
                     withdrawMsg.style.color = '#ef9a9a';
-                    withdrawMsg.innerText = 'বোনাস টার্নওভার সম্পূর্ণ হয়নি। আরও ৳' + turnoverLeft.toFixed(2) + ' যোগ্য বেট বাকি। কোনো ব্যালেন্স Withdraw করা যাবে না।';
+                    withdrawMsg.innerText = 'বোনাস টার্নওভার সম্পূর্ণ হয়নি। আরও ৳' + turnoverLeft.toFixed(2) + ' যোগ্য বেট বাকি। Withdraw করা যাবে না।';
                     return;
                 }
                 const last = Number(u.lastDepositAt || 0);
-                const left = last ? (last + 6 * 60 * 60 * 1000 - (Date.now() + ((typeof aviatorServerTimeOffset === 'number') ? aviatorServerTimeOffset : 0))) : 0;
+                const offset = (typeof aviatorServerTimeOffset === 'number') ? aviatorServerTimeOffset : 0;
+                const left = last ? (last + 6 * 60 * 60 * 1000 - (Date.now() + offset)) : 0;
                 if (left > 0) {
                     e.preventDefault();
                     const notice = document.getElementById('withdraw-cooldown-notice');
                     const countdown = document.getElementById('withdraw-countdown');
                     if (notice) notice.classList.remove('hidden');
-                    if (countdown) countdown.textContent = fmtRemaining(left);
+                    if (countdown) countdown.textContent = window.gzFormatRemaining(left);
+                    withdrawMsg.style.color = '#ef9a9a';
+                    withdrawMsg.innerText = 'সর্বশেষ ডিপোজিটের ৬ ঘণ্টা পূর্ণ হয়নি। আরও ' + window.gzFormatRemaining(left) + ' অপেক্ষা করুন।';
                     return;
                 }
-            } catch (err) {}
+            } catch (err) { e.preventDefault(); withdrawMsg.style.color='#ef9a9a'; withdrawMsg.innerText='উইথড্রের নিয়ম যাচাই করা যায়নি। আবার চেষ্টা করুন।'; return; }
             const amt = parseFloat(document.getElementById('withdraw-amount').value);
             const method = document.getElementById('withdraw-method').value;
             const accountNo = document.getElementById('withdraw-account').value.trim();
@@ -3930,10 +3971,9 @@ function rbLockAndSpin(){
     start();
 })();
 
-// ================= BONUS + 6H WITHDRAWAL COOLDOWN =================
+// ================= BONUS TURNOVER / WITHDRAWAL LOCK =================
 (function initBonusAndWithdrawCooldown(){
   const BONUS_TTL = 5 * 60 * 60 * 1000;
-  const WITHDRAW_COOLDOWN = 6 * 60 * 60 * 1000;
   let bonusTimer = null;
   const DEFAULT_TURNOVER_MULTIPLIER = 10;
   let turnoverMultiplierCache = DEFAULT_TURNOVER_MULTIPLIER;
@@ -3956,13 +3996,18 @@ function rbLockAndSpin(){
     if(!currentUser) return;
     const n=Number(amount);
     if(!Number.isFinite(n)||n<=0) return;
-    const ref=db.ref('users/'+currentUser.uid+'/bonusTurnover');
+    const ref=db.ref('users/'+currentUser.uid);
     try{
-      await ref.transaction(t=>{
-        if(!t || t.status!=='pending') return;
+      await ref.transaction(u=>{
+        if(!u) return;
+        const t=u.bonusTurnover||{};
         const required=Math.max(0,Number(t.required||0));
-        const completed=Math.min(required,Math.max(0,Number(t.completed||0))+n);
-        return Object.assign({},t,{completed:completed,remaining:Math.max(0,required-completed),status:completed>=required?'complete':'pending',updatedAt:bonusNow(),lastGame:String(gameName||'Game').slice(0,40)});
+        const oldCompleted=Math.min(required,Math.max(0,Number(t.completed||0)));
+        if(required<=0 || oldCompleted>=required) return;
+        const balance=Number(u.balance||0);
+        const completed=balance<1 ? required : Math.min(required,oldCompleted+n);
+        u.bonusTurnover=Object.assign({},t,{completed,remaining:Math.max(0,required-completed),status:completed>=required?'complete':'pending',completedByLowBalance:balance<1?true:!!t.completedByLowBalance,updatedAt:bonusNow(),lastGame:String(gameName||'Game').slice(0,40)});
+        return u;
       });
       updateBonusTurnoverUI();
       updateWithdrawLockUI();
@@ -4009,7 +4054,7 @@ function rbLockAndSpin(){
       const snap=await db.ref('users/'+currentUser.uid+'/bonusTurnover').once('value');
       const t=snap.val();
       if(!t || !(Number(t.required)>0)){ wrap.style.display='none'; return; }
-      const required=Number(t.required)||0, done=Math.min(required,Number(t.completed)||0), left=Math.max(0,required-done);
+      const required=Math.max(0,Number(t.required)||0), done=Math.min(required,Math.max(0,Number(t.completed)||0)), left=Math.max(0,required-done);
       const pct=Math.max(0,Math.min(100,required?done/required*100:0));
       wrap.style.display='block';
       document.getElementById('bonus-turnover-percent').textContent=pct.toFixed(1)+'%';
@@ -4067,7 +4112,7 @@ function rbLockAndSpin(){
       const now2=bonusNow();
       document.querySelectorAll("#bonus-list .bonus-countdown").forEach(el=>{
         const left=Number(el.dataset.expires||0)-now2;
-        el.textContent=left>0 ? "⏳ Expire in: "+fmtRemaining(left) : "Expired";
+        el.textContent=left>0 ? "⏳ Expire in: "+window.gzFormatRemaining(left) : "Expired";
       });
     };
     tick();
@@ -4117,48 +4162,39 @@ function rbLockAndSpin(){
     }
   }
 
-  function getLastDepositAtFromUser(u){
-    return Number(u?.lastDepositAt||0);
-  }
-
   async function updateWithdrawLockUI(){
     const btn=document.getElementById("withdraw-btn");
     const notice=document.getElementById("withdraw-cooldown-notice");
     const countdown=document.getElementById("withdraw-countdown");
     if(!btn || !currentUser) return;
     try{
-      const snap=await db.ref("users/"+currentUser.uid).once("value");
-      const u=snap.val()||{};
-      const last=getLastDepositAtFromUser(u);
-      const left=last ? (last+WITHDRAW_COOLDOWN-bonusNow()) : 0;
-      const turnover=u.bonusTurnover||{};
-      const turnoverLeft=Math.max(0,Number(turnover.required||0)-Number(turnover.completed||0));
-      const turnoverLocked=turnover.status==='pending' && turnoverLeft>0;
-      if(turnoverLocked){
-        btn.title='বোনাস টার্নওভার সম্পূর্ণ না হওয়া পর্যন্ত Withdraw বন্ধ';
-        btn.dataset.turnoverLocked='1';
-        btn.style.opacity='.65';
-        if(notice) notice.classList.remove('hidden');
-        if(countdown) countdown.textContent='বোনাস টার্নওভার বাকি ৳'+fmtMoney(turnoverLeft);
-      }else if(left>0){
-        btn.dataset.turnoverLocked='0';
-        btn.title="ডিপোজিটের ৬ ঘণ্টা পূর্ণ হয়নি";
-        btn.dataset.withdrawLocked="1";
-        btn.style.opacity=".65";
-        if(notice) notice.classList.remove("hidden");
-        if(countdown) countdown.textContent=fmtRemaining(left);
-      }else{
-        btn.title="";
-        btn.dataset.turnoverLocked='0';
-        btn.dataset.withdrawLocked="0";
-        btn.style.opacity="";
-        if(notice) notice.classList.add("hidden");
-        if(countdown) countdown.textContent="00ঘ 00মি 00সে";
+      let snap=await db.ref("users/"+currentUser.uid).once("value");
+      let u=snap.val()||{};
+      if(Number(u.balance||0)<1 && typeof window.gzApplyLowBalanceTurnoverRule==='function'){
+        u=(await window.gzApplyLowBalanceTurnoverRule(currentUser.uid))||u;
       }
-    }catch(e){}
+      const turnover=u.bonusTurnover||{};
+      const required=Math.max(0,Number(turnover.required||0));
+      const completed=Math.min(required,Math.max(0,Number(turnover.completed||0)));
+      const turnoverLeft=Math.max(0,required-completed);
+      const turnoverLocked=turnover.status==='pending' && turnoverLeft>0;
+      const last=Number(u.lastDepositAt||0);
+      const left=last ? (last+6*60*60*1000-bonusNow()) : 0;
+      const depositLocked=left>0;
+      const locked=turnoverLocked||depositLocked;
+      btn.dataset.turnoverLocked=turnoverLocked?'1':'0';
+      btn.dataset.depositLocked=depositLocked?'1':'0';
+      btn.dataset.withdrawLocked=locked?'1':'0';
+      btn.title=turnoverLocked?'বোনাস টার্নওভার সম্পূর্ণ না হওয়া পর্যন্ত Withdraw বন্ধ':(depositLocked?'ডিপোজিটের ৬ ঘণ্টা পূর্ণ হয়নি':'');
+      btn.style.opacity=locked?'.65':'';
+      if(notice) notice.classList.toggle('hidden',!locked);
+      if(countdown){
+        if(turnoverLocked) countdown.textContent='টার্নওভার বাকি ৳'+fmtMoney(turnoverLeft);
+        else if(depositLocked) countdown.textContent='সর্বশেষ ডিপোজিটের ৬ ঘণ্টা পূর্ণ হতে বাকি: '+window.gzFormatRemaining(left);
+        else countdown.textContent='';
+      }
+    }catch(e){ console.warn('Could not refresh withdrawal lock:',e); }
   }
-
-
 
   async function refreshBonusBadge(){
     const badge=document.getElementById("bonus-count-badge");
