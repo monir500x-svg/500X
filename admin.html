@@ -51,6 +51,16 @@
 </head>
 <body>
 
+<div id="adminLogin" style="min-height:100vh;display:none;place-items:center;padding:20px;background:radial-gradient(circle at top,#102a39 0,#071018 55%,#050b10 100%);color:#edf6fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+  <div style="width:min(420px,100%);padding:24px;border:1px solid #1e3949;border-radius:18px;background:#0d1a24;box-shadow:0 20px 60px #0006;">
+    <h2 style="margin:0 0 6px;">🛡️ Admin Login</h2><p style="color:#91a8b6;font-size:13px;margin:0 0 18px;">কাগজের বিমান — Admin Control Center</p>
+    <label for="adminLoginEmail" style="display:block;margin:10px 0 6px;font-size:13px;">Admin Email</label><input id="adminLoginEmail" type="email" autocomplete="username" placeholder="Admin email" style="width:100%;padding:12px;border-radius:10px;border:1px solid #1e3949;background:#08141d;color:#edf6fb;box-sizing:border-box;">
+    <label for="adminLoginPassword" style="display:block;margin:12px 0 6px;font-size:13px;">Password</label><input id="adminLoginPassword" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;padding:12px;border-radius:10px;border:1px solid #1e3949;background:#08141d;color:#edf6fb;box-sizing:border-box;">
+    <button id="adminLoginBtn" type="button" style="width:100%;margin-top:16px;padding:12px;border:0;border-radius:10px;background:#54e0a7;color:#062016;font-weight:800;">Login</button>
+    <div id="adminLoginStatus" role="status" style="white-space:pre-wrap;color:#ffbd5a;font-size:13px;margin-top:12px;"></div>
+  </div>
+</div>
+
 <div id="app" class="app">
 <aside class="side">
   <div class="brand">GAMING ZONE <small>ADMIN CONTROL CENTER</small></div>
@@ -314,7 +324,7 @@ async function loadAll(){
    db.ref("config/colorGems").once("value"),
    db.ref("config/aviator").once("value"),
    db.ref("adminAudit").limitToLast(100).once("value"),
-   db.ref("config/bonusTurnoverMultiplier").once("value")
+   db.ref("config/bonusTurnoverMultiplier").once("value").catch(e=>{console.warn("bonusTurnoverMultiplier read failed; using default 10",e);return {val:()=>10};})
  ]);
  users=u.val()||{};
  deposits=dep.val()||{};
@@ -681,8 +691,20 @@ auth.onAuthStateChanged(async user=>{
   $("adminLogin").style.display=user?"none":"grid";
   $("app").style.display=user?"grid":"none";
   if(!user)return;
-  try{await loadAll();startRequestListeners();await loadAnnouncement()}
-  catch(e){toast("Dashboard load failed: "+(e.message||e));console.error("Dashboard load failed",e);}
+  try{
+    await loadAll();
+    startRequestListeners();
+    await loadAnnouncement();
+    const errBox=$("dashboardLoadError"); if(errBox)errBox.style.display="none";
+  }
+  catch(e){
+    const msg="Dashboard load failed: "+(e.message||e);
+    toast(msg); console.error(msg,e);
+    let errBox=$("dashboardLoadError");
+    if(!errBox){errBox=document.createElement("div");errBox.id="dashboardLoadError";errBox.style.cssText="margin:12px 0;padding:12px;border:1px solid #ff6f7d;border-radius:10px;background:#32151a;color:#ffb0b7;white-space:pre-wrap;";const main=document.querySelector("#app .main");if(main)main.prepend(errBox);}
+    errBox.textContent=msg+"\nFirebase Database Rules/permission অথবা নেটওয়ার্ক পরীক্ষা করুন।";
+    errBox.style.display="block";
+  }
 });
 
 
