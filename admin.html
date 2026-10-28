@@ -107,8 +107,17 @@
         <button id="giveBonusBtn" class="btn primary">Give Bonus</button>
         <button id="giveAllBonusBtn" class="btn">Give Same Bonus to All Users</button>
       </div>
+      <div style="border-top:1px solid var(--line);margin-top:18px;padding-top:16px">
+        <h3 style="margin:0 0 6px">🎯 Bonus Turnover Control</h3>
+        <div class="notice" style="margin-bottom:10px">নতুন Bonus claim করার সময় এই multiplier ব্যবহার হবে। উদাহরণ: 10× হলে 100 bonus-এর turnover requirement 1,000 হবে। আগে claim করা bonus-এর multiplier পরিবর্তন হবে না।</div>
+        <div class="form">
+          <div class="field"><label>Turnover multiplier (×)</label><input id="bonusTurnoverMultiplierInput" type="number" min="1" max="100" step="1" value="10"></div>
+          <div class="field"><label>Current setting</label><input id="bonusTurnoverCurrent" type="text" value="10×" readonly></div>
+        </div>
+        <div class="row" style="margin-top:10px"><button id="saveBonusTurnoverBtn" class="btn primary" type="button">💾 Save Turnover Setting</button><span id="bonusTurnoverStatus" style="font-size:12px;color:var(--muted)"></span></div>
+      </div>
     </div>
-    <div class="card section"><input id="userSearch" class="search" placeholder="Search by email or UID…"><div class="table-wrap"><table class="table"><thead><tr><th>User</th><th>Balance</th><th>Games</th><th>Wins</th><th>Boxing</th><th>Last activity</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div></div>
+    <div class="card section"><input id="userSearch" class="search" placeholder="Search by email or UID…"><div class="table-wrap"><table class="table"><thead><tr><th>User</th><th>Balance</th><th>Bonus Turnover</th><th>Games</th><th>Wins</th><th>Boxing</th><th>Last activity</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div></div>
   </section>
 
   <section id="requests" class="page">
@@ -253,7 +262,7 @@
 <script>
 const firebaseConfig={apiKey:"AIzaSyAyTOnCm5IuPcB-yvGjFl3KbwRVxNrcNSY",authDomain:"ff-to-gaming-4ea1b.firebaseapp.com",databaseURL:"https://ff-to-gaming-4ea1b-default-rtdb.firebaseio.com",projectId:"ff-to-gaming-4ea1b",storageBucket:"ff-to-gaming-4ea1b.appspot.com",messagingSenderId:"816776130875",appId:"1:816776130875:web:c3e7984e0de53cbd89871e"};
 firebase.initializeApp(firebaseConfig);const auth=firebase.auth(),db=firebase.database();
-let users={},deposits={},withdrawals={},boxingConfig={},flagKingConfig={},colorGemsConfig={},aviatorConfig={};
+let users={},deposits={},withdrawals={},boxingConfig={},flagKingConfig={},colorGemsConfig={},aviatorConfig={},bonusTurnoverMultiplier=10;
 const $=id=>document.getElementById(id);
 function toast(m){$("toast").textContent=m;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),2800)}
 function esc(v){return String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
@@ -303,7 +312,8 @@ async function loadAll(){
    db.ref("config/flagKing").once("value"),
    db.ref("config/colorGems").once("value"),
    db.ref("config/aviator").once("value"),
-   db.ref("adminAudit").limitToLast(100).once("value")
+   db.ref("adminAudit").limitToLast(100).once("value"),
+   db.ref("config/bonusTurnoverMultiplier").once("value")
  ]);
  users=u.val()||{};
  deposits=dep.val()||{};
@@ -312,6 +322,8 @@ async function loadAll(){
  flagKingConfig=fk.val()||{};
  colorGemsConfig=cg.val()||{};
  aviatorConfig=av.val()||{};
+ const configuredMultiplier=Number(bt.val());
+ bonusTurnoverMultiplier=Number.isFinite(configuredMultiplier)&&configuredMultiplier>=1&&configuredMultiplier<=100?configuredMultiplier:10;
  render();
  renderConfig();
  renderAudit(auditSnap.val()||{});
@@ -366,7 +378,7 @@ function render(){
  populateBonusUsers();
  const arr=Object.entries(users);$("sUsers").textContent=arr.length;$("sBalance").textContent=arr.reduce((s,[,u])=>s+Number(u.balance||0),0).toFixed(2);$("sDeposits").textContent=Object.keys(deposits).length;$("sWithdrawals").textContent=Object.keys(withdrawals).length;
  const games=arr.reduce((s,[,u])=>s+Number(u.games||0),0),wins=arr.reduce((s,[,u])=>s+Number(u.wins||0),0),bg=arr.reduce((s,[,u])=>s+Number(u.boxingKingGames||0),0),bw=arr.reduce((s,[,u])=>s+Number(u.boxingKingWins||0),0);$("gameStats").innerHTML=`Aviator games: <b>${games}</b> · wins: <b>${wins}</b><br>Boxing King games: <b>${bg}</b> · wins: <b>${bw}</b>`;
- const q=$("userSearch").value.toLowerCase();$("usersBody").innerHTML=arr.filter(([uid,u])=>(uid+" "+(u.email||"")).toLowerCase().includes(q)).map(([uid,u])=>{const ts=getLastActivity(u);return `<tr><td><b>${esc(u.email||"—")}</b><br><small>${esc(uid)}</small></td><td>${money(u.balance)}</td><td>${u.games||0}</td><td>${u.wins||0}</td><td>${u.boxingKingWins||0}/${u.boxingKingGames||0}</td><td>${ts?esc(new Date(ts).toLocaleString()):"—"}</td><td><button class="btn" onclick="viewUser('${esc(uid)}')">View</button> <button class="btn danger" onclick="removeUser('${esc(uid)}')">Remove</button></td></tr>`}).join("")||`<tr><td colspan="7">No users found.</td></tr>`;
+ const q=$("userSearch").value.toLowerCase();$("usersBody").innerHTML=arr.filter(([uid,u])=>(uid+" "+(u.email||"")).toLowerCase().includes(q)).map(([uid,u])=>{const ts=getLastActivity(u),t=u.bonusTurnover||{},req=Math.max(0,Number(t.required||0)),done=Math.min(req,Math.max(0,Number(t.completed||0))),left=Math.max(0,req-done),turnLabel=req?(left<=0?'Complete':`${money(done)} / ${money(req)}<br><small>বাকি ${money(left)}</small>`):'—';return `<tr><td><b>${esc(u.email||"—")}</b><br><small>${esc(uid)}</small></td><td>${money(u.balance)}</td><td>${turnLabel}</td><td>${u.games||0}</td><td>${u.wins||0}</td><td>${u.boxingKingWins||0}/${u.boxingKingGames||0}</td><td>${ts?esc(new Date(ts).toLocaleString()):"—"}</td><td><button class="btn" onclick="viewUser('${esc(uid)}')">View</button> <button class="btn danger" onclick="removeUser('${esc(uid)}')">Remove</button></td></tr>`}).join("")||`<tr><td colspan="8">No users found.</td></tr>`;
  renderRequests();
 }
 $("userSearch").oninput=render;
@@ -399,7 +411,7 @@ window.removeUser=async uid=>{
   }finally{btns.forEach(b=>b.disabled=false)}
 };
 
-window.viewUser=uid=>{const u=users[uid]||{};$("userDetails").innerHTML=`<div class="notice"><b>${esc(u.email||"—")}</b><br>UID: ${esc(uid)}<br>Balance: ${money(u.balance)}<br>Aviator: ${u.wins||0} wins / ${u.games||0} games<br>Boxing King: ${u.boxingKingWins||0} wins / ${u.boxingKingGames||0} games</div>`;$("userModal").classList.remove("hidden")};
+window.viewUser=uid=>{const u=users[uid]||{},t=u.bonusTurnover||{},req=Math.max(0,Number(t.required||0)),done=Math.min(req,Math.max(0,Number(t.completed||0))),left=Math.max(0,req-done);$("userDetails").innerHTML=`<div class="notice"><b>${esc(u.email||"—")}</b><br>UID: ${esc(uid)}<br>Balance: ${money(u.balance)}<br>Aviator: ${u.wins||0} wins / ${u.games||0} games<br>Boxing King: ${u.boxingKingWins||0} wins / ${u.boxingKingGames||0} games<br><hr style="border-color:var(--line)"><b>Bonus Turnover</b><br>Status: ${req?(left<=0?'Complete':'Pending'):'No active turnover'}<br>Required: ${money(req)}<br>Completed: ${money(done)}<br>Remaining: ${money(left)}<br>Multiplier at claim: ${t.multiplier?esc(t.multiplier)+'×':'—'}</div>`;$("userModal").classList.remove("hidden")};
 function renderRequests(){
  const dep=Object.entries(deposits).reverse();$("depositsBody").innerHTML=dep.map(([id,r])=>`<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.trxId||"—")}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','rejected')">Reject</button>`}</td></tr>`).join("")||`<tr><td colspan="6">No deposit requests.</td></tr>`;
  const wd=Object.entries(withdrawals).reverse();$("withdrawalsBody").innerHTML=wd.map(([id,r])=>`<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.accountNo||"—")}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','rejected')">Reject</button>`}</td></tr>`).join("")||`<tr><td colspan="6">No withdrawal requests.</td></tr>`;
@@ -500,7 +512,26 @@ window.requestAction=async(type,id,status)=>{
   }
 };
 
+// Bonus turnover multiplier shared with the user app (config/bonusTurnoverMultiplier).
+$("saveBonusTurnoverBtn").onclick=async()=>{
+  const input=$("bonusTurnoverMultiplierInput"),btn=$("saveBonusTurnoverBtn"),status=$("bonusTurnoverStatus");
+  const n=Number(input.value);
+  if(!Number.isFinite(n)||n<1||n>100||!Number.isInteger(n)){status.textContent="১ থেকে ১০০-এর মধ্যে পূর্ণ সংখ্যা দিন।";status.style.color="#ff9aa4";return;}
+  btn.disabled=true;status.textContent="Saving…";
+  try{
+    await db.ref("config/bonusTurnoverMultiplier").set(n);
+    bonusTurnoverMultiplier=n;
+    $("bonusTurnoverCurrent").value=n+"×";
+    await audit("update_bonus_turnover_multiplier","config/bonusTurnoverMultiplier",JSON.stringify({multiplier:n}));
+    status.textContent="✅ Saved — নতুন bonus claim-এ প্রযোজ্য হবে।";status.style.color="var(--accent)";
+    toast("Bonus turnover multiplier saved");
+  }catch(e){status.textContent="❌ Save failed: "+(e.message||e);status.style.color="#ff9aa4";}
+  finally{btn.disabled=false;}
+};
+
 function renderConfig(){
+  $("bonusTurnoverMultiplierInput").value=String(bonusTurnoverMultiplier);
+  $("bonusTurnoverCurrent").value=String(bonusTurnoverMultiplier)+"×";
   const c=boxingConfig||{};
   $("bkEnabled").checked=c.enabled!==false;
   const bets=Array.isArray(c.betOptions)?c.betOptions:(typeof c.betOptions==="string"?c.betOptions.split(",").map(Number).filter(Number.isFinite):[1,2,3,5,10]);
