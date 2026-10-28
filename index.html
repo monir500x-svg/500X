@@ -1075,6 +1075,12 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             <div id="withdraw-cooldown-notice" class="withdraw-cooldown-notice hidden">
                 🔒 টার্নওভার বাকি থাকলে অথবা ডিপোজিটের ৬ ঘণ্টা পূর্ণ না হলে Withdraw বন্ধ। <strong id="withdraw-countdown"></strong>
             </div>
+    <div id="bonus-turnover-progress" style="display:none;margin:0 0 14px;padding:13px;border-radius:13px;background:#0b1018;border:1px solid rgba(255,204,0,.22);color:#fff;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px;"><strong>🎯 উইথড্রের জন্য টার্নওভার</strong><strong id="bonus-turnover-percent">0%</strong></div>
+      <div style="height:8px;background:#252b37;border-radius:99px;overflow:hidden;"><div id="bonus-turnover-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#8e24aa,#ffcc00);border-radius:99px;transition:width .25s;"></div></div>
+      <div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px;color:#c5cad3;"><span>সম্পন্ন: ৳<b id="bonus-turnover-done">0.00</b></span><span>বাকি: ৳<b id="bonus-turnover-left">0.00</b></span></div>
+      <div id="bonus-turnover-note" style="margin-top:8px;color:#ffcc80;line-height:1.5;"></div>
+    </div>
             <div class="form-group">
                 <select id="withdraw-method">
                     <option value="bkash">বিকাশ (Bkash)</option>
@@ -1910,8 +1916,9 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 if (turnover.status === 'pending' && turnoverLeft > 0) {
                     if (notice) notice.classList.remove('hidden');
                     if (countdown) countdown.textContent = 'টার্নওভার বাকি ৳' + turnoverLeft.toFixed(2);
-                    alert('বোনাস টার্নওভার সম্পূর্ণ হয়নি। আরও ৳' + turnoverLeft.toFixed(2) + ' যোগ্য বেট বাকি। এ সময় Withdraw করা যাবে না।');
-                    updateBonusTurnoverUI(); updateWithdrawLockUI();
+                    withdrawModal.classList.remove('hidden');
+                    await window.gzUpdateBonusTurnoverUI();
+                    window.gzUpdateWithdrawLockUI();
                     return;
                 }
                 const last = Number(u.lastDepositAt || 0);
@@ -1921,11 +1928,13 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     if (notice) notice.classList.remove('hidden');
                     if (countdown) countdown.textContent = window.gzFormatRemaining(left);
                     alert('সর্বশেষ ডিপোজিটের ৬ ঘণ্টা পূর্ণ হয়নি। আরও ' + window.gzFormatRemaining(left) + ' অপেক্ষা করুন।');
-                    updateWithdrawLockUI();
+                    window.gzUpdateWithdrawLockUI();
                     return;
                 }
             } catch (e) { console.warn('Withdrawal pre-check failed:',e); alert('উইথড্রের নিয়ম যাচাই করা যায়নি। ইন্টারনেট/Firebase সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।'); return; }
             withdrawModal.classList.remove('hidden');
+            await window.gzUpdateBonusTurnoverUI();
+            window.gzUpdateWithdrawLockUI();
         });
         document.getElementById('close-withdraw-btn').onclick = () => withdrawModal.classList.add('hidden');
 
@@ -3989,7 +3998,7 @@ function rbLockAndSpin(){
     return turnoverMultiplierCache;
   }
 
-  // Tracks only successful real-money bet debits while a claimed bonus has an outstanding turnover.
+  // Tracks only successful real-money bet debits while a claimed bonus has an outstanding turnover. Progress is displayed only inside the withdrawal modal.
   // This follows Update 31's existing Firebase/client flow; authoritative anti-tamper enforcement
   // requires moving bet settlement and this counter into trusted Cloud Functions in a later update.
   window.gzRecordBonusTurnover = async function(amount, gameName){
@@ -4064,6 +4073,9 @@ function rbLockAndSpin(){
       document.getElementById('bonus-turnover-note').textContent=left<=0?'✅ Bonus turnover সম্পূর্ণ। এখন withdrawal করা যাবে (অন্য নিয়ম প্রযোজ্য থাকলে সেগুলোও মানতে হবে)।':`মোট যোগ্য বেট ৳${fmtMoney(required)}। টার্নওভার শেষ না হওয়া পর্যন্ত কোনো withdrawal করা যাবে না।`;
     }catch(e){ console.warn('Could not load bonus turnover:',e); }
   }
+
+  // Expose refreshers for the withdrawal modal handlers defined earlier in the page script.
+  window.gzUpdateBonusTurnoverUI = updateBonusTurnoverUI;
 
   async function renderBonuses(){
     const list=document.getElementById("bonus-list");
@@ -4196,6 +4208,8 @@ function rbLockAndSpin(){
     }catch(e){ console.warn('Could not refresh withdrawal lock:',e); }
   }
 
+  window.gzUpdateWithdrawLockUI = updateWithdrawLockUI;
+
   async function refreshBonusBadge(){
     const badge=document.getElementById("bonus-count-badge");
     if(!badge || !currentUser) return;
@@ -4240,12 +4254,6 @@ function rbLockAndSpin(){
       <button id="close-bonus-btn" type="button" style="border:0;background:transparent;color:#aaa;font-size:24px;cursor:pointer;">×</button>
     </div>
     <div id="bonus-status" style="margin:12px 0;color:#aeb7c4;font-size:13px;"></div>
-    <div id="bonus-turnover-progress" style="display:none;margin:0 0 14px;padding:13px;border-radius:13px;background:#0b1018;border:1px solid rgba(255,204,0,.22);color:#fff;font-size:13px;">
-      <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px;"><strong>🎯 Bonus Turnover</strong><strong id="bonus-turnover-percent">0%</strong></div>
-      <div style="height:8px;background:#252b37;border-radius:99px;overflow:hidden;"><div id="bonus-turnover-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#8e24aa,#ffcc00);border-radius:99px;transition:width .25s;"></div></div>
-      <div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px;color:#c5cad3;"><span>সম্পন্ন: ৳<b id="bonus-turnover-done">0.00</b></span><span>বাকি: ৳<b id="bonus-turnover-left">0.00</b></span></div>
-      <div id="bonus-turnover-note" style="margin-top:8px;color:#ffcc80;line-height:1.5;"></div>
-    </div>
     <div id="bonus-list" style="display:flex;flex-direction:column;gap:10px;max-height:55vh;overflow:auto;"></div>
   </div>
 </div>
