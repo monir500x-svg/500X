@@ -73,7 +73,7 @@
   <div class="top"><div><h1 id="pageTitle">Overview</h1>
 
 
-<div id="adminEmail" style="color:var(--muted);font-size:12px;margin-top:4px"></div></div><span class="pill">● ADMIN SESSION</span></div>
+<div id="adminEmail" style="color:var(--muted);font-size:12px;margin-top:4px"></div></div><div class="row"><span class="pill">● ADMIN SESSION</span><button id="adminSignOutBtn" type="button" class="btn">Sign out</button></div></div>
 
   <section id="overview" class="page active">
     <div class="card danger-zone-card" style="margin:0 0 18px;">
@@ -271,6 +271,7 @@ async function audit(action,target,details){if(!auth.currentUser)return;await db
 function setPage(p){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(p).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===p));$("pageTitle").textContent=p[0].toUpperCase()+p.slice(1)}
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>setPage(b.dataset.page));
 $("closeModal").onclick=()=>$("userModal").classList.add("hidden");
+$("adminSignOutBtn").onclick=()=>auth.signOut().catch(e=>toast(e.message||String(e)));
 async function resetEverythingKeepBalance(){
   const btn=$("resetAllBtn");
   const typed=prompt("নিশ্চিত করতে RESET লিখুন। User Balance পরিবর্তন হবে না:");
@@ -304,7 +305,7 @@ async function resetEverythingKeepBalance(){
 $("resetAllBtn").onclick=resetEverythingKeepBalance;
 
 async function loadAll(){
- const [u,dep,wd,c,fk,cg,av,auditSnap]=await Promise.all([
+ const [u,dep,wd,c,fk,cg,av,auditSnap,bt]=await Promise.all([
    db.ref("users").once("value"),
    db.ref("adminRequests/deposits").once("value"),
    db.ref("adminRequests/withdrawals").once("value"),
@@ -664,9 +665,24 @@ function startRequestListeners(){
   });
 }
 
+$("adminLoginBtn").onclick=async()=>{
+  const btn=$("adminLoginBtn"), status=$("adminLoginStatus");
+  const email=$("adminLoginEmail").value.trim(), password=$("adminLoginPassword").value;
+  if(!email||!password){status.textContent="Email ও password দিন।";return;}
+  btn.disabled=true; status.textContent="লগইন হচ্ছে…";
+  try{await auth.signInWithEmailAndPassword(email,password);status.textContent="";}
+  catch(e){status.textContent="লগইন ব্যর্থ: "+(e.message||e);}
+  finally{btn.disabled=false;}
+};
+$("adminLoginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")$("adminLoginBtn").click()});
+
 auth.onAuthStateChanged(async user=>{
-  $("adminEmail").textContent=user?(user.email||user.uid):"Direct dashboard access";
-  try{await loadAll();startRequestListeners();await loadAnnouncement()}catch(e){toast(e.message)}
+  $("adminEmail").textContent=user?(user.email||user.uid):"";
+  $("adminLogin").style.display=user?"none":"grid";
+  $("app").style.display=user?"grid":"none";
+  if(!user)return;
+  try{await loadAll();startRequestListeners();await loadAnnouncement()}
+  catch(e){toast("Dashboard load failed: "+(e.message||e));console.error("Dashboard load failed",e);}
 });
 
 
