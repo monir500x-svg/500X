@@ -119,7 +119,7 @@
       </div>
       <div style="border-top:1px solid var(--line);margin-top:18px;padding-top:16px">
         <h3 style="margin:0 0 6px">🎯 Bonus Turnover Control</h3>
-        <div class="notice" style="margin-bottom:10px">নতুন Bonus claim করার সময় এই multiplier ব্যবহার হবে। উদাহরণ: 10× হলে 100 bonus-এর turnover requirement 1,000 হবে। আগে claim করা bonus-এর multiplier পরিবর্তন হবে না।</div>
+        <div class="notice" style="margin-bottom:10px">নতুন Bonus claim করার সময় এই multiplier ব্যবহার হবে। উদাহরণ: 10× হলে 100 bonus-এর turnover requirement 1,000 হবে। আগে claim করা bonus-এর multiplier পরিবর্তন হবে না। শুধু claim করা bonus-এর অঙ্ক × multiplier টার্নওভারে যোগ হবে; main balance যোগ হবে না। আগের বাকি turnover-এর সঙ্গে নতুন requirement যোগ হবে। balance ৳1-এর নিচে নামলে বাকি turnover complete হবে। Deposit approval-এর পর আগের নিয়মে ৬ ঘণ্টার withdrawal lock আলাদাভাবে থাকবে।</div>
         <div class="form">
           <div class="field"><label>Turnover multiplier (×)</label><input id="bonusTurnoverMultiplierInput" type="number" min="1" max="100" step="1" value="10"></div>
           <div class="field"><label>Current setting</label><input id="bonusTurnoverCurrent" type="text" value="10×" readonly></div>
@@ -481,6 +481,42 @@ window.requestAction=async(type,id,status)=>{
         throw new Error("Balance/cooldown update was not committed");
       }
       await db.ref(path+"/balanceCredited").set(true);
+    }
+
+    // Withdrawal approvals must respect the same independent locks as the user page.
+    // If balance is below ৳1, the agreed policy completes any outstanding bonus turnover.
+    if(status==="approved" && type==="withdrawals"){
+      const uid=String(processed.uid||"");
+      if(!uid) throw new Error("Withdrawal request has no user UID");
+      let offset=0;
+      try{ const os=await db.ref('.info/serverTimeOffset').once('value'); offset=Number(os.val()||0); if(!Number.isFinite(offset))offset=0; }catch(_){offset=0;}
+      const now=Date.now()+offset;
+      const userRef=db.ref(`users/${uid}`);
+      const userSnap=await userRef.once("value");
+      let user=userSnap.val()||{};
+      if(Number(user.balance||0)<1){
+        const normalized=await userRef.transaction(u=>{
+          if(!u)return;
+          const t=u.bonusTurnover||{};
+          const required=Math.max(0,Number(t.required||0));
+          const completed=Math.min(required,Math.max(0,Number(t.completed||0)));
+          if(required>completed){u.bonusTurnover=Object.assign({},t,{completed:required,remaining:0,status:"complete",completedByLowBalance:true,updatedAt:now});return u;}
+          return;
+        });
+        user=(normalized&&normalized.snapshot&&normalized.snapshot.val())||user;
+      }
+      const turnover=user.bonusTurnover||{};
+      const required=Math.max(0,Number(turnover.required||0));
+      const completed=Math.min(required,Math.max(0,Number(turnover.completed||0)));
+      if(turnover.status==="pending" && required-completed>0){
+        throw new Error("Bonus turnover is still pending: ৳"+(required-completed).toFixed(2)+" remaining. Withdrawal approval blocked.");
+      }
+      const lastDepositAt=Number(user.lastDepositAt||0);
+      const cooldownLeft=lastDepositAt+6*60*60*1000-now;
+      if(lastDepositAt>0 && cooldownLeft>0){
+        const mins=Math.ceil(cooldownLeft/60000);
+        throw new Error("Deposit 6-hour lock is active for this user (about "+mins+" minutes left). Approval blocked.");
+      }
     }
 
     // IMPORTANT: remove the actual request node directly.
