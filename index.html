@@ -1,4 +1,4 @@
-        <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
@@ -1873,6 +1873,16 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             try {
                 const snap = await db.ref('users/' + currentUser.uid).once('value');
                 const u = snap.val() || {};
+                const turnover = u.bonusTurnover || {};
+                const turnoverLeft = Math.max(0, Number(turnover.required || 0) - Number(turnover.completed || 0));
+                if (turnover.status === 'pending' && turnoverLeft > 0) {
+                    alert('বোনাস টার্নওভার সম্পূর্ণ হয়নি। আরও ৳' + turnoverLeft.toFixed(2) + ' যোগ্য বেট বাকি। এ সময় কোনো ব্যালেন্স Withdraw করা যাবে না।');
+                    updateBonusTurnoverUI();
+                    withdrawRequestBusy = false;
+                    const preflightButton = document.getElementById('withdraw-confirm-btn');
+                    if (preflightButton) preflightButton.disabled = false;
+                    return;
+                }
                 const last = Number(u.lastDepositAt || 0);
                 const left = last ? (last + 6 * 60 * 60 * 1000 - (Date.now() + ((typeof aviatorServerTimeOffset === 'number') ? aviatorServerTimeOffset : 0))) : 0;
                 if (left > 0) {
@@ -1894,6 +1904,14 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             try {
                 const snap = await db.ref('users/' + currentUser.uid).once('value');
                 const u = snap.val() || {};
+                const turnover = u.bonusTurnover || {};
+                const turnoverLeft = Math.max(0, Number(turnover.required || 0) - Number(turnover.completed || 0));
+                if (turnover.status === 'pending' && turnoverLeft > 0) {
+                    e.preventDefault();
+                    withdrawMsg.style.color = '#ef9a9a';
+                    withdrawMsg.innerText = 'বোনাস টার্নওভার সম্পূর্ণ হয়নি। আরও ৳' + turnoverLeft.toFixed(2) + ' যোগ্য বেট বাকি। কোনো ব্যালেন্স Withdraw করা যাবে না।';
+                    return;
+                }
                 const last = Number(u.lastDepositAt || 0);
                 const left = last ? (last + 6 * 60 * 60 * 1000 - (Date.now() + ((typeof aviatorServerTimeOffset === 'number') ? aviatorServerTimeOffset : 0))) : 0;
                 if (left > 0) {
@@ -2629,6 +2647,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 }).then(function(result) {
                     isProcessingBet = false;
                     if (result.committed) {
+                        if (typeof window.gzRecordBonusTurnover === 'function') window.gzRecordBonusTurnover(betAmt, 'Aviator');
                         syncLocalAviatorBet(currentRoundIndex, (result.snapshot.val().aviatorBets || {})[roundKey]);
                         betBtn.innerText = 'বেট প্লেসড';
                         betBtn.className = 'av-btn av-btn-action av-btn-waiting';
@@ -2878,6 +2897,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     statusEl.style.color = "#ff3333";
                     return;
                 }
+                if (typeof window.gzRecordBonusTurnover === 'function') window.gzRecordBonusTurnover(activeBet, 'Boxing King');
                 startBkSpinSequence(activeBet);
             });
         }
@@ -3272,6 +3292,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     statusEl.style.color = "#ff3333";
                     return;
                 }
+                if (typeof window.gzRecordBonusTurnover === 'function') window.gzRecordBonusTurnover(activeBet, 'Flag King');
                 startFkSpinSequence(activeBet);
             });
         }
@@ -3625,6 +3646,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             if(cgConfig.testMode){startCgSpinSequence(activeBet);return}
             db.ref('users/'+currentUser.uid+'/balance').transaction(cur=>{if(Number(cur||0)>=activeBet)return Number(cur||0)-activeBet},(err,ok)=>{
                 if(!ok){cgSpinning=false;setCgControls(false);cgSetStatus('পর্যাপ্ত কয়েন নেই! 😢','#ff3333');return}
+                if (typeof window.gzRecordBonusTurnover === 'function') window.gzRecordBonusTurnover(activeBet, 'Color Gems');
                 startCgSpinSequence(activeBet);
             });
         }
@@ -3821,6 +3843,7 @@ function rbLockAndSpin(){
                     return;
                 }
 
+                if (typeof window.gzRecordBonusTurnover === 'function') window.gzRecordBonusTurnover(amount, 'Red vs Blue');
                 const win=shared.result===bet.color;
                 const payout=win?amount*2:0;
 
@@ -3912,6 +3935,39 @@ function rbLockAndSpin(){
   const BONUS_TTL = 5 * 60 * 60 * 1000;
   const WITHDRAW_COOLDOWN = 6 * 60 * 60 * 1000;
   let bonusTimer = null;
+  const DEFAULT_TURNOVER_MULTIPLIER = 10;
+  let turnoverMultiplierCache = DEFAULT_TURNOVER_MULTIPLIER;
+
+  function fmtMoney(n){ return Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  async function loadTurnoverMultiplier(){
+    try{
+      const snap=await db.ref('config/bonusTurnoverMultiplier').once('value');
+      const n=Number(snap.val());
+      turnoverMultiplierCache=Number.isFinite(n)&&n>=1&&n<=100?n:DEFAULT_TURNOVER_MULTIPLIER;
+    }catch(e){ turnoverMultiplierCache=DEFAULT_TURNOVER_MULTIPLIER; }
+    return turnoverMultiplierCache;
+  }
+
+  // Tracks only successful real-money bet debits while a claimed bonus has an outstanding turnover.
+  // This follows Update 31's existing Firebase/client flow; authoritative anti-tamper enforcement
+  // requires moving bet settlement and this counter into trusted Cloud Functions in a later update.
+  window.gzRecordBonusTurnover = async function(amount, gameName){
+    if(!currentUser) return;
+    const n=Number(amount);
+    if(!Number.isFinite(n)||n<=0) return;
+    const ref=db.ref('users/'+currentUser.uid+'/bonusTurnover');
+    try{
+      await ref.transaction(t=>{
+        if(!t || t.status!=='pending') return;
+        const required=Math.max(0,Number(t.required||0));
+        const completed=Math.min(required,Math.max(0,Number(t.completed||0))+n);
+        return Object.assign({},t,{completed:completed,remaining:Math.max(0,required-completed),status:completed>=required?'complete':'pending',updatedAt:bonusNow(),lastGame:String(gameName||'Game').slice(0,40)});
+      });
+      updateBonusTurnoverUI();
+      updateWithdrawLockUI();
+    }catch(e){ console.warn('Bonus turnover progress update failed:',e); }
+  };
 
   function bonusNow(){
     // Firebase server offset is already maintained by the Aviator online-sync code when available.
@@ -3945,12 +4001,32 @@ function rbLockAndSpin(){
     if(Object.keys(updates).length) await db.ref().update(updates);
   }
 
+  async function updateBonusTurnoverUI(){
+    if(!currentUser) return;
+    const wrap=document.getElementById('bonus-turnover-progress');
+    if(!wrap) return;
+    try{
+      const snap=await db.ref('users/'+currentUser.uid+'/bonusTurnover').once('value');
+      const t=snap.val();
+      if(!t || !(Number(t.required)>0)){ wrap.style.display='none'; return; }
+      const required=Number(t.required)||0, done=Math.min(required,Number(t.completed)||0), left=Math.max(0,required-done);
+      const pct=Math.max(0,Math.min(100,required?done/required*100:0));
+      wrap.style.display='block';
+      document.getElementById('bonus-turnover-percent').textContent=pct.toFixed(1)+'%';
+      document.getElementById('bonus-turnover-bar').style.width=pct+'%';
+      document.getElementById('bonus-turnover-done').textContent=fmtMoney(done);
+      document.getElementById('bonus-turnover-left').textContent=fmtMoney(left);
+      document.getElementById('bonus-turnover-note').textContent=left<=0?'✅ Bonus turnover সম্পূর্ণ। এখন withdrawal করা যাবে (অন্য নিয়ম প্রযোজ্য থাকলে সেগুলোও মানতে হবে)।':`মোট যোগ্য বেট ৳${fmtMoney(required)}। টার্নওভার শেষ না হওয়া পর্যন্ত কোনো withdrawal করা যাবে না।`;
+    }catch(e){ console.warn('Could not load bonus turnover:',e); }
+  }
+
   async function renderBonuses(){
     const list=document.getElementById("bonus-list");
     const status=document.getElementById("bonus-status");
     if(!list||!status||!currentUser){return;}
     if(bonusTimer) clearInterval(bonusTimer);
     list.innerHTML="<div style='color:#aaa'>লোড হচ্ছে...</div>";
+    await updateBonusTurnoverUI();
     const snap=await db.ref("users/"+currentUser.uid+"/bonuses").once("value");
     const bonuses=snap.val()||{};
     await cleanupExpiredBonuses(currentUser.uid,bonuses);
@@ -3979,11 +4055,6 @@ function rbLockAndSpin(){
             <div style="font-weight:900;color:#ffd54f;font-size:20px;">${title}</div>
             <div style="font-size:16px;color:#fff;margin-top:4px;">৳${amount.toFixed(2)}</div>
             <div style="font-size:12px;color:#9aa6b2;margin-top:4px;">Bonus • Claim করলে main balance-এ যোগ হবে</div>
-            <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-              <span style="display:inline-block;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800;background:${b.conditionType === "deposit" ? "rgba(255,183,77,.15)" : "rgba(40,215,160,.14)"};color:${b.conditionType === "deposit" ? "#ffca78" : "#65e8bd"};border:1px solid ${b.conditionType === "deposit" ? "rgba(255,183,77,.35)" : "rgba(40,215,160,.3)"};">${b.conditionType === "deposit" ? "ডিপোজিট শর্ত" : "ফ্রি বোনাস"}</span>
-              ${b.conditionType === "deposit" && Number(b.requiredDeposit || 0) > 0 ? `<span style="font-size:12px;color:#f4d28b;">ন্যূনতম ডিপোজিট: ৳${Number(b.requiredDeposit).toLocaleString("en-US")}</span>` : ""}
-            </div>
-            ${b.description ? `<div style="margin-top:9px;padding:10px 11px;border-radius:10px;background:#121b28;border:1px solid rgba(255,255,255,.07);font-size:12px;line-height:1.55;color:#d2d9e3;"><strong style="color:#fff;display:block;margin-bottom:3px;">বোনাসের শর্ত</strong>${String(b.description).replace(/[&<>"']/g, ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]))}</div>` : ""}
           </div>
           <button type="button" data-bonus-id="${id}" style="border:0;border-radius:10px;padding:10px 14px;background:#8e24aa;color:#fff;font-weight:800;cursor:pointer;">Claim</button>
         </div>
@@ -4012,6 +4083,7 @@ function rbLockAndSpin(){
     const userRef=db.ref("users/"+currentUser.uid);
     try{
       const now=bonusNow();
+      const multiplier=await loadTurnoverMultiplier();
       let claimedAmount=0;
       const result=await userRef.transaction(u=>{
         if(!u) return;
@@ -4023,15 +4095,23 @@ function rbLockAndSpin(){
         if(!Number.isFinite(amount)||amount<=0) return;
         claimedAmount=amount;
         const nextBonuses=Object.assign({},bonuses);
-        nextBonuses[bonusId]=Object.assign({},b,{status:"claimed",claimedAt:now});
-        return Object.assign({},u,{balance:Number(u.balance||0)+amount,bonuses:nextBonuses});
+        nextBonuses[bonusId]=Object.assign({},b,{status:"claimed",claimedAt:now,turnoverMultiplier:multiplier,turnoverRequired:Number((amount*multiplier).toFixed(2)),turnoverCompleted:0});
+        const oldT=u.bonusTurnover||{};
+        const oldRequired=Math.max(0,Number(oldT.required||0));
+        const oldCompleted=Math.min(oldRequired,Math.max(0,Number(oldT.completed||0)));
+        const addedRequired=Number((amount*multiplier).toFixed(2));
+        const required=Number((oldRequired+addedRequired).toFixed(2));
+        const completed=Math.min(required,oldCompleted);
+        const turnover= {required,completed,remaining:Number(Math.max(0,required-completed).toFixed(2)),status:completed>=required?'complete':'pending',multiplier,claimedBonusTotal:Number((Number(oldT.claimedBonusTotal||0)+amount).toFixed(2)),updatedAt:now};
+        return Object.assign({},u,{balance:Number(u.balance||0)+amount,bonuses:nextBonuses,bonusTurnover:turnover});
       });
       if(!result.committed){
         alert("এই bonus আর claim করা যাচ্ছে না।");
         return renderBonuses();
       }
-      alert(`৳${claimedAmount.toFixed(2)} bonus আপনার balance-এ যোগ হয়েছে।`);
+      alert(`৳${claimedAmount.toFixed(2)} bonus আপনার balance-এ যোগ হয়েছে। ${turnoverMultiplierCache}× turnover চালু হয়েছে। Turnover সম্পূর্ণ না হওয়া পর্যন্ত withdrawal বন্ধ থাকবে।`);
       renderBonuses();
+      updateWithdrawLockUI();
     }catch(e){
       alert("Bonus claim করা যায়নি: "+(e.message||e));
     }
@@ -4051,7 +4131,17 @@ function rbLockAndSpin(){
       const u=snap.val()||{};
       const last=getLastDepositAtFromUser(u);
       const left=last ? (last+WITHDRAW_COOLDOWN-bonusNow()) : 0;
-      if(left>0){
+      const turnover=u.bonusTurnover||{};
+      const turnoverLeft=Math.max(0,Number(turnover.required||0)-Number(turnover.completed||0));
+      const turnoverLocked=turnover.status==='pending' && turnoverLeft>0;
+      if(turnoverLocked){
+        btn.title='বোনাস টার্নওভার সম্পূর্ণ না হওয়া পর্যন্ত Withdraw বন্ধ';
+        btn.dataset.turnoverLocked='1';
+        btn.style.opacity='.65';
+        if(notice) notice.classList.remove('hidden');
+        if(countdown) countdown.textContent='বোনাস টার্নওভার বাকি ৳'+fmtMoney(turnoverLeft);
+      }else if(left>0){
+        btn.dataset.turnoverLocked='0';
         btn.title="ডিপোজিটের ৬ ঘণ্টা পূর্ণ হয়নি";
         btn.dataset.withdrawLocked="1";
         btn.style.opacity=".65";
@@ -4059,6 +4149,7 @@ function rbLockAndSpin(){
         if(countdown) countdown.textContent=fmtRemaining(left);
       }else{
         btn.title="";
+        btn.dataset.turnoverLocked='0';
         btn.dataset.withdrawLocked="0";
         btn.style.opacity="";
         if(notice) notice.classList.add("hidden");
@@ -4095,7 +4186,10 @@ function rbLockAndSpin(){
 
   // Keep the lock state fresh while the user remains logged in.
   setInterval(updateWithdrawLockUI,1000);
+  setInterval(updateBonusTurnoverUI,5000);
   setTimeout(updateWithdrawLockUI,1000);
+  setTimeout(updateBonusTurnoverUI,1100);
+  loadTurnoverMultiplier();
   setTimeout(refreshBonusBadge,1200);
   setInterval(refreshBonusBadge,15000);
 })();
@@ -4110,6 +4204,12 @@ function rbLockAndSpin(){
       <button id="close-bonus-btn" type="button" style="border:0;background:transparent;color:#aaa;font-size:24px;cursor:pointer;">×</button>
     </div>
     <div id="bonus-status" style="margin:12px 0;color:#aeb7c4;font-size:13px;"></div>
+    <div id="bonus-turnover-progress" style="display:none;margin:0 0 14px;padding:13px;border-radius:13px;background:#0b1018;border:1px solid rgba(255,204,0,.22);color:#fff;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px;"><strong>🎯 Bonus Turnover</strong><strong id="bonus-turnover-percent">0%</strong></div>
+      <div style="height:8px;background:#252b37;border-radius:99px;overflow:hidden;"><div id="bonus-turnover-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#8e24aa,#ffcc00);border-radius:99px;transition:width .25s;"></div></div>
+      <div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px;color:#c5cad3;"><span>সম্পন্ন: ৳<b id="bonus-turnover-done">0.00</b></span><span>বাকি: ৳<b id="bonus-turnover-left">0.00</b></span></div>
+      <div id="bonus-turnover-note" style="margin-top:8px;color:#ffcc80;line-height:1.5;"></div>
+    </div>
     <div id="bonus-list" style="display:flex;flex-direction:column;gap:10px;max-height:55vh;overflow:auto;"></div>
   </div>
 </div>
