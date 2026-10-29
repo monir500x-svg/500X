@@ -213,8 +213,12 @@
 
       <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(255,204,0,.25);">
         <h3 class="bk-title" style="font-size:17px;">✈️ Aviator — Random Crash System</h3>
-        <div class="notice" style="margin-bottom:10px">র‍্যান্ডম ক্র্যাশ চালু আছে। প্রতিটি রাউন্ডের ফলাফল আলাদাভাবে তৈরি হবে; লো/হাই পালাবদলের কোনো বাধ্যতামূলক নিয়ম বা Admin-set maximum multiplier থাকবে না। একই রাউন্ডে সব খেলোয়াড় একই crash point দেখবে।</div>
-        <div id="avConfigMsg" class="bk-status">✅ Random mode active — কোনো multiplier cap প্রয়োগ করা হচ্ছে না।</div>
+        <div class="notice" style="margin-bottom:10px">র‍্যান্ডম ফলাফল থাকবে—লো মাল্টিপ্লায়ার সাধারণত বেশি, হাই মাল্টিপ্লায়ার ধীরে ধীরে বিরল হবে। কোনো বাধ্যতামূলক পালাবদল থাকবে না। নিচের মানটি শুধু সর্বোচ্চ সীমা; এটি নির্দিষ্ট ক্র্যাশ পয়েন্ট ঠিক করে না।</div>
+        <div class="bk-label" style="margin-bottom:8px">সর্বোচ্চ Crash Multiplier (ঐচ্ছিক)</div>
+        <input id="avMaxMultiplier" class="bk-input" type="number" min="1.01" max="38.94" step="0.01" placeholder="খালি রাখলে ডিফল্ট সীমা 38.94x">
+        <div class="bk-help" style="margin:7px 0">উদাহরণ: 10 লিখলে কোনো রাউন্ড 10x-এর বেশি যাবে না; তার নিচে ক্র্যাশ পয়েন্ট র‍্যান্ডম থাকবে। 1.01–38.94 পর্যন্ত দেওয়া যাবে।</div>
+        <button id="saveAvConfig" class="bk-save" type="button">Aviator সেটিংস সেভ করুন</button>
+        <div id="avConfigMsg" class="bk-status">র‍্যান্ডম মোড চালু।</div>
       </div>
 
       <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(255,204,0,.25);">
@@ -594,6 +598,9 @@ function renderConfig(){
   $("fkRtpFactor").value=fk.rtpFactor!=null?String(fk.rtpFactor):"1.0";
   const cg=colorGemsConfig||{};
   $("cgRtpFactor").value=cg.rtpFactor!=null?String(cg.rtpFactor):"1.0";
+  const av=aviatorConfig||{};
+  $("avMaxMultiplier").value=av.maxMultiplier!=null && av.maxMultiplier!=="" ? String(av.maxMultiplier) : "";
+  $("avConfigMsg").textContent=av.maxMultiplier!=null && av.maxMultiplier!=="" ? ("সর্বোচ্চ সীমা: "+Number(av.maxMultiplier).toFixed(2)+"x — এর নিচে র‍্যান্ডম ক্র্যাশ") : "র‍্যান্ডম মোড চালু — ডিফল্ট সর্বোচ্চ সীমা 38.94x";
 }
 
 $("saveConfig").onclick=async()=>{
@@ -609,6 +616,31 @@ $("saveConfig").onclick=async()=>{
     $("configMsg").textContent="Saved successfully";
     toast("Boxing King settings saved");
   }catch(e){$("configMsg").textContent="Save failed: "+e.message;toast(e.message)}
+};
+
+$("saveAvConfig").onclick=async()=>{
+  const raw=$("avMaxMultiplier").value.trim();
+  const out={};
+  if(raw!==""){
+    const cap=Number(raw);
+    if(!Number.isFinite(cap)||cap<1.01||cap>38.94){
+      $("avConfigMsg").textContent="1.01 থেকে 38.94-এর মধ্যে একটি মান দিন, অথবা খালি রাখুন।";
+      return;
+    }
+    out.maxMultiplier=Number(cap.toFixed(2));
+  } else {
+    out.maxMultiplier=null;
+  }
+  try{
+    await db.ref("config/aviator").update(out);
+    aviatorConfig=Object.assign({},aviatorConfig,out);
+    await audit("update_aviator_random_config","config/aviator",JSON.stringify(out));
+    $("avConfigMsg").textContent=raw===""?"র‍্যান্ডম মোড: ডিফল্ট সীমা 38.94x":"সর্বোচ্চ সীমা সেভ হয়েছে: "+Number(raw).toFixed(2)+"x";
+    toast("Aviator settings saved");
+  }catch(e){
+    $("avConfigMsg").textContent="Save failed: "+(e.message||e);
+    toast(e.message||String(e));
+  }
 };
 
 $("saveFkConfig").onclick=async()=>{
