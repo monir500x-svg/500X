@@ -2500,7 +2500,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 if (didCash) { status = bot.target.toFixed(2) + 'x (' + (bot.amount * bot.target).toFixed(2) + ' কয়েন)'; rowClass += ' cashed'; }
                 else if (didLose) { status = 'CRASHED (0 কয়েন)'; rowClass += ' lost'; }
                 else { status = 'In Flight (' + (bot.amount * Math.max(1, liveMultiplier)).toFixed(2) + ' কয়েন)'; }
-                rows.push('<div class="'+rowClass+'"><span>'+bot.name+' <span class="av-bot-tag">BOT</span></span><span>'+bot.amount+' কয়েন</span><span>'+status+'</span></div>');
+                rows.push('<div class="'+rowClass+'"><span>'+bot.name+'</span><span>'+bot.amount+' কয়েন</span><span>'+status+'</span></div>');
             });
 
             const hasActiveBetThisRound = (betRoundIndex === currentRoundIndex) && !!currentUser;
