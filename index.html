@@ -2387,19 +2387,32 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         const AVIATOR_CRASH_HISTORY_PATH = 'aviatorGame/crashHistory';
 
         function recordAviatorCrashHistory(roundState) {
-            if (!roundState || !Number.isFinite(Number(roundState.roundIndex)) || !Number.isFinite(Number(roundState.crashPoint))) return;
-            const roundKey = String(Number(roundState.roundIndex));
+            // Only write a finalized shared round; never record countdown/flying predictions.
+            if (!roundState || roundState.state !== 'crashed' ||
+                !Number.isFinite(Number(roundState.roundIndex)) ||
+                !Number.isFinite(Number(roundState.crashPoint))) return;
+            const roundIndex = Number(roundState.roundIndex);
+            const roundKey = String(roundIndex);
+            const crashPoint = Number(Number(roundState.crashPoint).toFixed(2));
+            const crashAtMs = Number(roundState.crashAtMs || roundState.crashedAtMs || 0);
+            if (crashPoint < 1 || !Number.isFinite(crashAtMs) || crashAtMs <= 0) return;
             const entry = {
-                roundIndex: Number(roundState.roundIndex),
-                crashPoint: Number(Number(roundState.crashPoint).toFixed(2)),
-                crashAtMs: Number(roundState.crashAtMs || roundState.crashedAtMs || 0),
+                roundIndex: roundIndex,
+                crashPoint: crashPoint,
+                crashAtMs: crashAtMs,
                 recordedAt: firebase.database.ServerValue.TIMESTAMP
             };
-            // Fixed round key prevents duplicate history rows from multiple players/devices.
+            // A stable round key avoids duplicates across devices. If a stale record
+            // from a reused/reset round index has a different result, replace it with
+            // the finalized value from the shared currentRound state.
             db.ref(AVIATOR_CRASH_HISTORY_PATH + '/' + roundKey).transaction(function(existing) {
-                return existing || entry;
-            }, function(error) {
+                if (existing && Number(existing.roundIndex) === roundIndex &&
+                    Number(Number(existing.crashPoint).toFixed(2)) === crashPoint &&
+                    Number(existing.crashAtMs || 0) === crashAtMs) return existing;
+                return entry;
+            }, function(error, committed) {
                 if (error) console.warn('Aviator crash history write failed:', error);
+                else if (!committed) console.warn('Aviator crash history was not committed for round:', roundIndex);
             });
         }
 
@@ -2421,10 +2434,17 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             const records = [];
             snapshot.forEach(function(child) {
                 const record = child.val();
-                if (record && Number.isFinite(Number(record.crashPoint))) records.push(record);
+                const roundIndex = Number(record && record.roundIndex);
+                const crashPoint = Number(record && record.crashPoint);
+                const crashAtMs = Number(record && record.crashAtMs);
+                if (record && Number.isFinite(roundIndex) && Number.isFinite(crashPoint) &&
+                    crashPoint >= 1 && Number.isFinite(crashAtMs) && crashAtMs > 0) {
+                    records.push({roundIndex: roundIndex, crashPoint: Number(crashPoint.toFixed(2)), crashAtMs: crashAtMs});
+                }
             });
-            records.sort(function(a,b) { return Number(b.roundIndex) - Number(a.roundIndex); });
-            historyArray = records.map(function(record) { return Number(record.crashPoint); });
+            // Sort newest round first, show only the most recent 30 finalized rounds.
+            records.sort(function(a,b) { return b.roundIndex - a.roundIndex; });
+            historyArray = records.slice(0, 30).map(function(record) { return record.crashPoint; });
             renderHistoryUI();
         }, function(error) {
             console.warn('Aviator crash history read failed:', error);
