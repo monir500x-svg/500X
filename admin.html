@@ -212,14 +212,9 @@
       <div id="configMsg" class="bk-status"></div>
 
       <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(255,204,0,.25);">
-        <h3 class="bk-title" style="font-size:17px;">✈️ Aviator — Maximum Multiplier</h3>
-        <div class="notice" style="margin-bottom:10px">এটি একটি স্বচ্ছ maximum cap। উদাহরণ: <b>5x</b> দিলে random crash point 5x-এর বেশি হবে না। ঘরটি খালি রাখলে স্বাভাবিক random crash logic ব্যবহার হবে। এটি কোনো গোপন exact crash-point override নয়।</div>
-        <div class="bk-preset-wrap">
-          <div class="bk-preset-title">Maximum Multiplier (x)</div>
-          <input id="avMaxMultiplier" class="bk-input" type="number" min="1.01" max="100000" step="0.01" placeholder="খালি = Random">
-        </div>
-        <button id="saveAvConfig" class="bk-save" type="button" style="margin-top:10px;">Aviator সেটিংস সেভ করুন</button>
-        <div id="avConfigMsg" class="bk-status"></div>
+        <h3 class="bk-title" style="font-size:17px;">✈️ Aviator — Random Crash System</h3>
+        <div class="notice" style="margin-bottom:10px">র‍্যান্ডম ক্র্যাশ চালু আছে। প্রতিটি রাউন্ডের ফলাফল আলাদাভাবে তৈরি হবে; লো/হাই পালাবদলের কোনো বাধ্যতামূলক নিয়ম বা Admin-set maximum multiplier থাকবে না। একই রাউন্ডে সব খেলোয়াড় একই crash point দেখবে।</div>
+        <div id="avConfigMsg" class="bk-status">✅ Random mode active — কোনো multiplier cap প্রয়োগ করা হচ্ছে না।</div>
       </div>
 
       <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(255,204,0,.25);">
@@ -497,11 +492,22 @@ window.requestAction=async(type,id,status)=>{
       if(Number(user.balance||0)<1){
         const normalized=await userRef.transaction(u=>{
           if(!u)return;
+          let changed=false;
+          // Low main balance cancels the current deposit lock. A future approved deposit
+          // stamps a new lastDepositAt and starts a fresh 6-hour cooldown.
+          if(Number(u.balance||0)<1 && Number(u.lastDepositAt||0)>0){
+            u.lastDepositAt=0;
+            u.depositCooldownClearedByLowBalanceAt=now;
+            changed=true;
+          }
           const t=u.bonusTurnover||{};
           const required=Math.max(0,Number(t.required||0));
           const completed=Math.min(required,Math.max(0,Number(t.completed||0)));
-          if(required>completed){u.bonusTurnover=Object.assign({},t,{completed:required,remaining:0,status:"complete",completedByLowBalance:true,updatedAt:now});return u;}
-          return;
+          if(required>completed){
+            u.bonusTurnover=Object.assign({},t,{completed:required,remaining:0,status:"complete",completedByLowBalance:true,updatedAt:now});
+            changed=true;
+          }
+          return changed ? u : undefined;
         });
         user=(normalized&&normalized.snapshot&&normalized.snapshot.val())||user;
       }
@@ -588,8 +594,6 @@ function renderConfig(){
   $("fkRtpFactor").value=fk.rtpFactor!=null?String(fk.rtpFactor):"1.0";
   const cg=colorGemsConfig||{};
   $("cgRtpFactor").value=cg.rtpFactor!=null?String(cg.rtpFactor):"1.0";
-  const av=aviatorConfig||{};
-  $("avMaxMultiplier").value=av.maxMultiplier!=null?String(av.maxMultiplier):"";
 }
 
 $("saveConfig").onclick=async()=>{
@@ -605,24 +609,6 @@ $("saveConfig").onclick=async()=>{
     $("configMsg").textContent="Saved successfully";
     toast("Boxing King settings saved");
   }catch(e){$("configMsg").textContent="Save failed: "+e.message;toast(e.message)}
-};
-
-$("saveAvConfig").onclick=async()=>{
-  const raw=String($("avMaxMultiplier").value||"").trim();
-  let maxMultiplier=null;
-  if(raw!==""){
-    const n=Number(raw);
-    if(!Number.isFinite(n)||n<1.01||n>100000){toast("Aviator Max Multiplier 1.01x থেকে 100000x-এর মধ্যে দিন, অথবা খালি রাখুন");return}
-    maxMultiplier=Number(n.toFixed(2));
-  }
-  const out={maxMultiplier};
-  try{
-    await db.ref("config/aviator").update(out);
-    aviatorConfig=Object.assign({},aviatorConfig,out);
-    await audit("update_aviator_max_multiplier","config/aviator",JSON.stringify(out));
-    $("avConfigMsg").textContent=maxMultiplier===null?"Saved — Random crash logic restored":"Saved — Maximum multiplier: "+maxMultiplier.toFixed(2)+"x";
-    toast(maxMultiplier===null?"Aviator random crash restored":"Aviator maximum multiplier saved");
-  }catch(e){$("avConfigMsg").textContent="Save failed: "+e.message;toast(e.message)}
 };
 
 $("saveFkConfig").onclick=async()=>{
