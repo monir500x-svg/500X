@@ -2385,6 +2385,8 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         }
 
         const AVIATOR_CRASH_HISTORY_PATH = 'aviatorGame/crashHistory';
+        // Prevent the render loop from sending the same round to Firebase repeatedly.
+        let lastLocallyRecordedCrashRound = null;
 
         function recordAviatorCrashHistory(roundState) {
             // Only write a finalized shared round; never record countdown/flying predictions.
@@ -2640,6 +2642,18 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 betBtn.className = 'av-btn av-btn-action av-btn-bet';
                 betBtn.disabled = isProcessingBet;
             } else if (state === 'crashed') {
+                // The shared crashAtMs is authoritative. Once local server-adjusted
+                // time reaches it, publish this exact shared result immediately rather
+                // than waiting for the Firebase state field to change to 'crashed'.
+                if (lastLocallyRecordedCrashRound !== currentRoundIndex) {
+                    lastLocallyRecordedCrashRound = currentRoundIndex;
+                    recordAviatorCrashHistory(Object.assign({}, roundState, {
+                        state: 'crashed',
+                        crashedAtMs: Number.isFinite(Number(roundState.crashedAtMs))
+                            ? Number(roundState.crashedAtMs)
+                            : crashAtMs
+                    }));
+                }
                 currentLocalMult = targetCrashPoint;
                 lastCrashedDisplayValue = currentLocalMult;
                 multiplierDisplay.innerText = 'FLEW AWAY!\n' + targetCrashPoint.toFixed(2) + 'x';
