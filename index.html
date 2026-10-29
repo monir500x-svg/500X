@@ -6,8 +6,7 @@
     <title>Gaming Zone - Professional Game Lobby</title>
 
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">\n
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -444,6 +443,7 @@
         .av-live-bet-row { display: grid; grid-template-columns: 2fr 1fr 1fr; padding: 6px 10px; font-size: 0.72rem; align-items: center; }
         .av-live-bet-row.cashed { background: rgba(67, 160, 71, 0.15); color: #81c784; }
         .av-live-bet-row.lost { background: rgba(229, 57, 53, 0.15); color: #ef9a9a; }
+        .av-bot-tag { display:inline-block; margin-left:4px; padding:1px 4px; border-radius:4px; font-size:.55rem; font-weight:900; color:#cbd5e1; background:rgba(148,163,184,.18); border:1px solid rgba(148,163,184,.28); vertical-align:middle; }
         .av-no-bet-text { text-align: center; padding: 12px; font-size: 0.72rem; color: var(--text-dim); }
 
         .av-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 200000; }
@@ -2387,6 +2387,18 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         const AVIATOR_CRASH_HISTORY_PATH = 'aviatorGame/crashHistory';
         // Prevent the render loop from sending the same round to Firebase repeatedly.
         let lastLocallyRecordedCrashRound = null;
+        const locallySeenCrashRecords = new Map();
+
+        function showCrashHistoryImmediately(roundIndex, crashPoint) {
+            if (!Number.isFinite(Number(roundIndex)) || !Number.isFinite(Number(crashPoint))) return;
+            locallySeenCrashRecords.set(Number(roundIndex), Number(Number(crashPoint).toFixed(2)));
+            const merged = [];
+            locallySeenCrashRecords.forEach((point, idx) => merged.push({roundIndex:Number(idx), crashPoint:Number(point)}));
+            historyArray.forEach((point, i) => { if (!merged.some(r => r.crashPoint === point && r.roundIndex === -100000-i)) merged.push({roundIndex:-100000-i, crashPoint:point}); });
+            merged.sort((a,b) => b.roundIndex-a.roundIndex);
+            historyArray = merged.slice(0,30).map(r=>r.crashPoint);
+            renderHistoryUI();
+        }
 
         function recordAviatorCrashHistory(roundState) {
             // Only write a finalized shared round; never record countdown/flying predictions.
@@ -2398,6 +2410,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             const crashPoint = Number(Number(roundState.crashPoint).toFixed(2));
             const crashAtMs = Number(roundState.crashAtMs || roundState.crashedAtMs || 0);
             if (crashPoint < 1 || !Number.isFinite(crashAtMs) || crashAtMs <= 0) return;
+            showCrashHistoryImmediately(roundIndex, crashPoint);
             const entry = {
                 roundIndex: roundIndex,
                 crashPoint: crashPoint,
@@ -2432,7 +2445,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         }
 
         // All connected players read the same finalized crash records from Firebase.
-        db.ref(AVIATOR_CRASH_HISTORY_PATH).limitToLast(30).on('value', function(snapshot) {
+        db.ref(AVIATOR_CRASH_HISTORY_PATH).on('value', function(snapshot) {
             const records = [];
             snapshot.forEach(function(child) {
                 const record = child.val();
@@ -2444,7 +2457,10 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     records.push({roundIndex: roundIndex, crashPoint: Number(crashPoint.toFixed(2)), crashAtMs: crashAtMs});
                 }
             });
-            // Sort newest round first, show only the most recent 30 finalized rounds.
+            // Merge local crash events immediately, then sort numerically (Firebase keys are strings).
+            locallySeenCrashRecords.forEach(function(point, idx) {
+                if (!records.some(function(r){ return r.roundIndex === Number(idx); })) records.push({roundIndex:Number(idx), crashPoint:Number(point), crashAtMs:0});
+            });
             records.sort(function(a,b) { return b.roundIndex - a.roundIndex; });
             historyArray = records.slice(0, 30).map(function(record) { return record.crashPoint; });
             renderHistoryUI();
@@ -2452,35 +2468,52 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             console.warn('Aviator crash history read failed:', error);
         });
 
+        // Automated practice participants make the lobby feel active. Their BOT tag
+        // keeps automated activity distinguishable from real players; they never touch user balances.
+        let simulatedBetRound = null;
+        let simulatedBets = [];
+        function getSimulatedBets(roundIndex) {
+            if (simulatedBetRound === Number(roundIndex) && simulatedBets.length) return simulatedBets;
+            simulatedBetRound = Number(roundIndex);
+            const names = ['Rafi','Siam','Nabil','Tanim','Sakib','Riyad','Nayeem','Arian','Fahim','Shuvo','Mim','Nusrat'];
+            const count = 5 + Math.floor(Math.random() * 5);
+            simulatedBets = [];
+            for (let i=0; i<count; i++) {
+                const amountPool = [500, 600, 750, 900, 1000, 1200, 1500, 1800, 2500, 3000];
+                const targetPool = [1.25,1.4,1.55,1.7,1.85,2,2.2,2.5,3,3.5,4,5];
+                simulatedBets.push({name:names[(i + Math.floor(Math.random()*names.length)) % names.length], amount:amountPool[Math.floor(Math.random()*amountPool.length)], target:targetPool[Math.floor(Math.random()*targetPool.length)]});
+            }
+            return simulatedBets;
+        }
+
         function renderMyLiveBetUI(currentRoundIndex, isCrashed) {
-            const hasActiveBetThisRound = (betRoundIndex === currentRoundIndex);
-            if (!hasActiveBetThisRound || !currentUser) {
-                liveBetsList.innerHTML = '<div class="av-no-bet-text">কোনো লাইভ বেট নেই</div>';
-                return;
+            const rows = [];
+            const bots = getSimulatedBets(currentRoundIndex);
+            const crashPoint = Number(aviatorRoundState && aviatorRoundState.crashPoint) || 1;
+            const isFlyingNow = !!(aviatorRoundState && aviatorRoundState.state === 'flying');
+            const liveMultiplier = isFlyingNow ? currentLocalMult : 1;
+            bots.forEach(function(bot) {
+                const didCash = crashPoint >= bot.target && (isCrashed || (isFlyingNow && currentLocalMult >= bot.target));
+                const didLose = isCrashed && !didCash;
+                let status = '';
+                let rowClass = 'av-live-bet-row';
+                if (didCash) { status = bot.target.toFixed(2) + 'x (' + (bot.amount * bot.target).toFixed(2) + ' কয়েন)'; rowClass += ' cashed'; }
+                else if (didLose) { status = 'CRASHED (0 কয়েন)'; rowClass += ' lost'; }
+                else { status = 'In Flight (' + (bot.amount * Math.max(1, liveMultiplier)).toFixed(2) + ' কয়েন)'; }
+                rows.push('<div class="'+rowClass+'"><span>'+bot.name+' <span class="av-bot-tag">BOT</span></span><span>'+bot.amount+' কয়েন</span><span>'+status+'</span></div>');
+            });
+
+            const hasActiveBetThisRound = (betRoundIndex === currentRoundIndex) && !!currentUser;
+            if (hasActiveBetThisRound) {
+                const nameDisplay = currentUser.email ? currentUser.email.split('@')[0] : 'You';
+                let statusText = '';
+                let rowClass = 'av-live-bet-row';
+                if (hasCashedOut) { statusText = cashedMultiplier.toFixed(2) + 'x (' + cashedAmount.toFixed(2) + ' কয়েন)'; rowClass += ' cashed'; }
+                else if (isCrashed) { statusText = 'CRASHED (0 কয়েন)'; rowClass += ' lost'; }
+                else { statusText = 'In Flight (' + (activeBet * currentLocalMult).toFixed(2) + ' কয়েন)'; }
+                rows.unshift('<div class="'+rowClass+'"><span>'+nameDisplay+' (You)</span><span>'+activeBet+' কয়েন</span><span>'+statusText+'</span></div>');
             }
-
-            let nameDisplay = currentUser.email ? currentUser.email.split('@')[0] : 'You';
-            let statusText = "";
-            let rowClass = "av-live-bet-row";
-
-            if (hasCashedOut) {
-                statusText = cashedMultiplier.toFixed(2) + "x (" + cashedAmount.toFixed(2) + " কয়েন)";
-                rowClass += " cashed";
-            } else if (isCrashed) {
-                statusText = "CRASHED (0 কয়েন)";
-                rowClass += " lost";
-            } else {
-                let liveWin = (activeBet * currentLocalMult).toFixed(2);
-                statusText = "In Flight (" + liveWin + " কয়েন)";
-            }
-
-            liveBetsList.innerHTML = `
-                <div class="${rowClass}">
-                    <span>${nameDisplay} (You)</span>
-                    <span>${activeBet} কয়েন</span>
-                    <span>${statusText}</span>
-                </div>
-            `;
+            liveBetsList.innerHTML = rows.join('');
         }
 
         function drawAviatorFlight(mult, timeElapsed, totalDurationNeeded) {
@@ -2647,6 +2680,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 // than waiting for the Firebase state field to change to 'crashed'.
                 if (lastLocallyRecordedCrashRound !== currentRoundIndex) {
                     lastLocallyRecordedCrashRound = currentRoundIndex;
+                    showCrashHistoryImmediately(currentRoundIndex, targetCrashPoint);
                     recordAviatorCrashHistory(Object.assign({}, roundState, {
                         state: 'crashed',
                         crashedAtMs: Number.isFinite(Number(roundState.crashedAtMs))
