@@ -51,6 +51,16 @@
 </head>
 <body>
 
+<div id="adminLogin" style="min-height:100vh;display:none;place-items:center;padding:20px;background:radial-gradient(circle at top,#102a39 0,#071018 55%,#050b10 100%);color:#edf6fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+  <div style="width:min(420px,100%);padding:24px;border:1px solid #1e3949;border-radius:18px;background:#0d1a24;box-shadow:0 20px 60px #0006;">
+    <h2 style="margin:0 0 6px;">🛡️ Admin Login</h2><p style="color:#91a8b6;font-size:13px;margin:0 0 18px;">কাগজের বিমান — Admin Control Center</p>
+    <label for="adminLoginEmail" style="display:block;margin:10px 0 6px;font-size:13px;">Admin Email</label><input id="adminLoginEmail" type="email" autocomplete="username" placeholder="Admin email" style="width:100%;padding:12px;border-radius:10px;border:1px solid #1e3949;background:#08141d;color:#edf6fb;box-sizing:border-box;">
+    <label for="adminLoginPassword" style="display:block;margin:12px 0 6px;font-size:13px;">Password</label><input id="adminLoginPassword" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;padding:12px;border-radius:10px;border:1px solid #1e3949;background:#08141d;color:#edf6fb;box-sizing:border-box;">
+    <button id="adminLoginBtn" type="button" style="width:100%;margin-top:16px;padding:12px;border:0;border-radius:10px;background:#54e0a7;color:#062016;font-weight:800;">Login</button>
+    <div id="adminLoginStatus" role="status" style="white-space:pre-wrap;color:#ffbd5a;font-size:13px;margin-top:12px;"></div>
+  </div>
+</div>
+
 <div id="app" class="app">
 <aside class="side">
   <div class="brand">GAMING ZONE <small>ADMIN CONTROL CENTER</small></div>
@@ -58,7 +68,6 @@
     <button class="active" data-page="overview">📊 Overview</button>
     <button data-page="users">👥 Users</button>
     <button data-page="requests">💳 Requests</button>
-    <button data-page="refunds">↩️ Refund / টাকা ফেরত</button>
     <button data-page="support">🆘 Help Center</button>
     <button data-page="games">🎮 Games & Config</button>
     <button data-page="announcement">📢 Announcement</button>
@@ -74,7 +83,7 @@
   <div class="top"><div><h1 id="pageTitle">Overview</h1>
 
 
-<div id="adminEmail" style="color:var(--muted);font-size:12px;margin-top:4px"></div></div><span class="pill">● ADMIN SESSION</span></div>
+<div id="adminEmail" style="color:var(--muted);font-size:12px;margin-top:4px"></div></div><div class="row"><span class="pill">● ADMIN SESSION</span><button id="adminSignOutBtn" type="button" class="btn">Sign out</button></div></div>
 
   <section id="overview" class="page active">
     <div class="card danger-zone-card" style="margin:0 0 18px;">
@@ -108,8 +117,17 @@
         <button id="giveBonusBtn" class="btn primary">Give Bonus</button>
         <button id="giveAllBonusBtn" class="btn">Give Same Bonus to All Users</button>
       </div>
+      <div style="border-top:1px solid var(--line);margin-top:18px;padding-top:16px">
+        <h3 style="margin:0 0 6px">🎯 Bonus Turnover Control</h3>
+        <div class="notice" style="margin-bottom:10px">নতুন Bonus claim করার সময় এই multiplier ব্যবহার হবে। উদাহরণ: 10× হলে 100 bonus-এর turnover requirement 1,000 হবে। আগে claim করা bonus-এর multiplier পরিবর্তন হবে না। শুধু claim করা bonus-এর অঙ্ক × multiplier টার্নওভারে যোগ হবে; main balance যোগ হবে না। আগের বাকি turnover-এর সঙ্গে নতুন requirement যোগ হবে। balance ৳1-এর নিচে নামলে বাকি turnover complete হবে। Deposit approval-এর পর আগের নিয়মে ৬ ঘণ্টার withdrawal lock আলাদাভাবে থাকবে।</div>
+        <div class="form">
+          <div class="field"><label>Turnover multiplier (×)</label><input id="bonusTurnoverMultiplierInput" type="number" min="1" max="100" step="1" value="10"></div>
+          <div class="field"><label>Current setting</label><input id="bonusTurnoverCurrent" type="text" value="10×" readonly></div>
+        </div>
+        <div class="row" style="margin-top:10px"><button id="saveBonusTurnoverBtn" class="btn primary" type="button">💾 Save Turnover Setting</button><span id="bonusTurnoverStatus" style="font-size:12px;color:var(--muted)"></span></div>
+      </div>
     </div>
-    <div class="card section"><input id="userSearch" class="search" placeholder="Search by email or UID…"><div class="table-wrap"><table class="table"><thead><tr><th>User</th><th>Balance</th><th>Games</th><th>Wins</th><th>Boxing</th><th>Last activity</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div></div>
+    <div class="card section"><input id="userSearch" class="search" placeholder="Search by email or UID…"><div class="table-wrap"><table class="table"><thead><tr><th>User</th><th>Balance</th><th>Bonus Turnover</th><th>Games</th><th>Wins</th><th>Boxing</th><th>Last activity</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div></div>
   </section>
 
   <section id="requests" class="page">
@@ -145,21 +163,6 @@
 
 
 
-  <section id="refunds" class="page">
-    <div class="card">
-      <h2>↩️ টাকা ফেরত / Balance Refund</h2>
-      <div class="notice" style="margin-bottom:12px">ভুলবশত বা কোনো কারণে কেটে নেওয়া কয়েন নির্বাচিত user-এর ব্যালেন্সে ফেরত দিন। প্রতিটি ফেরতের কারণ ও হিসাব সংরক্ষণ হবে। ফেরত দেওয়ার আগে UID, পরিমাণ ও কারণ যাচাই করুন।</div>
-      <div class="form">
-        <div class="field full"><label>খেলোয়াড় নির্বাচন করুন (Email / UID / Balance)</label><select id="refundUser"><option value="">Select a user…</option></select></div>
-        <div class="field"><label>ফেরত দেওয়ার পরিমাণ (coins)</label><input id="refundAmount" type="number" min="0.01" step="0.01" placeholder="যেমন: 100"></div>
-        <div class="field"><label>কারণ / নোট (বাধ্যতামূলক)</label><input id="refundReason" type="text" maxlength="180" placeholder="যেমন: ভুলবশত 100 কয়েন কাটা হয়েছে"></div>
-      </div>
-      <div class="row" style="margin-top:12px"><button id="refundSubmit" type="button" class="btn primary">↩️ টাকা ফেরত দিন</button><button id="refundRefresh" type="button" class="btn">Refresh History</button></div>
-      <div id="refundStatus" style="margin-top:10px;font-size:13px"></div>
-    </div>
-    <div class="card section"><h2>📒 Refund History</h2><div class="notice" style="margin-bottom:10px">সফল ফেরতগুলো এখানে দেখা যাবে। একই refund operation পুনরায় চালু হলে user-এর ledger-এ একই ID থাকায় ব্যালেন্স দ্বিতীয়বার যোগ হবে না।</div><div class="table-wrap"><table class="table"><thead><tr><th>Time</th><th>User</th><th>Amount</th><th>Reason</th><th>Admin</th><th>Status</th></tr></thead><tbody id="refundsBody"></tbody></table></div></div>
-  </section>
-
   <section id="support" class="page">
     <div class="card">
       <h3 style="margin-top:0;">🆘 Private Help Center</h3>
@@ -179,7 +182,7 @@
   <section id="games" class="page">
     <div class="bk-control-card">
       <h2 class="bk-title">🥊 বক্সিং কিং কন্ট্রোল <span style="font-size:14px;color:#aab4c1">(Settings)</span></h2>
-      <div class="notice" style="margin-bottom:6px">এই কন্ট্রোলগুলো সরাসরি <code>config/boxingKing</code>-এ সেভ হবে। Win-rate/RTP দিয়ে খেলোয়াড়ের ফলাফল গোপনে নিয়ন্ত্রণ করার অপশন রাখা হয়নি।</div>
+      <div class="notice" style="margin-bottom:6px">এই কন্ট্রোলগুলো শুধু Boxing King-এর জন্য <code>config/boxingKing</code>-এ সেভ হবে। Flag King ও Color Gems-এর RTP/reference factor আলাদা সেটিংসে রাখা হয়েছে।</div>
 
       <div class="bk-row">
         <div><div class="bk-label">গেম চালু/বন্ধ (Enable/Disable)</div><div class="bk-help">বন্ধ করলে Boxing King-এর spin শুরু করা যাবে না।</div></div>
@@ -196,6 +199,8 @@
         <div class="bk-help" style="margin-bottom:8px">এটি configuration/reference value হিসেবে সেভ হবে; এটি player-এর win/lose outcome গোপনে নিয়ন্ত্রণ করে না।</div>
         <select id="bkRtpFactor" class="bk-input">
           <option value="0.4">0.4x</option>
+          <option value="0.5">0.5x</option>
+          <option value="0.6">0.6x</option>
           <option value="0.7">0.7x</option>
           <option value="1.0" selected>1.0x</option>
           <option value="1.5">1.5x</option>
@@ -207,14 +212,32 @@
       <div id="configMsg" class="bk-status"></div>
 
       <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(255,204,0,.25);">
-        <h3 class="bk-title" style="font-size:17px;">✈️ Aviator — Maximum Multiplier</h3>
-        <div class="notice" style="margin-bottom:10px">এটি একটি স্বচ্ছ maximum cap। উদাহরণ: <b>5x</b> দিলে random crash point 5x-এর বেশি হবে না। ঘরটি খালি রাখলে স্বাভাবিক random crash logic ব্যবহার হবে। এটি কোনো গোপন exact crash-point override নয়।</div>
+        <h3 class="bk-title" style="font-size:17px;">✈️ Aviator — Random Crash System</h3>
+        <div class="notice" style="margin-bottom:10px">র‍্যান্ডম ফলাফল থাকবে—লো মাল্টিপ্লায়ার সাধারণত বেশি, হাই মাল্টিপ্লায়ার ধীরে ধীরে বিরল হবে। কোনো বাধ্যতামূলক পালাবদল থাকবে না। নিচের মানটি শুধু সর্বোচ্চ সীমা; এটি নির্দিষ্ট ক্র্যাশ পয়েন্ট ঠিক করে না।</div>
+        <div class="bk-label" style="margin-bottom:8px">সর্বোচ্চ Crash Multiplier (ঐচ্ছিক)</div>
+        <input id="avMaxMultiplier" class="bk-input" type="number" min="1.01" max="38.94" step="0.01" placeholder="খালি রাখলে ডিফল্ট সীমা 38.94x">
+        <div class="bk-help" style="margin:7px 0">উদাহরণ: 10 লিখলে কোনো রাউন্ড 10x-এর বেশি যাবে না; তার নিচে ক্র্যাশ পয়েন্ট র‍্যান্ডম থাকবে। 1.01–38.94 পর্যন্ত দেওয়া যাবে।</div>
+        <button id="saveAvConfig" class="bk-save" type="button">Aviator সেটিংস সেভ করুন</button>
+        <div id="avConfigMsg" class="bk-status">র‍্যান্ডম মোড চালু।</div>
+      </div>
+
+      <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(255,204,0,.25);">
+        <h3 class="bk-title" style="font-size:17px;">🏁 Flag King — আলাদা RTP / Reference Factor</h3>
+        <div class="notice" style="margin-bottom:10px">Flag King-এর সেটিং আলাদাভাবে <code>config/flagKing/rtpFactor</code>-এ সেভ হবে। এটি Boxing King ও Color Gems-এর সেটিং থেকে পৃথক reference/configuration value; এটি নিজে থেকে game outcome নিয়ন্ত্রণ করে না।</div>
         <div class="bk-preset-wrap">
-          <div class="bk-preset-title">Maximum Multiplier (x)</div>
-          <input id="avMaxMultiplier" class="bk-input" type="number" min="1.01" max="100000" step="0.01" placeholder="খালি = Random">
+          <div class="bk-preset-title">Flag King RTP / Reference Factor</div>
+          <select id="fkRtpFactor" class="bk-input">
+            <option value="0.4">0.4x</option>
+            <option value="0.5">0.5x</option>
+            <option value="0.6">0.6x</option>
+            <option value="0.7">0.7x</option>
+            <option value="1.0" selected>1.0x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2.0">2.0x</option>
+          </select>
         </div>
-        <button id="saveAvConfig" class="bk-save" type="button" style="margin-top:10px;">Aviator সেটিংস সেভ করুন</button>
-        <div id="avConfigMsg" class="bk-status"></div>
+        <button id="saveFkConfig" class="bk-save" type="button" style="margin-top:10px;">Flag King RTP সেভ করুন</button>
+        <div id="fkConfigMsg" class="bk-status"></div>
       </div>
 
       <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(116,180,255,.25);">
@@ -224,6 +247,8 @@
           <div class="bk-preset-title">Color Gems RTP / Reference Factor</div>
           <select id="cgRtpFactor" class="bk-input">
             <option value="0.4">0.4x</option>
+            <option value="0.5">0.5x</option>
+            <option value="0.6">0.6x</option>
             <option value="0.7">0.7x</option>
             <option value="1.0" selected>1.0x</option>
             <option value="1.5">1.5x</option>
@@ -246,7 +271,7 @@
 <script>
 const firebaseConfig={apiKey:"AIzaSyAyTOnCm5IuPcB-yvGjFl3KbwRVxNrcNSY",authDomain:"ff-to-gaming-4ea1b.firebaseapp.com",databaseURL:"https://ff-to-gaming-4ea1b-default-rtdb.firebaseio.com",projectId:"ff-to-gaming-4ea1b",storageBucket:"ff-to-gaming-4ea1b.appspot.com",messagingSenderId:"816776130875",appId:"1:816776130875:web:c3e7984e0de53cbd89871e"};
 firebase.initializeApp(firebaseConfig);const auth=firebase.auth(),db=firebase.database();
-let users={},deposits={},withdrawals={},refunds={},boxingConfig={},colorGemsConfig={},aviatorConfig={};
+let users={},deposits={},withdrawals={},boxingConfig={},flagKingConfig={},colorGemsConfig={},aviatorConfig={},bonusTurnoverMultiplier=10;
 const $=id=>document.getElementById(id);
 function toast(m){$("toast").textContent=m;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),2800)}
 function esc(v){return String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
@@ -255,6 +280,7 @@ async function audit(action,target,details){if(!auth.currentUser)return;await db
 function setPage(p){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(p).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===p));$("pageTitle").textContent=p[0].toUpperCase()+p.slice(1)}
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>setPage(b.dataset.page));
 $("closeModal").onclick=()=>$("userModal").classList.add("hidden");
+$("adminSignOutBtn").onclick=()=>auth.signOut().catch(e=>toast(e.message||String(e)));
 async function resetEverythingKeepBalance(){
   const btn=$("resetAllBtn");
   const typed=prompt("নিশ্চিত করতে RESET লিখুন। User Balance পরিবর্তন হবে না:");
@@ -288,25 +314,27 @@ async function resetEverythingKeepBalance(){
 $("resetAllBtn").onclick=resetEverythingKeepBalance;
 
 async function loadAll(){
- const [u,dep,wd,refundSnap,c,cg,av,auditSnap]=await Promise.all([
+ const [u,dep,wd,c,fk,cg,av,auditSnap,bt]=await Promise.all([
    db.ref("users").once("value"),
    db.ref("adminRequests/deposits").once("value"),
    db.ref("adminRequests/withdrawals").once("value"),
-   db.ref("adminRefunds").limitToLast(100).once("value"),
    db.ref("config/boxingKing").once("value"),
+   db.ref("config/flagKing").once("value"),
    db.ref("config/colorGems").once("value"),
    db.ref("config/aviator").once("value"),
-   db.ref("adminAudit").limitToLast(100).once("value")
+   db.ref("adminAudit").limitToLast(100).once("value"),
+   db.ref("config/bonusTurnoverMultiplier").once("value").catch(e=>{console.warn("bonusTurnoverMultiplier read failed; using default 10",e);return {val:()=>10};})
  ]);
  users=u.val()||{};
  deposits=dep.val()||{};
  withdrawals=wd.val()||{};
- refunds=refundSnap.val()||{};
  boxingConfig=c.val()||{};
+ flagKingConfig=fk.val()||{};
  colorGemsConfig=cg.val()||{};
  aviatorConfig=av.val()||{};
+ const configuredMultiplier=Number(bt.val());
+ bonusTurnoverMultiplier=Number.isFinite(configuredMultiplier)&&configuredMultiplier>=1&&configuredMultiplier<=100?configuredMultiplier:10;
  render();
- renderRefunds();
  renderConfig();
  renderAudit(auditSnap.val()||{});
 }
@@ -320,71 +348,6 @@ function populateBonusUsers(){
     .map(([uid,u])=>`<option value="${esc(uid)}">${esc(u.email||uid)} — ${money(u.balance)} coins</option>`).join("");
   if(users[current])sel.value=current;
 }
-function populateRefundUsers(){
-  const sel=$("refundUser");
-  if(!sel)return;
-  const current=sel.value;
-  sel.innerHTML='<option value="">Select a user…</option>'+Object.entries(users)
-    .sort((a,b)=>String(a[1].email||a[0]).localeCompare(String(b[1].email||b[0])))
-    .map(([uid,u])=>`<option value="${esc(uid)}">${esc(u.email||uid)} — ${esc(uid)} — ${money(u.balance)} coins</option>`).join("");
-  if(users[current])sel.value=current;
-}
-function renderRefunds(){
-  const rows=Object.entries(refunds||{}).sort((a,b)=>Number(b[1]?.timestamp||0)-Number(a[1]?.timestamp||0));
-  $("refundsBody").innerHTML=rows.map(([id,r])=>`<tr><td>${r.timestamp?esc(new Date(Number(r.timestamp)).toLocaleString()):"—"}</td><td><b>${esc(r.email||r.uid||"—")}</b><br><small>${esc(r.uid||"")}</small></td><td>${money(r.amount)}</td><td>${esc(r.reason||"—")}</td><td>${esc(r.adminEmail||r.adminUid||"—")}</td><td><span class="badge ${r.status==="completed"?"ok":"warn"}">${esc(r.status||"recorded")}</span></td></tr>`).join("")||'<tr><td colspan="6">এখনো কোনো refund record নেই।</td></tr>';
-}
-async function issueRefund(){
-  const btn=$("refundSubmit"), statusEl=$("refundStatus");
-  const uid=String($("refundUser").value||"").trim();
-  const amount=Number($("refundAmount").value);
-  const reason=String($("refundReason").value||"").trim();
-  if(!auth.currentUser){toast("প্রথমে Admin account দিয়ে লগইন করুন");return}
-  if(!uid||!users[uid]){toast("একজন সঠিক user নির্বাচন করুন");return}
-  if(!Number.isFinite(amount)||amount<=0||amount>100000000){toast("সঠিক refund amount দিন");return}
-  if(!reason){toast("Refund-এর কারণ লিখুন");return}
-  const u=users[uid]||{};
-  if(!confirm(`${u.email||uid} (${uid})-কে ${money(amount)} coins ফেরত দেবেন?
-কারণ: ${reason}
-এটি ব্যালেন্সে যোগ হবে।`))return;
-  btn.disabled=true; statusEl.textContent="Refund processing…"; statusEl.style.color="var(--muted)";
-  const refundId=db.ref("users/"+uid+"/refundLedger").push().key;
-  const now=Date.now();
-  const record={refundId,uid,email:u.email||"",amount,reason,adminUid:auth.currentUser.uid,adminEmail:auth.currentUser.email||"",timestamp:now,status:"completed"};
-  try{
-    // Require an authenticated admin claim; the Firebase Rules must also enforce admin-only writes.
-    const token=await auth.currentUser.getIdTokenResult(true);
-    if(!token.claims||token.claims.admin!==true)throw new Error("এই account-এ admin claim নেই। Firebase admin access সেটিংস যাচাই করুন।");
-    const userRef=db.ref("users/"+uid);
-    const result=await userRef.transaction(current=>{
-      if(!current||typeof current!=="object")return;
-      const user=Object.assign({},current);
-      user.refundLedger=Object.assign({},user.refundLedger||{});
-      if(user.refundLedger[refundId])return;
-      const balance=Number(user.balance||0);
-      if(!Number.isFinite(balance)||balance<0)return;
-      user.balance=balance+amount;
-      user.refundLedger[refundId]=record;
-      return user;
-    });
-    if(!result.committed){
-      const check=await db.ref("users/"+uid+"/refundLedger/"+refundId).once("value");
-      if(!check.exists())throw new Error("Firebase-এ refund commit হয়নি। Database Rules ও admin access যাচাই করুন।");
-    }
-    // Global history copy; the per-user ledger above is the idempotency record.
-    try{await db.ref("adminRefunds/"+refundId).set(record)}catch(historyError){console.warn("Global refund history write failed; per-user ledger remains saved",historyError)}
-    try{await audit("refund_user_balance",uid,JSON.stringify({refundId,amount,reason,balanceAfter:Number(result.snapshot?.val()?.balance||0)}))}catch(auditError){console.warn("Refund audit failed",auditError)}
-    $("refundAmount").value="";$("refundReason").value="";
-    statusEl.textContent="✅ Refund সফল হয়েছে। User-এর ব্যালেন্সে কয়েন যোগ হয়েছে।";statusEl.style.color="var(--accent)";
-    await loadAll();toast("Refund completed");
-  }catch(e){
-    console.error("issueRefund failed",e);
-    statusEl.textContent="❌ Refund করা যায়নি: "+(e.message||e);statusEl.style.color="var(--danger)";
-    toast("Refund failed: "+(e.message||e));
-  }finally{btn.disabled=false}
-}
-$("refundSubmit").onclick=()=>issueRefund();
-$("refundRefresh").onclick=async()=>{try{const snap=await db.ref("adminRefunds").limitToLast(100).once("value");refunds=snap.val()||{};renderRefunds();toast("Refund history refreshed")}catch(e){toast(e.message||String(e))}};
-
 async function giveBonus(uid, amount, title){
   const n=Number(amount);
   const bonusTitle=String(title||"").trim();
@@ -423,10 +386,9 @@ $("giveAllBonusBtn").onclick=async()=>{
 
 function render(){
  populateBonusUsers();
- populateRefundUsers();
  const arr=Object.entries(users);$("sUsers").textContent=arr.length;$("sBalance").textContent=arr.reduce((s,[,u])=>s+Number(u.balance||0),0).toFixed(2);$("sDeposits").textContent=Object.keys(deposits).length;$("sWithdrawals").textContent=Object.keys(withdrawals).length;
  const games=arr.reduce((s,[,u])=>s+Number(u.games||0),0),wins=arr.reduce((s,[,u])=>s+Number(u.wins||0),0),bg=arr.reduce((s,[,u])=>s+Number(u.boxingKingGames||0),0),bw=arr.reduce((s,[,u])=>s+Number(u.boxingKingWins||0),0);$("gameStats").innerHTML=`Aviator games: <b>${games}</b> · wins: <b>${wins}</b><br>Boxing King games: <b>${bg}</b> · wins: <b>${bw}</b>`;
- const q=$("userSearch").value.toLowerCase();$("usersBody").innerHTML=arr.filter(([uid,u])=>(uid+" "+(u.email||"")).toLowerCase().includes(q)).map(([uid,u])=>{const ts=getLastActivity(u);return `<tr><td><b>${esc(u.email||"—")}</b><br><small>${esc(uid)}</small></td><td>${money(u.balance)}</td><td>${u.games||0}</td><td>${u.wins||0}</td><td>${u.boxingKingWins||0}/${u.boxingKingGames||0}</td><td>${ts?esc(new Date(ts).toLocaleString()):"—"}</td><td><button class="btn" onclick="viewUser('${esc(uid)}')">View</button> <button class="btn danger" onclick="removeUser('${esc(uid)}')">Remove</button></td></tr>`}).join("")||`<tr><td colspan="7">No users found.</td></tr>`;
+ const q=$("userSearch").value.toLowerCase();$("usersBody").innerHTML=arr.filter(([uid,u])=>(uid+" "+(u.email||"")).toLowerCase().includes(q)).map(([uid,u])=>{const ts=getLastActivity(u),t=u.bonusTurnover||{},req=Math.max(0,Number(t.required||0)),done=Math.min(req,Math.max(0,Number(t.completed||0))),left=Math.max(0,req-done),turnLabel=req?(left<=0?'Complete':`${money(done)} / ${money(req)}<br><small>বাকি ${money(left)}</small>`):'—';return `<tr><td><b>${esc(u.email||"—")}</b><br><small>${esc(uid)}</small></td><td>${money(u.balance)}</td><td>${turnLabel}</td><td>${u.games||0}</td><td>${u.wins||0}</td><td>${u.boxingKingWins||0}/${u.boxingKingGames||0}</td><td>${ts?esc(new Date(ts).toLocaleString()):"—"}</td><td><button class="btn" onclick="viewUser('${esc(uid)}')">View</button> <button class="btn danger" onclick="removeUser('${esc(uid)}')">Remove</button></td></tr>`}).join("")||`<tr><td colspan="8">No users found.</td></tr>`;
  renderRequests();
 }
 $("userSearch").oninput=render;
@@ -459,7 +421,7 @@ window.removeUser=async uid=>{
   }finally{btns.forEach(b=>b.disabled=false)}
 };
 
-window.viewUser=uid=>{const u=users[uid]||{};$("userDetails").innerHTML=`<div class="notice"><b>${esc(u.email||"—")}</b><br>UID: ${esc(uid)}<br>Balance: ${money(u.balance)}<br>Aviator: ${u.wins||0} wins / ${u.games||0} games<br>Boxing King: ${u.boxingKingWins||0} wins / ${u.boxingKingGames||0} games</div>`;$("userModal").classList.remove("hidden")};
+window.viewUser=uid=>{const u=users[uid]||{},t=u.bonusTurnover||{},req=Math.max(0,Number(t.required||0)),done=Math.min(req,Math.max(0,Number(t.completed||0))),left=Math.max(0,req-done);$("userDetails").innerHTML=`<div class="notice"><b>${esc(u.email||"—")}</b><br>UID: ${esc(uid)}<br>Balance: ${money(u.balance)}<br>Aviator: ${u.wins||0} wins / ${u.games||0} games<br>Boxing King: ${u.boxingKingWins||0} wins / ${u.boxingKingGames||0} games<br><hr style="border-color:var(--line)"><b>Bonus Turnover</b><br>Status: ${req?(left<=0?'Complete':'Pending'):'No active turnover'}<br>Required: ${money(req)}<br>Completed: ${money(done)}<br>Remaining: ${money(left)}<br>Multiplier at claim: ${t.multiplier?esc(t.multiplier)+'×':'—'}</div>`;$("userModal").classList.remove("hidden")};
 function renderRequests(){
  const dep=Object.entries(deposits).reverse();$("depositsBody").innerHTML=dep.map(([id,r])=>`<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.trxId||"—")}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','rejected')">Reject</button>`}</td></tr>`).join("")||`<tr><td colspan="6">No deposit requests.</td></tr>`;
  const wd=Object.entries(withdrawals).reverse();$("withdrawalsBody").innerHTML=wd.map(([id,r])=>`<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.accountNo||"—")}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','rejected')">Reject</button>`}</td></tr>`).join("")||`<tr><td colspan="6">No withdrawal requests.</td></tr>`;
@@ -520,6 +482,53 @@ window.requestAction=async(type,id,status)=>{
       await db.ref(path+"/balanceCredited").set(true);
     }
 
+    // Withdrawal approvals must respect the same independent locks as the user page.
+    // If balance is below ৳1, the agreed policy completes any outstanding bonus turnover.
+    if(status==="approved" && type==="withdrawals"){
+      const uid=String(processed.uid||"");
+      if(!uid) throw new Error("Withdrawal request has no user UID");
+      let offset=0;
+      try{ const os=await db.ref('.info/serverTimeOffset').once('value'); offset=Number(os.val()||0); if(!Number.isFinite(offset))offset=0; }catch(_){offset=0;}
+      const now=Date.now()+offset;
+      const userRef=db.ref(`users/${uid}`);
+      const userSnap=await userRef.once("value");
+      let user=userSnap.val()||{};
+      if(Number(user.balance||0)<1){
+        const normalized=await userRef.transaction(u=>{
+          if(!u)return;
+          let changed=false;
+          // Low main balance cancels the current deposit lock. A future approved deposit
+          // stamps a new lastDepositAt and starts a fresh 6-hour cooldown.
+          if(Number(u.balance||0)<1 && Number(u.lastDepositAt||0)>0){
+            u.lastDepositAt=0;
+            u.depositCooldownClearedByLowBalanceAt=now;
+            changed=true;
+          }
+          const t=u.bonusTurnover||{};
+          const required=Math.max(0,Number(t.required||0));
+          const completed=Math.min(required,Math.max(0,Number(t.completed||0)));
+          if(required>completed){
+            u.bonusTurnover=Object.assign({},t,{completed:required,remaining:0,status:"complete",completedByLowBalance:true,updatedAt:now});
+            changed=true;
+          }
+          return changed ? u : undefined;
+        });
+        user=(normalized&&normalized.snapshot&&normalized.snapshot.val())||user;
+      }
+      const turnover=user.bonusTurnover||{};
+      const required=Math.max(0,Number(turnover.required||0));
+      const completed=Math.min(required,Math.max(0,Number(turnover.completed||0)));
+      if(turnover.status==="pending" && required-completed>0){
+        throw new Error("Bonus turnover is still pending: ৳"+(required-completed).toFixed(2)+" remaining. Withdrawal approval blocked.");
+      }
+      const lastDepositAt=Number(user.lastDepositAt||0);
+      const cooldownLeft=lastDepositAt+6*60*60*1000-now;
+      if(lastDepositAt>0 && cooldownLeft>0){
+        const mins=Math.ceil(cooldownLeft/60000);
+        throw new Error("Deposit 6-hour lock is active for this user (about "+mins+" minutes left). Approval blocked.");
+      }
+    }
+
     // IMPORTANT: remove the actual request node directly.
     // This is the operation that makes it disappear from the admin queue.
     await db.ref(path).remove();
@@ -560,16 +569,38 @@ window.requestAction=async(type,id,status)=>{
   }
 };
 
+// Bonus turnover multiplier shared with the user app (config/bonusTurnoverMultiplier).
+$("saveBonusTurnoverBtn").onclick=async()=>{
+  const input=$("bonusTurnoverMultiplierInput"),btn=$("saveBonusTurnoverBtn"),status=$("bonusTurnoverStatus");
+  const n=Number(input.value);
+  if(!Number.isFinite(n)||n<1||n>100||!Number.isInteger(n)){status.textContent="১ থেকে ১০০-এর মধ্যে পূর্ণ সংখ্যা দিন।";status.style.color="#ff9aa4";return;}
+  btn.disabled=true;status.textContent="Saving…";
+  try{
+    await db.ref("config/bonusTurnoverMultiplier").set(n);
+    bonusTurnoverMultiplier=n;
+    $("bonusTurnoverCurrent").value=n+"×";
+    await audit("update_bonus_turnover_multiplier","config/bonusTurnoverMultiplier",JSON.stringify({multiplier:n}));
+    status.textContent="✅ Saved — নতুন bonus claim-এ প্রযোজ্য হবে।";status.style.color="var(--accent)";
+    toast("Bonus turnover multiplier saved");
+  }catch(e){status.textContent="❌ Save failed: "+(e.message||e);status.style.color="#ff9aa4";}
+  finally{btn.disabled=false;}
+};
+
 function renderConfig(){
+  $("bonusTurnoverMultiplierInput").value=String(bonusTurnoverMultiplier);
+  $("bonusTurnoverCurrent").value=String(bonusTurnoverMultiplier)+"×";
   const c=boxingConfig||{};
   $("bkEnabled").checked=c.enabled!==false;
   const bets=Array.isArray(c.betOptions)?c.betOptions:(typeof c.betOptions==="string"?c.betOptions.split(",").map(Number).filter(Number.isFinite):[1,2,3,5,10]);
   $("bkBetOptions").value=bets.join(", ");
   $("bkRtpFactor").value=c.rtpFactor!=null?String(c.rtpFactor):"1.0";
+  const fk=flagKingConfig||{};
+  $("fkRtpFactor").value=fk.rtpFactor!=null?String(fk.rtpFactor):"1.0";
   const cg=colorGemsConfig||{};
   $("cgRtpFactor").value=cg.rtpFactor!=null?String(cg.rtpFactor):"1.0";
   const av=aviatorConfig||{};
-  $("avMaxMultiplier").value=av.maxMultiplier!=null?String(av.maxMultiplier):"";
+  $("avMaxMultiplier").value=av.maxMultiplier!=null && av.maxMultiplier!=="" ? String(av.maxMultiplier) : "";
+  $("avConfigMsg").textContent=av.maxMultiplier!=null && av.maxMultiplier!=="" ? ("সর্বোচ্চ সীমা: "+Number(av.maxMultiplier).toFixed(2)+"x — এর নিচে র‍্যান্ডম ক্র্যাশ") : "র‍্যান্ডম মোড চালু — ডিফল্ট সর্বোচ্চ সীমা 38.94x";
 }
 
 $("saveConfig").onclick=async()=>{
@@ -588,21 +619,41 @@ $("saveConfig").onclick=async()=>{
 };
 
 $("saveAvConfig").onclick=async()=>{
-  const raw=String($("avMaxMultiplier").value||"").trim();
-  let maxMultiplier=null;
+  const raw=$("avMaxMultiplier").value.trim();
+  const out={};
   if(raw!==""){
-    const n=Number(raw);
-    if(!Number.isFinite(n)||n<1.01||n>100000){toast("Aviator Max Multiplier 1.01x থেকে 100000x-এর মধ্যে দিন, অথবা খালি রাখুন");return}
-    maxMultiplier=Number(n.toFixed(2));
+    const cap=Number(raw);
+    if(!Number.isFinite(cap)||cap<1.01||cap>38.94){
+      $("avConfigMsg").textContent="1.01 থেকে 38.94-এর মধ্যে একটি মান দিন, অথবা খালি রাখুন।";
+      return;
+    }
+    out.maxMultiplier=Number(cap.toFixed(2));
+  } else {
+    out.maxMultiplier=null;
   }
-  const out={maxMultiplier};
   try{
     await db.ref("config/aviator").update(out);
     aviatorConfig=Object.assign({},aviatorConfig,out);
-    await audit("update_aviator_max_multiplier","config/aviator",JSON.stringify(out));
-    $("avConfigMsg").textContent=maxMultiplier===null?"Saved — Random crash logic restored":"Saved — Maximum multiplier: "+maxMultiplier.toFixed(2)+"x";
-    toast(maxMultiplier===null?"Aviator random crash restored":"Aviator maximum multiplier saved");
-  }catch(e){$("avConfigMsg").textContent="Save failed: "+e.message;toast(e.message)}
+    await audit("update_aviator_random_config","config/aviator",JSON.stringify(out));
+    $("avConfigMsg").textContent=raw===""?"র‍্যান্ডম মোড: ডিফল্ট সীমা 38.94x":"সর্বোচ্চ সীমা সেভ হয়েছে: "+Number(raw).toFixed(2)+"x";
+    toast("Aviator settings saved");
+  }catch(e){
+    $("avConfigMsg").textContent="Save failed: "+(e.message||e);
+    toast(e.message||String(e));
+  }
+};
+
+$("saveFkConfig").onclick=async()=>{
+  const rtpFactor=Number($("fkRtpFactor").value);
+  if(!Number.isFinite(rtpFactor)||rtpFactor<=0){toast("Valid Flag King RTP/reference factor নির্বাচন করুন");return}
+  const out={rtpFactor};
+  try{
+    await db.ref("config/flagKing").update(out);
+    flagKingConfig=Object.assign({},flagKingConfig,out);
+    await audit("update_flag_king_config","config/flagKing",JSON.stringify(out));
+    $("fkConfigMsg").textContent="Saved successfully";
+    toast("Flag King RTP settings saved");
+  }catch(e){$("fkConfigMsg").textContent="Save failed: "+e.message;toast(e.message)}
 };
 
 $("saveCgConfig").onclick=async()=>{
@@ -678,9 +729,36 @@ function startRequestListeners(){
   });
 }
 
+$("adminLoginBtn").onclick=async()=>{
+  const btn=$("adminLoginBtn"), status=$("adminLoginStatus");
+  const email=$("adminLoginEmail").value.trim(), password=$("adminLoginPassword").value;
+  if(!email||!password){status.textContent="Email ও password দিন।";return;}
+  btn.disabled=true; status.textContent="লগইন হচ্ছে…";
+  try{await auth.signInWithEmailAndPassword(email,password);status.textContent="";}
+  catch(e){status.textContent="লগইন ব্যর্থ: "+(e.message||e);}
+  finally{btn.disabled=false;}
+};
+$("adminLoginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")$("adminLoginBtn").click()});
+
 auth.onAuthStateChanged(async user=>{
-  $("adminEmail").textContent=user?(user.email||user.uid):"Direct dashboard access";
-  try{await loadAll();startRequestListeners();await loadAnnouncement()}catch(e){toast(e.message)}
+  $("adminEmail").textContent=user?(user.email||user.uid):"";
+  $("adminLogin").style.display=user?"none":"grid";
+  $("app").style.display=user?"grid":"none";
+  if(!user)return;
+  try{
+    await loadAll();
+    startRequestListeners();
+    await loadAnnouncement();
+    const errBox=$("dashboardLoadError"); if(errBox)errBox.style.display="none";
+  }
+  catch(e){
+    const msg="Dashboard load failed: "+(e.message||e);
+    toast(msg); console.error(msg,e);
+    let errBox=$("dashboardLoadError");
+    if(!errBox){errBox=document.createElement("div");errBox.id="dashboardLoadError";errBox.style.cssText="margin:12px 0;padding:12px;border:1px solid #ff6f7d;border-radius:10px;background:#32151a;color:#ffb0b7;white-space:pre-wrap;";const main=document.querySelector("#app .main");if(main)main.prepend(errBox);}
+    errBox.textContent=msg+"\nFirebase Database Rules/permission অথবা নেটওয়ার্ক পরীক্ষা করুন।";
+    errBox.style.display="block";
+  }
 });
 
 
