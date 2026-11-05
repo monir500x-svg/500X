@@ -2847,7 +2847,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
 
         // Live bets list = You + REAL players (shared via Firebase, same on every phone)
         // + DEMO players (generated from the round number, so every phone shows the same ones).
-        // DEMO rows carry a DEMO tag; they never touch any balance.
+        // Demo rows never touch any balance. Switch them off with GZ_SHOW_DEMO_PLAYERS below.
         function seededRng(seed) {
             let t = (Number(seed) * 2654435761 + 1013904223) >>> 0;
             return function() {
@@ -2857,6 +2857,8 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
             };
         }
+        // TRIAL SWITCH: set to false before the public launch to remove all demo players (only real players will show).
+        const GZ_SHOW_DEMO_PLAYERS = true;
         let simulatedBetRound = null;
         let simulatedBets = [];
         function getSimulatedBets(roundIndex) {
@@ -2931,7 +2933,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             }
 
             // Demo players (identical on every phone)
-            getSimulatedBets(currentRoundIndex).forEach(function(bot) {
+            (GZ_SHOW_DEMO_PLAYERS ? getSimulatedBets(currentRoundIndex) : []).forEach(function(bot) {
                 const didCash = crashPoint >= bot.target && (isCrashed || (isFlyingNow && currentLocalMult >= bot.target));
                 const didLose = isCrashed && !didCash;
                 let status = '';
@@ -2939,7 +2941,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 if (didCash) { status = bot.target.toFixed(2) + 'x (' + (bot.amount * bot.target).toFixed(2) + ' কয়েন)'; rowClass += ' cashed'; }
                 else if (didLose) { status = 'CRASHED (0 কয়েন)'; rowClass += ' lost'; }
                 else { status = 'In Flight (' + (bot.amount * Math.max(1, liveMultiplier)).toFixed(2) + ' কয়েন)'; }
-                rows.push('<div class="'+rowClass+'"><span>'+bot.name+' <span class="av-bot-tag" style="opacity:.55;font-size:.5rem;padding:0 3px">DEMO</span></span><span>'+bot.amount+' কয়েন</span><span>'+status+'</span></div>');
+                rows.push('<div class="'+rowClass+'"><span>'+bot.name+'</span><span>'+bot.amount+' কয়েন</span><span>'+status+'</span></div>');
             });
 
             const hasActiveBetThisRound = (betRoundIndex === currentRoundIndex) && !!currentUser;
