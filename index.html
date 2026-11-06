@@ -1652,12 +1652,19 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
 
 
 
+    <style>
+      .cg-cell.scatter{box-shadow:0 0 14px 3px #ffd54a,inset 0 0 10px #ffd54a99;animation:cgScat .7s infinite alternate}
+      @keyframes cgScat{from{transform:scale(1)}to{transform:scale(1.07)}}
+      .cg-free{display:none;margin-top:7px;padding:7px 10px;border-radius:10px;border:2px solid #ffd54a;background:linear-gradient(90deg,#5b2bd6,#c9378f);color:#fff;font-weight:800;font-size:.85rem;text-align:center;box-shadow:0 0 12px #ffd54a88}
+      .cg-free b{color:#ffe27a}
+    </style>
     <!-- PAGE 4: COLOR GEMS -->
     <div class="page-screen" id="color-gems-screen">
       <div class="cg-container" id="cgGameContainer">
         <div class="cg-fs" id="cg-balance-display"><span id="cg-top-balance">0.00</span></div>
         <div class="cg-top"><div class="cg-ways">2000 WAYS</div><div class="cg-mults" id="cg-mults"><span class="active">1X</span><span>2X</span><span>3X</span><span>5X</span></div></div>
         <div class="cg-frame"><div class="cg-reels" id="cg-board"></div></div>
+        <div class="cg-free" id="cg-free">⭐ FREE SPIN • বাকি <b id="cg-free-left">0</b> • মোট জয় <b id="cg-free-win">0.00</b> কয়েন</div>
         <div class="cg-actions"><button class="cg-action" id="cg-extra-btn">⚡ Extra Bet</button><button class="cg-action buy" id="cg-buy-btn">💎 Buy Feature</button></div>
         <div class="cg-info"><div class="cg-box"><div class="cg-label">ব্যালেন্স</div><div class="cg-value" id="cg-bal">0.00</div></div><div class="cg-box"><div class="cg-label">উইন</div><div class="cg-value" id="cg-win">0.00</div></div><div class="cg-box"><div class="cg-label">মোট বেট</div><div class="cg-value" id="cg-bet">1.00</div></div></div>
         <div class="cg-status" id="cg-status">SPIN চাপুন! 💎</div>
@@ -4101,6 +4108,51 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         let CG_BET_OPTIONS=[1,2,3,5,10],cgBetIndex=0,cgSpinning=false,cgAuto=false,cgAutoTimer=null,cgBoardState=Array(25).fill(''),cgWin=0,cgMultiplierIndex=0;
         /* Color Gems multiplier sequence follows Boxing King's 1X → 2X → 3X → 5X. */
         const CG_MULTS=[1,2,3,5];
+
+        /* ===== Scatter / Free Spin (admin-controlled via config/colorGems) ===== */
+        const CG_SCATTER='⭐';
+        const CG_SCATTER_DEFAULTS={enabled:true,chancePct:0.7,freeSpins:10,retrigger:5,winMult:3,maxSpins:30,maxWinX:50};
+        let cgScatterCfg=Object.assign({},CG_SCATTER_DEFAULTS);
+        let cgScatterHit=false;
+        let cgFree={active:false,left:0,done:0,bet:1,sessionWin:0};
+        function cgReadScatterCfg(c){
+            c=c||{};
+            const n=(v,d,min,max)=>{v=Number(v);return Number.isFinite(v)?Math.min(max,Math.max(min,v)):d};
+            return {
+                enabled:c.scatterEnabled!==false,
+                chancePct:n(c.scatterChancePct,CG_SCATTER_DEFAULTS.chancePct,0,10),
+                freeSpins:Math.round(n(c.scatterFreeSpins,CG_SCATTER_DEFAULTS.freeSpins,1,50)),
+                retrigger:Math.round(n(c.scatterRetrigger,CG_SCATTER_DEFAULTS.retrigger,0,20)),
+                winMult:n(c.scatterWinMult,CG_SCATTER_DEFAULTS.winMult,1,5),
+                maxSpins:Math.round(n(c.scatterMaxSpins,CG_SCATTER_DEFAULTS.maxSpins,1,100)),
+                maxWinX:n(c.scatterMaxWinX,CG_SCATTER_DEFAULTS.maxWinX,1,500)
+            };
+        }
+        db.ref('config/colorGems').on('value',snap=>{cgScatterCfg=cgReadScatterCfg(snap.val())},err=>console.warn('Color Gems config read failed:',err));
+        function cgUpdateFreeBadge(){
+            const box=document.getElementById('cg-free');if(!box)return;
+            box.style.display=cgFree.active?'block':'none';
+            const l=document.getElementById('cg-free-left'),w=document.getElementById('cg-free-win');
+            if(l)l.textContent=cgFree.left;if(w)w.textContent=cgFmt(cgFree.sessionWin);
+        }
+        function cgEndFree(){
+            const total=cgFree.sessionWin;
+            cgFree.active=false;cgFree.left=0;
+            cgWin=total;updateCgUI();cgUpdateFreeBadge();
+            cgSetStatus('⭐ Free Spin শেষ! মোট জয়: '+cgFmt(total)+' কয়েন','#ffcc00');
+            cgSpinning=false;setCgControls(!cgConfig.enabled);
+            if(cgAuto)cgAutoTimer=setTimeout(handleCgSpin,1800);
+        }
+        function cgRunFreeSpin(){
+            if(!cgFree.active)return;
+            if(cgFree.left<=0){cgEndFree();return}
+            cgFree.left--;cgFree.done++;
+            cgSpinning=true;setCgControls(true);
+            cgWin=0;cgMultiplierIndex=0;updateCgMult();updateCgUI();cgUpdateFreeBadge();
+            cgSetStatus('⭐ FREE SPIN '+cgFree.done+' • জয় '+cgScatterCfg.winMult+'x','#ffe27a');
+            document.querySelectorAll('.cg-cell').forEach(c=>c.classList.remove('winner','rolling'));
+            startCgSpinSequence(cgFree.bet);
+        }
         /* Color Gems uses the same cascade/stop principle as Boxing King.
            No artificial win-rate/forced-win result is used. A spin only wins when
            a valid same-symbol path starts in column 1 and reaches column 3. */
@@ -4110,7 +4162,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         function cgIdx(r,c){return r*5+c}
         function cgGet(r,c){return cgBoardState[cgIdx(r,c)]}
         function cgSet(r,c,sym){cgBoardState[cgIdx(r,c)]=sym;const cell=document.getElementById('cg-cell-'+cgIdx(r,c));if(cell)cell.querySelector('.cg-symbol').textContent=sym}
-        function cgRenderBoard(){for(let i=0;i<25;i++){const cell=document.getElementById('cg-cell-'+i);if(cell)cell.querySelector('.cg-symbol').textContent=cgBoardState[i]}}
+        function cgRenderBoard(){for(let i=0;i<25;i++){const cell=document.getElementById('cg-cell-'+i);if(cell){cell.querySelector('.cg-symbol').textContent=cgBoardState[i];cell.classList.toggle('scatter',cgBoardState[i]===CG_SCATTER)}}}
         function initCgBoard(){if(!cgBoard)return;cgBoard.innerHTML='';for(let i=0;i<25;i++){const c=document.createElement('div');c.className='cg-cell';c.id='cg-cell-'+i;const s=document.createElement('span');s.className='cg-symbol';s.textContent=cgRand();c.appendChild(s);cgBoard.appendChild(c);cgBoardState[i]=s.textContent}}
         function updateCgUI(){const b=document.getElementById('cg-bal'),w=document.getElementById('cg-win'),bet=document.getElementById('cg-bet');if(b)b.innerText=cgFmt(currentBalance);if(w)w.innerText=cgFmt(cgWin);if(bet)bet.innerText=cgFmt(CG_BET_OPTIONS[cgBetIndex]||1)}
         function updateCgMult(){document.querySelectorAll('#cg-mults span').forEach((e,i)=>e.classList.toggle('active',i===cgMultiplierIndex))}
@@ -4184,6 +4236,14 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                winning result. The cascade evaluator decides whether the spin
                wins or stops, exactly from the symbols that landed. */
             for(let i=0;i<25;i++) cgBoardState[i]=cgRand();
+            /* Scatter: ONE roll per round, same chance every round (admin: config/colorGems).
+               A hit lands exactly 3 scatters on random cells. Scatters never form winning lines. */
+            cgScatterHit=false;
+            if(cgScatterCfg.enabled && cgScatterCfg.chancePct>0 && Math.random()*100<cgScatterCfg.chancePct){
+                const cells=[...Array(25).keys()];
+                for(let k=0;k<3;k++){const j=Math.floor(Math.random()*cells.length);cgBoardState[cells.splice(j,1)[0]]=CG_SCATTER}
+                cgScatterHit=true;
+            }
             cgRenderBoard();
         }
 
@@ -4200,7 +4260,8 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             cgAnimateWin(result.indices);
             const mult=CG_MULTS[Math.min(cascadeNo-1,CG_MULTS.length-1)];
             const factor=Number(cgConfig.rtpFactor)>0?Number(cgConfig.rtpFactor):1;
-            const stepWin=+(activeBet*mult*Math.max(1,result.indices.length/3)*factor*0.5).toFixed(2);
+            const freeScale=cgFree.active?cgScatterCfg.winMult:1;
+            const stepWin=+(activeBet*mult*Math.max(1,result.indices.length/3)*factor*0.5*freeScale).toFixed(2);
             totalWin=+(totalWin+stepWin).toFixed(2);
             cgWin=totalWin;
             updateCgUI();
@@ -4219,7 +4280,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         }
 
         function handleCgSpin(){
-            if(cgSpinning)return;
+            if(cgSpinning||cgFree.active)return;
             if(!currentUser)return alert('প্রথমে Login করুন!');
             if(!cgConfig.enabled){cgSetStatus('গেমটি বর্তমানে বন্ধ আছে 🚧','#ff9900');return}
             const activeBet=Number(CG_BET_OPTIONS[cgBetIndex]||1);
@@ -4258,17 +4319,48 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         }
 
         function finishCgSpin(activeBet,totalWin){
-            const factor=Number(cgConfig.rtpFactor)>0?Number(cgConfig.rtpFactor):1;
-            cgWin=+Number(totalWin||0).toFixed(2);
+            const isFree=cgFree.active;
+            let win=+Number(totalWin||0).toFixed(2);
+            if(isFree){
+                /* Safety cap for one Free Spin session (admin: maxWinX × triggering bet). */
+                const cap=+(cgScatterCfg.maxWinX*cgFree.bet).toFixed(2);
+                const room=Math.max(0,+(cap-cgFree.sessionWin).toFixed(2));
+                if(win>room)win=room;
+            }
+            cgWin=win;
             if(cgWin>0){
-                cgSetStatus('💰 চেইন শেষ! মোট উইন: '+cgFmt(cgWin)+' কয়েন','#ffcc00');
+                cgSetStatus((isFree?'⭐ Free Spin উইন: ':'💰 চেইন শেষ! মোট উইন: ')+cgFmt(cgWin)+' কয়েন','#ffcc00');
                 if(!cgConfig.testMode)db.ref('users/'+currentUser.uid+'/balance').transaction(v=>Number(v||0)+cgWin);
                 if(!cgConfig.testMode)db.ref('users/'+currentUser.uid+'/colorGemsWins').transaction(v=>(v||0)+1);
-            }else{
-                cgMultiplierIndex=0;updateCgMult();cgSetStatus('আবার চেষ্টা করুন ❌','#ff6666');
+                if(isFree)cgFree.sessionWin=+(cgFree.sessionWin+cgWin).toFixed(2);
+            }else if(!cgScatterHit){
+                cgMultiplierIndex=0;updateCgMult();
+                cgSetStatus(isFree?'Free Spin: এবার জয় নেই':'আবার চেষ্টা করুন ❌','#ff6666');
             }
-            if(!cgConfig.testMode)db.ref('users/'+currentUser.uid+'/colorGemsGames').transaction(v=>(v||0)+1);
+            if(!isFree&&!cgConfig.testMode)db.ref('users/'+currentUser.uid+'/colorGemsGames').transaction(v=>(v||0)+1);
             updateCgUI();
+
+            if(cgScatterHit){
+                cgScatterHit=false;
+                if(isFree){
+                    const total=cgFree.done+cgFree.left;
+                    const add=Math.max(0,Math.min(cgScatterCfg.retrigger,cgScatterCfg.maxSpins-total));
+                    cgFree.left+=add;
+                    cgSetStatus(add>0?'⭐⭐⭐ নতুন Scatter! +'+add+' Free Spin':'⭐⭐⭐ Scatter! (Free Spin সর্বোচ্চ সীমায় পৌঁছেছে)','#ffe27a');
+                }else{
+                    cgFree={active:true,left:cgScatterCfg.freeSpins,done:0,bet:activeBet,sessionWin:0};
+                    cgSetStatus('⭐⭐⭐ ৩টি Scatter! '+cgScatterCfg.freeSpins+'টি Free Spin শুরু হচ্ছে • জয় '+cgScatterCfg.winMult+'x','#ffe27a');
+                }
+                cgUpdateFreeBadge();
+                setTimeout(cgRunFreeSpin,2000);   /* controls stay locked during the session */
+                return;
+            }
+            if(isFree){
+                cgUpdateFreeBadge();
+                if(cgFree.left>0){setTimeout(cgRunFreeSpin,1300);return}
+                cgEndFree();
+                return;
+            }
             cgSpinning=false;setCgControls(!cgConfig.enabled);
             if(cgAuto)cgAutoTimer=setTimeout(handleCgSpin,900);
         }
