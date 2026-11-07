@@ -7,6 +7,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<meta name="theme-color" content="#0a0726">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%A9%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <style>
 :root{--bg:#071018;--panel:#0d1a24;--panel2:#102331;--line:#1e3949;--text:#edf6fb;--muted:#91a8b6;--accent:#54e0a7;--warn:#ffbd5a;--danger:#ff6f7d;--blue:#67a8ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#102a39 0,#071018 48%,#050b10 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans Bengali,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}.app{min-height:100vh;display:grid;grid-template-columns:250px 1fr}.side{padding:22px 16px;border-right:1px solid var(--line);background:rgba(5,12,17,.86);backdrop-filter:blur(14px);position:sticky;top:0;height:100vh}.brand{font-weight:900;font-size:20px}.brand small{display:block;color:var(--muted);font-size:11px;margin-top:4px}.nav{margin-top:28px;display:grid;gap:8px}.nav button{border:1px solid transparent;background:transparent;color:var(--muted);padding:12px 13px;border-radius:12px;text-align:left}.nav button.active,.nav button:hover{background:var(--panel2);border-color:var(--line);color:var(--text)}.main{padding:24px;min-width:0}.top{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:22px}.top h1{margin:0;font-size:25px}.pill{padding:7px 10px;border-radius:999px;background:#10261f;color:var(--accent);font-size:12px}.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:10px 13px;border-radius:10px}.btn.primary{background:var(--accent);color:#062016;border-color:var(--accent);font-weight:800}.btn.danger{background:#32151a;color:#ff9aa4;border-color:#64232b}.btn:disabled{opacity:.45;cursor:not-allowed}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.card{background:linear-gradient(145deg,rgba(16,35,49,.92),rgba(10,22,31,.92));border:1px solid var(--line);border-radius:16px;padding:17px;box-shadow:0 12px 30px rgba(0,0,0,.16)}.stat .label{color:var(--muted);font-size:12px}.stat .num{font-size:26px;font-weight:900;margin-top:7px}.section{margin-top:18px}.section h2{font-size:16px;margin:0 0 11px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}.table{width:100%;border-collapse:collapse;min-width:720px}.table th,.table td{padding:12px 11px;border-bottom:1px solid rgba(30,57,73,.65);text-align:left;font-size:13px}.table th{color:var(--muted);font-weight:600;background:#0b1821}.table tr:last-child td{border-bottom:0}.badge{font-size:11px;border-radius:999px;padding:5px 8px;background:#162b38;color:#b9d1df}.badge.ok{background:#102b22;color:var(--accent)}.badge.warn{background:#302515;color:var(--warn)}.badge.bad{background:#35171c;color:#ff9aa4}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:#08141d;color:var(--text);border-radius:10px;padding:10px}.field textarea{min-height:90px;resize:vertical}.full{grid-column:1/-1}.notice{padding:11px 12px;border-radius:11px;background:#0d202b;color:var(--muted);font-size:12px;line-height:1.55}.search{width:100%;border:1px solid var(--line);background:#08141d;color:var(--text);padding:11px;border-radius:10px;margin-bottom:11px}.page{display:none}.page.active{display:block}.toast{position:fixed;right:18px;bottom:18px;background:#102431;border:1px solid var(--line);padding:12px 14px;border-radius:12px;max-width:340px;z-index:20}.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:18px;z-index:10}.modal .card{width:min(520px,100%)}
 
@@ -47,13 +49,96 @@
 .top h1{letter-spacing:.2px}.nav button{font-weight:700}.nav button.active{box-shadow:inset 3px 0 0 var(--accent)}
 .card{transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}.card:hover{border-color:rgba(84,224,167,.20);box-shadow:0 16px 36px rgba(0,0,0,.20)}
 @media(max-width:600px){.top{padding:13px 14px}.top h1{font-size:20px}.grid{grid-template-columns:1fr}.stat .num{font-size:22px}}
+
+/* ===================== Update 46: new admin design (visual only — all IDs & logic unchanged) ===================== */
+:root{--bg:#0a0726;--panel:#14104d;--panel2:#1f1a78;--line:rgba(120,100,255,.28);--text:#f2f0ff;--muted:#a9a6e6;--accent:#2ee06a;--warn:#ffd23f;--danger:#ff7a8a;--blue:#8fb4ff;--gold:#ffc928;--violet:#8a3dff}
+body{background:radial-gradient(circle at 20% -10%,#3a22a8 0,#150f55 38%,#080620 100%) fixed;font-family:"Noto Sans Bengali",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+::selection{background:#ffc92855}
+/* sidebar */
+.side{background:linear-gradient(180deg,#1b1470,#0d0a3a 70%);border-right:1px solid var(--line);box-shadow:18px 0 50px rgba(0,0,0,.28)}
+.brand{font-size:22px;font-weight:900;background:linear-gradient(90deg,#ffe27a,#ffb300);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.2px}
+.brand:before{content:"🛩️ ";-webkit-text-fill-color:initial}
+.brand small{color:var(--muted);-webkit-text-fill-color:var(--muted);font-weight:600;letter-spacing:1.4px;font-size:10px}
+.nav button{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-radius:14px;font-weight:700;color:#c9c6ff;border:1px solid transparent;transition:.15s}
+.nav button:hover{background:rgba(255,255,255,.06);border-color:var(--line);color:#fff}
+.nav button.active{background:linear-gradient(90deg,#7b36f2,#5b2bd6);border-color:#b79bff66;color:#fff;box-shadow:0 8px 22px rgba(91,43,214,.45),inset 3px 0 0 var(--gold)}
+.nav .nav-badge{min-width:22px;padding:2px 7px;border-radius:99px;background:var(--gold);color:#3a2400;font-size:11px;font-weight:900;text-align:center}
+.nav .nav-badge.zero{display:none}
+/* top bar */
+.top{background:linear-gradient(135deg,rgba(41,30,140,.75),rgba(20,16,77,.75));border:1px solid var(--line);border-radius:20px;box-shadow:0 14px 36px rgba(0,0,0,.28)}
+.top h1{font-size:24px;font-weight:900;background:linear-gradient(90deg,#fff,#ffe27a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pill{background:rgba(46,224,106,.12);color:#6dffa0;border:1px solid rgba(46,224,106,.35);font-weight:800;letter-spacing:.4px}
+/* buttons */
+.btn{border-radius:12px;border:1px solid var(--line);background:linear-gradient(#25207f,#181357);color:#fff;font-weight:700;transition:.15s}
+.btn:hover{border-color:#b79bff88;transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(#ffc928,#ff9a00);border-color:#ffd86b;color:#3a2400;font-weight:900;box-shadow:0 6px 18px rgba(255,170,0,.28)}
+.btn.danger{background:linear-gradient(#4a1830,#2f0f20);border-color:#8d2e4d;color:#ffb1bd}
+/* cards & stats */
+.card{background:linear-gradient(150deg,rgba(33,26,120,.78),rgba(14,11,60,.9));border:1px solid var(--line);border-radius:20px;box-shadow:0 14px 34px rgba(0,0,0,.24)}
+.card:hover{border-color:rgba(255,201,40,.35);box-shadow:0 18px 40px rgba(0,0,0,.32)}
+.card h2{font-weight:900;color:#ffe27a}
+.stat{position:relative;overflow:hidden;padding-left:68px}
+.stat:before{content:"";position:absolute;left:14px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:rgba(255,255,255,.08);border:1px solid var(--line)}
+.grid>.stat:nth-child(1):before{content:"👥"}.grid>.stat:nth-child(2):before{content:"💰"}.grid>.stat:nth-child(3):before{content:"⬇️"}.grid>.stat:nth-child(4):before{content:"⬆️"}
+.stat .label{color:var(--muted);font-weight:600}
+.stat .num{font-size:26px;font-weight:900;color:#fff;text-shadow:0 0 18px rgba(255,201,40,.25)}
+.grid>.stat:nth-child(2) .num{color:#ffe27a}
+/* tables */
+.table-wrap{border:1px solid var(--line);border-radius:16px;background:rgba(7,5,32,.45)}
+.table th{background:linear-gradient(#2a2391,#1c1770);color:#d9d6ff;font-weight:800;letter-spacing:.3px;white-space:nowrap}
+.table td{border-bottom:1px solid rgba(120,100,255,.14)}
+.table tbody tr:nth-child(even){background:rgba(255,255,255,.025)}
+.table tbody tr:hover{background:rgba(255,201,40,.07)}
+.badge{background:rgba(255,255,255,.1);color:#d9d6ff;font-weight:800}
+.badge.ok{background:rgba(46,224,106,.15);color:#6dffa0}.badge.warn{background:rgba(255,210,63,.16);color:#ffd23f}.badge.bad{background:rgba(255,122,138,.16);color:#ff9aa8}
+/* form controls */
+.field label,.bk-preset-title{color:#c9c6ff;font-weight:700}
+.field input,.field select,.field textarea,.search,.bk-select,.bk-input,#bkRtpFactor{background:rgba(6,4,28,.75)!important;border:1.5px solid rgba(120,100,255,.45)!important;color:#fff!important;border-radius:12px!important;outline:none}
+.field input:focus,.field select:focus,.field textarea:focus,.search:focus,.bk-select:focus,.bk-input:focus{border-color:var(--gold)!important;box-shadow:0 0 0 3px rgba(255,201,40,.18)!important}
+.notice{background:rgba(6,4,28,.55);border:1px dashed rgba(255,201,40,.35);color:#d6d3ff;border-radius:12px}
+/* Boxing King / Color Gems control panels */
+.bk-control-card{background:linear-gradient(160deg,rgba(33,26,120,.85),rgba(12,9,52,.95));border:1px solid rgba(255,201,40,.4);border-radius:20px}
+.bk-title{color:var(--gold);border-bottom-color:rgba(255,255,255,.12)}
+.bk-help{color:#a9a6e6}
+.bk-row{border-bottom-color:rgba(255,255,255,.1)}
+.bk-preset{background:rgba(6,4,28,.6);border-color:rgba(120,100,255,.3)}
+.bk-preset:hover{border-color:var(--gold)}
+.bk-slider{background:#3b3770}
+.bk-switch input:checked + .bk-slider{background:#2ee06a}
+.bk-save{background:linear-gradient(#2fd24f,#138a2c);border:2px solid #5dff7e;box-shadow:0 8px 22px rgba(47,210,79,.28);border-radius:14px}
+.bk-status{color:#c9c6ff}
+/* danger zone, modal, toast */
+.danger-zone-card{background:linear-gradient(145deg,rgba(74,24,48,.6),rgba(20,16,77,.9));border-color:rgba(255,122,138,.4)}
+.danger-zone-card h3{color:#ffb1bd}
+.modal{background:rgba(5,3,25,.78)}
+.toast{background:linear-gradient(#2a2391,#1c1770);border:1px solid var(--gold);color:#fff;border-radius:14px;box-shadow:0 12px 34px rgba(0,0,0,.45);font-weight:700}
+/* login screen */
+#adminLogin{background:radial-gradient(circle at 30% -10%,#3a22a8 0,#150f55 40%,#080620 100%)!important}
+#adminLogin>div{background:linear-gradient(160deg,#241c86,#0d0a3a)!important;border:1.5px solid rgba(183,155,255,.45)!important;border-radius:24px!important;box-shadow:0 0 50px rgba(120,90,255,.4),0 24px 60px rgba(0,0,0,.5)!important;padding:30px 24px!important}
+#adminLogin h2{font-size:26px;font-weight:900;background:linear-gradient(90deg,#fff,#ffe27a);-webkit-background-clip:text;background-clip:text;color:transparent}
+#adminLogin input{background:rgba(6,4,28,.8)!important;border:1.5px solid rgba(120,100,255,.5)!important;color:#fff!important;border-radius:12px!important;outline:none}
+#adminLogin input:focus{border-color:var(--gold)!important;box-shadow:0 0 0 3px rgba(255,201,40,.2)}
+#adminLoginBtn{background:linear-gradient(#ffc928,#ff9a00)!important;color:#3a2400!important;border-radius:14px!important;padding:14px!important;font-size:16px;box-shadow:0 8px 22px rgba(255,170,0,.3)}
+/* mobile */
+@media(max-width:900px){
+  .side{position:sticky;top:0;z-index:30;padding:10px 12px;background:linear-gradient(180deg,#1b1470,#120d52);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .brand{font-size:18px}.brand small{display:none}
+  .nav{margin-top:8px;gap:6px;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
+  .nav button{padding:9px 13px;border-radius:99px;font-size:13px}
+  .nav button.active{box-shadow:0 6px 16px rgba(91,43,214,.5)}
+}
+@media(max-width:600px){
+  .main{padding:12px}.top{padding:12px 14px;border-radius:16px}.top h1{font-size:19px}
+  .stat{padding-left:62px}.stat .num{font-size:21px}
+  .toast{left:12px;right:12px;bottom:12px;max-width:none;text-align:center}
+}
 </style>
 </head>
 <body>
 
 <div id="adminLogin" style="min-height:100vh;display:none;place-items:center;padding:20px;background:radial-gradient(circle at top,#102a39 0,#071018 55%,#050b10 100%);color:#edf6fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
   <div style="width:min(420px,100%);padding:24px;border:1px solid #1e3949;border-radius:18px;background:#0d1a24;box-shadow:0 20px 60px #0006;">
-    <h2 style="margin:0 0 6px;">🛡️ Admin Login</h2><p style="color:#91a8b6;font-size:13px;margin:0 0 18px;">কাগজের বিমান — Admin Control Center</p>
+    <h2 style="margin:0 0 6px;">🛡️ Admin Login</h2><p style="color:#91a8b6;font-size:13px;margin:0 0 18px;">গেমিং জোন ইডি — Admin Control Center</p>
     <label for="adminLoginEmail" style="display:block;margin:10px 0 6px;font-size:13px;">Admin Email</label><input id="adminLoginEmail" type="email" autocomplete="username" placeholder="Admin email" style="width:100%;padding:12px;border-radius:10px;border:1px solid #1e3949;background:#08141d;color:#edf6fb;box-sizing:border-box;">
     <label for="adminLoginPassword" style="display:block;margin:12px 0 6px;font-size:13px;">Password</label><input id="adminLoginPassword" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;padding:12px;border-radius:10px;border:1px solid #1e3949;background:#08141d;color:#edf6fb;box-sizing:border-box;">
     <button id="adminLoginBtn" type="button" style="width:100%;margin-top:16px;padding:12px;border:0;border-radius:10px;background:#54e0a7;color:#062016;font-weight:800;">Login</button>
@@ -63,11 +148,11 @@
 
 <div id="app" class="app">
 <aside class="side">
-  <div class="brand">GAMING ZONE <small>ADMIN CONTROL CENTER</small></div>
+  <div class="brand">গেমিং জোন ইডি <small>ADMIN CONTROL CENTER</small></div>
   <div class="nav">
     <button class="active" data-page="overview">📊 Overview</button>
     <button data-page="users">👥 Users</button>
-    <button data-page="requests">💳 Requests</button>
+    <button data-page="requests"><span>💳 Requests</span><span class="nav-badge zero" id="navReqBadge">0</span></button>
     <button data-page="support">🆘 Help Center</button>
     <button data-page="games">🎮 Games & Config</button>
     <button data-page="announcement">📢 Announcement</button>
@@ -86,12 +171,6 @@
 <div id="adminEmail" style="color:var(--muted);font-size:12px;margin-top:4px"></div></div><div class="row"><span class="pill">● ADMIN SESSION</span><button id="adminSignOutBtn" type="button" class="btn">Sign out</button></div></div>
 
   <section id="overview" class="page active">
-    <div class="card danger-zone-card" style="margin:0 0 18px;">
-      <h3 style="margin:0 0 6px;">⚠️ Danger Zone — Reset Data</h3>
-      <p style="margin:0 0 10px;opacity:.82;">Admin/request/config/statistics data reset করা যাবে। <b>User Balance কোনোভাবেই কাটবে বা পরিবর্তন হবে না।</b> এই কাজ Undo করা যাবে না।</p>
-      <button id="resetAllBtn" type="button" class="btn danger">♻️ Reset Everything — Keep User Balance</button>
-      <div id="resetAllStatus" style="margin-top:8px;"></div>
-    </div>
     <div class="grid">
       <div class="card stat"><div class="label">Total users</div><div id="sUsers" class="num">—</div></div>
       <div class="card stat"><div class="label">Total balance</div><div id="sBalance" class="num">—</div></div>
@@ -101,6 +180,12 @@
     <div class="section grid" style="grid-template-columns:1.2fr .8fr">
       <div class="card"><h2>Game activity</h2><div id="gameStats" class="notice">Loading…</div></div>
       <div class="card"><h2>Security</h2><div class="notice">Outcome manipulation controls are intentionally not included. Use this console for transparent account management, configuration, requests and auditing.</div></div>
+    </div>
+    <div class="card danger-zone-card" style="margin:18px 0 0;">
+      <h3 style="margin:0 0 6px;">⚠️ Danger Zone — Reset Data</h3>
+      <p style="margin:0 0 10px;opacity:.82;">Admin/request/config/statistics data reset করা যাবে। <b>User Balance কোনোভাবেই কাটবে বা পরিবর্তন হবে না।</b> এই কাজ Undo করা যাবে না।</p>
+      <button id="resetAllBtn" type="button" class="btn danger">♻️ Reset Everything — Keep User Balance</button>
+      <div id="resetAllStatus" style="margin-top:8px;"></div>
     </div>
   </section>
 
@@ -241,7 +326,7 @@
       </div>
 
       <div class="bk-control-card" style="margin-top:14px;padding:14px;border-color:rgba(116,180,255,.25);">
-        <h3 class="bk-title" style="font-size:17px;">💎 Color Gems — আলাদা RTP Factor</h3>
+        <h3 class="bk-title" style="font-size:17px;">💎 Color Gems — RTP ও Scatter/Free Spin</h3>
         <div class="notice" style="margin-bottom:10px">Color Gems-এর RTP Factor আলাদা। এটি <code>config/colorGems/rtpFactor</code>-এ সেভ হবে এবং Boxing King/Flag King-এর RTP Factor পরিবর্তন করবে না।</div>
         <div class="bk-preset-wrap">
           <div class="bk-preset-title">Color Gems RTP / Reference Factor</div>
@@ -255,7 +340,25 @@
             <option value="2.0">2.0x</option>
           </select>
         </div>
-        <button id="saveCgConfig" class="bk-save" type="button" style="margin-top:10px;">Color Gems RTP সেভ করুন</button>
+        <div class="bk-preset-wrap" style="margin-top:12px">
+          <div class="bk-preset-title">⭐ Scatter / Free Spin সেটিং</div>
+          <div class="notice" style="margin-bottom:8px">প্রতি রাউন্ডে ৩টি বা বেশি Scatter মিলে Free Spin চালু হওয়ার সম্ভাবনা এই সংখ্যাই। মাঝে মাঝে ১–২টি Scatter আপনাআপনি পড়বে (কোনো বোনাস ছাড়া)। Free Spin-এ ব্যালেন্স থেকে টাকা কাটে না, জয় গুণক অনুযায়ী বাড়ে।</div>
+          <label class="bk-preset-title" style="display:block;margin-top:6px">Scatter চালু</label>
+          <select id="cgScatterEnabled" class="bk-input"><option value="true">চালু</option><option value="false">বন্ধ</option></select>
+          <label class="bk-preset-title" style="display:block;margin-top:6px">Free Spin চালু হওয়ার সম্ভাবনা (% প্রতি রাউন্ড, 0–10, প্রস্তাবিত 0.7)</label>
+          <input id="cgScatterChance" class="bk-input" type="number" min="0" max="10" step="0.1">
+          <label class="bk-preset-title" style="display:block;margin-top:6px">প্রথমে কতটি Free Spin (1–50)</label>
+          <input id="cgScatterFreeSpins" class="bk-input" type="number" min="1" max="50" step="1">
+          <label class="bk-preset-title" style="display:block;margin-top:6px">নতুন Scatter-এ অতিরিক্ত Free Spin (0–20)</label>
+          <input id="cgScatterRetrigger" class="bk-input" type="number" min="0" max="20" step="1">
+          <label class="bk-preset-title" style="display:block;margin-top:6px">Free Spin-এ জয়ের গুণক (1–5)</label>
+          <input id="cgScatterWinMult" class="bk-input" type="number" min="1" max="5" step="0.5">
+          <label class="bk-preset-title" style="display:block;margin-top:6px">এক সেশনে সর্বোচ্চ Free Spin (1–100)</label>
+          <input id="cgScatterMaxSpins" class="bk-input" type="number" min="1" max="100" step="1">
+          <label class="bk-preset-title" style="display:block;margin-top:6px">এক সেশনে সর্বোচ্চ জয় (বাজির কত গুণ, 1–500)</label>
+          <input id="cgScatterMaxWinX" class="bk-input" type="number" min="1" max="500" step="1">
+        </div>
+        <button id="saveCgConfig" class="bk-save" type="button" style="margin-top:10px;">Color Gems সেটিং সেভ করুন</button>
         <div id="cgConfigMsg" class="bk-status"></div>
       </div>
     </div>
@@ -650,6 +753,13 @@ function renderConfig(){
   $("fkRtpFactor").value=fk.rtpFactor!=null?String(fk.rtpFactor):"1.0";
   const cg=colorGemsConfig||{};
   $("cgRtpFactor").value=cg.rtpFactor!=null?String(cg.rtpFactor):"1.0";
+  $("cgScatterEnabled").value=cg.scatterEnabled===false?"false":"true";
+  $("cgScatterChance").value=cg.scatterChancePct!=null?String(cg.scatterChancePct):"0.7";
+  $("cgScatterFreeSpins").value=cg.scatterFreeSpins!=null?String(cg.scatterFreeSpins):"10";
+  $("cgScatterRetrigger").value=cg.scatterRetrigger!=null?String(cg.scatterRetrigger):"5";
+  $("cgScatterWinMult").value=cg.scatterWinMult!=null?String(cg.scatterWinMult):"3";
+  $("cgScatterMaxSpins").value=cg.scatterMaxSpins!=null?String(cg.scatterMaxSpins):"30";
+  $("cgScatterMaxWinX").value=cg.scatterMaxWinX!=null?String(cg.scatterMaxWinX):"50";
   const av=aviatorConfig||{};
   $("avMaxMultiplier").value=av.maxMultiplier!=null && av.maxMultiplier!=="" ? String(av.maxMultiplier) : "";
   $("avConfigMsg").textContent=av.maxMultiplier!=null && av.maxMultiplier!=="" ? ("সর্বোচ্চ সীমা: "+Number(av.maxMultiplier).toFixed(2)+"x — এর নিচে র‍্যান্ডম ক্র্যাশ") : "র‍্যান্ডম মোড চালু — ডিফল্ট সর্বোচ্চ সীমা 38.94x";
@@ -711,13 +821,20 @@ $("saveFkConfig").onclick=async()=>{
 $("saveCgConfig").onclick=async()=>{
   const rtpFactor=Number($("cgRtpFactor").value);
   if(!Number.isFinite(rtpFactor)||rtpFactor<=0){toast("Valid Color Gems RTP/reference factor নির্বাচন করুন");return}
-  const out={rtpFactor};
+  const num=(id,min,max,label)=>{const v=Number($(id).value);if(!Number.isFinite(v)||v<min||v>max){toast(label+" অবশ্যই "+min+" থেকে "+max+"-এর মধ্যে হতে হবে");return null}return v};
+  const scatterChancePct=num("cgScatterChance",0,10,"Scatter সম্ভাবনা");if(scatterChancePct===null)return;
+  const scatterFreeSpins=num("cgScatterFreeSpins",1,50,"Free Spin সংখ্যা");if(scatterFreeSpins===null)return;
+  const scatterRetrigger=num("cgScatterRetrigger",0,20,"অতিরিক্ত Free Spin");if(scatterRetrigger===null)return;
+  const scatterWinMult=num("cgScatterWinMult",1,5,"জয়ের গুণক");if(scatterWinMult===null)return;
+  const scatterMaxSpins=num("cgScatterMaxSpins",1,100,"সর্বোচ্চ Free Spin");if(scatterMaxSpins===null)return;
+  const scatterMaxWinX=num("cgScatterMaxWinX",1,500,"সর্বোচ্চ জয়");if(scatterMaxWinX===null)return;
+  const out={rtpFactor,scatterEnabled:$("cgScatterEnabled").value!=="false",scatterChancePct,scatterFreeSpins:Math.round(scatterFreeSpins),scatterRetrigger:Math.round(scatterRetrigger),scatterWinMult,scatterMaxSpins:Math.round(scatterMaxSpins),scatterMaxWinX};
   try{
     await db.ref("config/colorGems").update(out);
     colorGemsConfig=Object.assign({},colorGemsConfig,out);
     await audit("update_color_gems_config","config/colorGems",JSON.stringify(out));
     $("cgConfigMsg").textContent="Saved successfully";
-    toast("Color Gems RTP settings saved");
+    toast("Color Gems settings saved");
   }catch(e){$("cgConfigMsg").textContent="Save failed: "+e.message;toast(e.message)}
 };
 
@@ -880,6 +997,16 @@ auth.onAuthStateChanged(async user=>{
   }
 })();
 
+</script>
+<script>
+(function(){
+  var d=document.getElementById('sDeposits'),w=document.getElementById('sWithdrawals'),b=document.getElementById('navReqBadge');
+  if(!d||!w||!b)return;
+  function upd(){var n=(parseInt(d.textContent,10)||0)+(parseInt(w.textContent,10)||0);b.textContent=n>99?'99+':String(n);b.classList.toggle('zero',n===0);}
+  var mo=new MutationObserver(upd);
+  [d,w].forEach(function(el){mo.observe(el,{childList:true,characterData:true,subtree:true});});
+  upd();
+})();
 </script>
 </body>
 </html>
