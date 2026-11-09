@@ -127,11 +127,21 @@ body{background:radial-gradient(circle at 20% -10%,#3a22a8 0,#150f55 38%,#080620
   .nav button{padding:9px 13px;border-radius:99px;font-size:13px}
   .nav button.active{box-shadow:0 6px 16px rgba(91,43,214,.5)}
 }
+@media(max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .main{min-width:0;max-width:100%}
+  .section.grid{grid-template-columns:minmax(0,1fr)!important}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .top{flex-wrap:wrap}
+  .form,.bk-grid-2{grid-template-columns:minmax(0,1fr)}
+  .card{min-width:0}
+}
 @media(max-width:600px){
   .main{padding:12px}.top{padding:12px 14px;border-radius:16px}.top h1{font-size:19px}
-  .stat{padding-left:62px}.stat .num{font-size:21px}
+  .stat{padding-left:60px;padding-right:10px}.stat .num{font-size:18px;overflow-wrap:anywhere}
   .toast{left:12px;right:12px;bottom:12px;max-width:none;text-align:center}
 }
+.dep-num{margin-top:5px;font-size:12px;color:#d6d3ff;white-space:nowrap;letter-spacing:.2px}.dep-num b{color:#ffd23f;font-size:15px;font-weight:900}.dep-num .badge{margin-left:4px;font-size:10px}.dep-num-none{color:var(--muted);font-style:italic;white-space:normal}
 </style>
 </head>
 <body>
@@ -242,7 +252,7 @@ body{background:radial-gradient(circle at 20% -10%,#3a22a8 0,#150f55 38%,#080620
 
 
 
-<div class="table-wrap"><table class="table"><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Trx/Account</th><th>Status</th><th>Action</th></tr></thead><tbody id="depositsBody"></tbody></table></div></div>
+<div class="table-wrap"><table class="table"><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>TrxID / দেখানো নম্বর</th><th>Status</th><th>Action</th></tr></thead><tbody id="depositsBody"></tbody></table></div></div>
     <div class="card section"><h2>Withdrawal requests</h2><div class="table-wrap"><table class="table"><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Account</th><th>Status</th><th>Action</th></tr></thead><tbody id="withdrawalsBody"></tbody></table></div></div>
   </section>
 
@@ -525,8 +535,25 @@ window.removeUser=async uid=>{
 };
 
 window.viewUser=uid=>{const u=users[uid]||{},t=u.bonusTurnover||{},req=Math.max(0,Number(t.required||0)),done=Math.min(req,Math.max(0,Number(t.completed||0))),left=Math.max(0,req-done),phone=String(u.phone||u.phoneNumber||'').trim(),phoneHtml=phone?`<a href="tel:${esc(phone)}" style="color:#67a8ff;font-weight:900">📞 ${esc(phone)} — কল করুন</a>`:'Not provided';$("userDetails").innerHTML=`<div class="notice"><b>${esc(u.email||"—")}</b><br>UID: ${esc(uid)}<br>Phone: ${phoneHtml}<br>Balance: ${money(u.balance)}<br>Aviator: ${u.wins||0} wins / ${u.games||0} games<br>Boxing King: ${u.boxingKingWins||0} wins / ${u.boxingKingGames||0} games<br><hr style="border-color:var(--line)"><b>Bonus Turnover</b><br>Status: ${req?(left<=0?'Complete':'Pending'):'No active turnover'}<br>Required: ${money(req)}<br>Completed: ${money(done)}<br>Remaining: ${money(left)}<br>Multiplier at claim: ${t.multiplier?esc(t.multiplier)+'×':'—'}</div>`;$("userModal").classList.remove("hidden")};
+function depTrxCell(r){
+  // TrxID + the number the system SHOWED the player to pay (saved with the request).
+  var html="<b>"+esc(r.trxId||"—")+"</b>";
+  var num=String(r.shownNumber||"").trim();
+  if(!num) return html+"<div class=\"dep-num dep-num-none\">💳 নম্বর রেকর্ড নেই (পুরোনো রিকোয়েস্ট)</div>";
+  var shown=esc(num.slice(0,-2))+"<b>"+esc(num.slice(-2))+"</b>";
+  var tag="";
+  if(r.numberSource==="withdrawal"){
+    var w=(typeof withdrawals!=="undefined"&&withdrawals&&withdrawals[r.matchedWithdrawalId])||null;
+    tag="<span class=\"badge warn\">Withdraw ম্যাচ"+(w&&w.email?" • "+esc(w.email):"")+"</span>";
+  }else{
+    var cur=($(r.method==="nagad"?"depositNagadNumberInput":"depositBkashNumberInput")||{}).value;
+    cur=String(cur||"").trim();
+    tag=(cur&&cur!==num)?"<span class=\"badge bad\">পুরোনো প্যানেল নম্বর</span>":"<span class=\"badge\">প্যানেলের নম্বর</span>";
+  }
+  return html+"<div class=\"dep-num\">💳 "+shown+" "+tag+"</div>";
+}
 function renderRequests(){
- const dep=Object.entries(deposits).reverse();$("depositsBody").innerHTML=dep.map(([id,r])=>`<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.trxId||"—")}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','rejected')">Reject</button>`}</td></tr>`).join("")||`<tr><td colspan="6">No deposit requests.</td></tr>`;
+ const dep=Object.entries(deposits).reverse();$("depositsBody").innerHTML=dep.map(([id,r])=>`<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${depTrxCell(r)}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','rejected')">Reject</button>`}</td></tr>`).join("")||`<tr><td colspan="6">No deposit requests.</td></tr>`;
  const wd=Object.entries(withdrawals).reverse();$("withdrawalsBody").innerHTML=wd.map(([id,r])=>`<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.accountNo||"—")}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','rejected')">Reject</button>`}</td></tr>`).join("")||`<tr><td colspan="6">No withdrawal requests.</td></tr>`;
 }
 window.requestAction=async(type,id,status)=>{
