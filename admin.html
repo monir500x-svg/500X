@@ -384,7 +384,7 @@ body{background:radial-gradient(circle at 20% -10%,#3a22a8 0,#150f55 38%,#080620
 <script>
 const firebaseConfig={apiKey:"AIzaSyAyTOnCm5IuPcB-yvGjFl3KbwRVxNrcNSY",authDomain:"ff-to-gaming-4ea1b.firebaseapp.com",databaseURL:"https://ff-to-gaming-4ea1b-default-rtdb.firebaseio.com",projectId:"ff-to-gaming-4ea1b",storageBucket:"ff-to-gaming-4ea1b.appspot.com",messagingSenderId:"816776130875",appId:"1:816776130875:web:c3e7984e0de53cbd89871e"};
 firebase.initializeApp(firebaseConfig);const auth=firebase.auth(),db=firebase.database();
-let users={},deposits={},withdrawals={},boxingConfig={},flagKingConfig={},colorGemsConfig={},aviatorConfig={},bonusTurnoverMultiplier=10;
+let users={},wallets={},walletBlocked={},deposits={},withdrawals={},boxingConfig={},flagKingConfig={},colorGemsConfig={},aviatorConfig={},bonusTurnoverMultiplier=10;
 const $=id=>document.getElementById(id);
 function toast(m){$("toast").textContent=m;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),2800)}
 function esc(v){return String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
@@ -501,7 +501,7 @@ function render(){
  populateBonusUsers();
  const arr=Object.entries(users);$("sUsers").textContent=arr.length;$("sBalance").textContent=arr.reduce((s,[,u])=>s+Number(u.balance||0),0).toFixed(2);$("sDeposits").textContent=Object.keys(deposits).length;$("sWithdrawals").textContent=Object.keys(withdrawals).length;
  const games=arr.reduce((s,[,u])=>s+Number(u.games||0),0),wins=arr.reduce((s,[,u])=>s+Number(u.wins||0),0),bg=arr.reduce((s,[,u])=>s+Number(u.boxingKingGames||0),0),bw=arr.reduce((s,[,u])=>s+Number(u.boxingKingWins||0),0);$("gameStats").innerHTML=`Aviator games: <b>${games}</b> · wins: <b>${wins}</b><br>Boxing King games: <b>${bg}</b> · wins: <b>${bw}</b>`;
- const q=$("userSearch").value.toLowerCase();$("usersBody").innerHTML=arr.filter(([uid,u])=>(uid+" "+(u.email||"")+" "+(u.phone||u.phoneNumber||"")).toLowerCase().includes(q)).map(([uid,u])=>{const ts=getLastActivity(u),t=u.bonusTurnover||{},req=Math.max(0,Number(t.required||0)),done=Math.min(req,Math.max(0,Number(t.completed||0))),left=Math.max(0,req-done),turnLabel=req?(left<=0?'Complete':`${money(done)} / ${money(req)}<br><small>বাকি ${money(left)}</small>`):'—',phone=String(u.phone||u.phoneNumber||'').trim(),phoneCell=phone?`<a href="tel:${esc(phone)}" style="color:#67a8ff;text-decoration:none;font-weight:800">📞 ${esc(phone)}</a>`:'<span style="color:var(--muted)">Not provided</span>';return `<tr><td><b>${esc(u.email||"—")}</b><br><small>${esc(uid)}</small></td><td>${phoneCell}</td><td>${money(u.balance)}</td><td>${turnLabel}</td><td>${u.games||0}</td><td>${u.wins||0}</td><td>${u.boxingKingWins||0}/${u.boxingKingGames||0}</td><td>${ts?esc(new Date(ts).toLocaleString()):"—"}</td><td><button class="btn" onclick="viewUser('${esc(uid)}')">View</button> <button class="btn danger" onclick="removeUser('${esc(uid)}')">Remove</button></td></tr>`}).join("")||`<tr><td colspan="9">No users found.</td></tr>`;
+ const q=$("userSearch").value.toLowerCase();$("usersBody").innerHTML=arr.filter(([uid,u])=>(uid+" "+(u.email||"")+" "+(u.phone||u.phoneNumber||"")+" "+walletNumbers(uid)).toLowerCase().includes(q)).map(([uid,u])=>{const ts=getLastActivity(u),t=u.bonusTurnover||{},req=Math.max(0,Number(t.required||0)),done=Math.min(req,Math.max(0,Number(t.completed||0))),left=Math.max(0,req-done),turnLabel=req?(left<=0?'Complete':`${money(done)} / ${money(req)}<br><small>বাকি ${money(left)}</small>`):'—',phone=String(u.phone||u.phoneNumber||walletPhone(uid)).trim(),phoneCell=phone?`<a href="tel:${esc(phone)}" style="color:#67a8ff;text-decoration:none;font-weight:800">📞 ${esc(phone)}</a>`:'<span style="color:var(--muted)">Not provided</span>';return `<tr><td><b>${esc(u.email||"—")}</b><br><small>${esc(uid)}</small></td><td>${phoneCell}</td><td>${money(u.balance)}</td><td>${turnLabel}</td><td>${u.games||0}</td><td>${u.wins||0}</td><td>${u.boxingKingWins||0}/${u.boxingKingGames||0}</td><td>${ts?esc(new Date(ts).toLocaleString()):"—"}</td><td><button class="btn" onclick="viewUser('${esc(uid)}')">View</button> <button class="btn danger" onclick="removeUser('${esc(uid)}')">Remove</button></td></tr>`}).join("")||`<tr><td colspan="9">No users found.</td></tr>`;
  renderRequests();
 }
 $("userSearch").oninput=render;
@@ -534,7 +534,41 @@ window.removeUser=async uid=>{
   }finally{btns.forEach(b=>b.disabled=false)}
 };
 
-window.viewUser=uid=>{const u=users[uid]||{},t=u.bonusTurnover||{},req=Math.max(0,Number(t.required||0)),done=Math.min(req,Math.max(0,Number(t.completed||0))),left=Math.max(0,req-done),phone=String(u.phone||u.phoneNumber||'').trim(),phoneHtml=phone?`<a href="tel:${esc(phone)}" style="color:#67a8ff;font-weight:900">📞 ${esc(phone)} — কল করুন</a>`:'Not provided';$("userDetails").innerHTML=`<div class="notice"><b>${esc(u.email||"—")}</b><br>UID: ${esc(uid)}<br>Phone: ${phoneHtml}<br>Balance: ${money(u.balance)}<br>Aviator: ${u.wins||0} wins / ${u.games||0} games<br>Boxing King: ${u.boxingKingWins||0} wins / ${u.boxingKingGames||0} games<br><hr style="border-color:var(--line)"><b>Bonus Turnover</b><br>Status: ${req?(left<=0?'Complete':'Pending'):'No active turnover'}<br>Required: ${money(req)}<br>Completed: ${money(done)}<br>Remaining: ${money(left)}<br>Multiplier at claim: ${t.multiplier?esc(t.multiplier)+'×':'—'}</div>`;$("userModal").classList.remove("hidden")};
+function walletPhone(uid){var w=wallets[uid]||{};return (w.bkash&&w.bkash.number)||(w.nagad&&w.nagad.number)||"";}
+function walletNumbers(uid){var w=wallets[uid]||{};return [(w.bkash&&w.bkash.number)||"",(w.nagad&&w.nagad.number)||""].join(" ");}
+function walletPanel(uid){
+  var w=wallets[uid]||{}, blocked=!!walletBlocked[uid];
+  function row(p,label){
+    var x=w[p]; var has=x&&x.number;
+    return '<div class="wl-admin-row"><span><b>'+label+':</b> '+(has?esc(x.number)+' <small style="color:var(--muted)">('+(x.addedAt?new Date(x.addedAt).toLocaleString():"")+')</small>':'<i style="color:var(--muted)">যোগ করা নেই</i>')+'</span>'+(has?'<button class="btn danger" onclick="adminDeleteWallet(\''+esc(uid)+'\',\''+p+'\')">মুছুন</button>':'')+'</div>';
+  }
+  return '<hr style="border-color:var(--line)"><b>Wallets (ইউজারের জমা রাখা নম্বর)</b>'+row("bkash","bKash")+row("nagad","Nagad")
+    +'<div class="wl-admin-row"><span>নম্বর যোগ করা: <b>'+(blocked?"🔒 বন্ধ (Blocked)":"✅ চালু")+'</b></span><button class="btn" onclick="adminToggleWalletBlock(\''+esc(uid)+'\')">'+(blocked?"চালু করুন":"বন্ধ করুন")+'</button></div>'
+    +'<div class="notice" style="margin:6px 0 10px">অ্যাডমিন নম্বর লিখতে পারে না, শুধু মুছতে বা ব্লক করতে পারে। মুছলে ইউজার নিজে নতুন নম্বর বসাতে পারবে (ব্লক না থাকলে)।</div><hr style="border-color:var(--line)">';
+}
+window.adminDeleteWallet=async function(uid,p){
+  var x=(wallets[uid]||{})[p]; if(!x||!x.number) return;
+  if(!confirm((p==="nagad"?"Nagad":"bKash")+" নম্বর ("+x.number+") মুছবেন?\nমুছলে ইউজার নিজে নতুন নম্বর যোগ করতে পারবে।")) return;
+  try{
+    var upd={}; upd["wallets/"+uid+"/"+p]=null;
+    var other=(wallets[uid]||{})[p==="bkash"?"nagad":"bkash"];
+    if(!(other&&other.number===x.number)) upd["walletIndex/"+x.number]=null;
+    await db.ref().update(upd);
+    await audit("wallet_delete",uid,p+" "+x.number);
+    toast("নম্বর মোছা হয়েছে");
+    setTimeout(function(){window.viewUser(uid)},250);
+  }catch(e){toast("Failed: "+(e.message||e))}
+};
+window.adminToggleWalletBlock=async function(uid){
+  var cur=!!walletBlocked[uid];
+  try{
+    await db.ref("walletBlocked/"+uid).set(cur?null:true);
+    await audit(cur?"wallet_unblock":"wallet_block",uid,"");
+    toast(cur?"নম্বর যোগ করা চালু হয়েছে":"নম্বর যোগ করা বন্ধ করা হয়েছে");
+    setTimeout(function(){window.viewUser(uid)},350);
+  }catch(e){toast("Failed: "+(e.message||e))}
+};
+window.viewUser=uid=>{const u=users[uid]||{},t=u.bonusTurnover||{},req=Math.max(0,Number(t.required||0)),done=Math.min(req,Math.max(0,Number(t.completed||0))),left=Math.max(0,req-done),phone=String(u.phone||u.phoneNumber||walletPhone(uid)).trim(),phoneHtml=phone?`<a href="tel:${esc(phone)}" style="color:#67a8ff;font-weight:900">📞 ${esc(phone)} — কল করুন</a>`:'Not provided';$("userDetails").innerHTML=`<div class="notice"><b>${esc(u.email||"—")}</b><br>UID: ${esc(uid)}<br>Phone: ${phoneHtml}<br>${walletPanel(uid)}Balance: ${money(u.balance)}<br>Aviator: ${u.wins||0} wins / ${u.games||0} games<br>Boxing King: ${u.boxingKingWins||0} wins / ${u.boxingKingGames||0} games<br><hr style="border-color:var(--line)"><b>Bonus Turnover</b><br>Status: ${req?(left<=0?'Complete':'Pending'):'No active turnover'}<br>Required: ${money(req)}<br>Completed: ${money(done)}<br>Remaining: ${money(left)}<br>Multiplier at claim: ${t.multiplier?esc(t.multiplier)+'×':'—'}</div>`;$("userModal").classList.remove("hidden")};
 function depTrxCell(r){
   // TrxID + the number the system SHOWED the player to pay (saved with the request).
   var html="<b>"+esc(r.trxId||"—")+"</b>";
@@ -654,9 +688,15 @@ window.requestAction=async(type,id,status)=>{
       }
       const lastDepositAt=Number(user.lastDepositAt||0);
       const cooldownLeft=lastDepositAt+6*60*60*1000-now;
-      if(lastDepositAt>0 && cooldownLeft>0){
+      // The user page already enforces the 6-hour lock at the moment the request is made.
+      // So here the lock only applies if the withdrawal was requested AFTER the last approved deposit.
+      // A request made before that deposit (the deposit was approved later) must not be blocked by it.
+      const requestedAt=Number(processed.timestamp||0);
+      const requestedBeforeDeposit=requestedAt>0 && lastDepositAt>0 && requestedAt < lastDepositAt-120000;   // 2-minute tolerance for phone clocks
+      if(lastDepositAt>0 && cooldownLeft>0 && !requestedBeforeDeposit){
         const mins=Math.ceil(cooldownLeft/60000);
-        throw new Error("Deposit 6-hour lock is active for this user (about "+mins+" minutes left). Approval blocked.");
+        const fmtT=function(t){try{return new Date(t).toLocaleString("en-GB",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});}catch(_){return String(t);}};
+        throw new Error("Deposit 6-hour lock is active for this user (about "+mins+" minutes left). Last deposit approved: "+fmtT(lastDepositAt)+" • this withdrawal requested: "+(requestedAt?fmtT(requestedAt):"unknown")+". Approval blocked.");
       }
     }
 
@@ -919,6 +959,8 @@ function startRequestListeners(){
     deposits=snap.val()||{};
     if(typeof render === "function") render();
   });
+  db.ref("wallets").on("value",snap=>{ wallets=snap.val()||{}; if(typeof render==="function") render(); });
+  db.ref("walletBlocked").on("value",snap=>{ walletBlocked=snap.val()||{}; });
   db.ref("adminRequests/withdrawals").on("value",snap=>{
     withdrawals=snap.val()||{};
     if(typeof render === "function") render();
@@ -939,8 +981,24 @@ $("adminLoginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")$("adm
 auth.onAuthStateChanged(async user=>{
   $("adminEmail").textContent=user?(user.email||user.uid):"";
   $("adminLogin").style.display=user?"none":"grid";
-  $("app").style.display=user?"grid":"none";
-  if(!user)return;
+  $("app").style.display="none";
+  if(!user){$("adminLogin").style.display="grid";return;}
+  // Only accounts listed under admins/{uid} = true in the database may open the dashboard.
+  // (A normal player who logs in here is signed out again.) The database Rules enforce the same.
+  // TRIAL SWITCH: set REQUIRE_ADMIN_FLAG to true when you are ready (after adding admins/{your UID} = true in the database).
+  // While it is false, any account that logs in here gets the dashboard (the old behaviour).
+  const REQUIRE_ADMIN_FLAG=false;
+  let isAdmin=!REQUIRE_ADMIN_FLAG;
+  if(REQUIRE_ADMIN_FLAG){
+    try{ isAdmin=(await db.ref("admins/"+user.uid).once("value")).val()===true; }catch(e){ isAdmin=false; }
+  }
+  if(!isAdmin){
+    $("adminLogin").style.display="grid";
+    const st=$("adminLoginStatus"); if(st) st.textContent="এই অ্যাকাউন্টটি অ্যাডমিন নয়। অ্যাক্সেস নেই।";
+    try{ await auth.signOut(); }catch(e){}
+    return;
+  }
+  $("app").style.display="grid";
   try{
     await loadAll();
     startRequestListeners();
