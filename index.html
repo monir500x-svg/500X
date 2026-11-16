@@ -12,6 +12,38 @@
     var lite=q?q[1]==='1':((m&&m<=2)||(c&&c<=4));if(lite)document.documentElement.classList.add('gz-lite');}catch(e){}})();
     </script>
     <style>
+      /* ===== Wallet cards (withdraw) + registration hint ===== */
+      .kb-wallet-hint{font-size:.78rem;line-height:1.45;color:#d6d3ff;margin-bottom:8px;text-align:left}
+      #withdraw-modal .wl-track{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:6px 2px 12px;scrollbar-width:none;touch-action:pan-x pan-y}
+      #withdraw-modal .wl-track::-webkit-scrollbar{display:none}
+      #withdraw-modal .wl-card{position:relative;flex:0 0 88%;scroll-snap-align:center;min-height:172px;border-radius:22px;padding:16px 18px;color:#fff;overflow:hidden;box-sizing:border-box;transition:box-shadow .2s,transform .2s;user-select:none}
+      #withdraw-modal .wl-card::after{content:"";position:absolute;right:-40px;bottom:-60px;width:230px;height:230px;border-radius:50%;background:repeating-radial-gradient(circle at 60% 60%,rgba(255,255,255,.16) 0 3px,rgba(255,255,255,0) 3px 14px);pointer-events:none}
+      #withdraw-modal .wl-bkash{background:linear-gradient(135deg,#8b5cf6 0%,#6f78ee 45%,#25d6c4 100%)}
+      #withdraw-modal .wl-nagad{background:linear-gradient(135deg,#ffa31a 0%,#f2582b 55%,#d4206f 100%)}
+      #withdraw-modal .wl-card.sel{box-shadow:0 0 0 3px #ffd23f,0 12px 28px rgba(0,0,0,.5)}
+      #withdraw-modal .wl-top{display:flex;align-items:center;gap:10px;position:relative;z-index:1}
+      #withdraw-modal .wl-top b{font-size:1.35rem;font-weight:800;letter-spacing:.3px}
+      #withdraw-modal .wl-chip{margin-left:auto;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,.22);font-size:.72rem;font-weight:800}
+      #withdraw-modal .wl-num{position:relative;z-index:1;margin-top:26px;font-size:1.75rem;font-weight:800;letter-spacing:2.5px;text-shadow:0 2px 6px rgba(0,0,0,.25)}
+      #withdraw-modal .wl-date{position:relative;z-index:1;margin-top:14px;font-size:.9rem;opacity:.95}
+      #withdraw-modal .wl-empty{background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03));border:2px dashed rgba(255,255,255,.4)}
+      #withdraw-modal .wl-empty.wl-bkash{box-shadow:inset 0 0 40px rgba(139,92,246,.28)}
+      #withdraw-modal .wl-empty.wl-nagad{box-shadow:inset 0 0 40px rgba(255,140,40,.25)}
+      #withdraw-modal .wl-plus{position:relative;z-index:1;display:grid;place-items:center;width:34px;height:34px;margin:12px 0 8px;border-radius:50%;background:#ff2d3d;font-size:1.5rem;font-weight:800;box-shadow:0 6px 14px rgba(255,45,61,.45)}
+      #withdraw-modal .wl-input{position:relative;z-index:1;width:100%;padding:11px 12px;border-radius:12px;border:2px solid rgba(255,255,255,.55);background:rgba(5,4,25,.55);color:#fff;font-size:1.1rem;font-weight:700;letter-spacing:1px;outline:none;box-sizing:border-box}
+      #withdraw-modal .wl-input:focus{border-color:#ffd23f}
+      #withdraw-modal .wl-save{position:relative;z-index:1;margin-top:9px;width:100%;padding:10px;border-radius:12px;border:2px solid #b8ff8a;background:linear-gradient(#5be04a,#1f9d2f);color:#fff;font-weight:800;font-size:1rem;cursor:pointer}
+      #withdraw-modal .wl-save:disabled{opacity:.6}
+      #withdraw-modal .wl-note{position:relative;z-index:1;margin-top:7px;font-size:.74rem;line-height:1.4;opacity:.95}
+      #withdraw-modal .wl-msg{position:relative;z-index:1;min-height:16px;margin-top:5px;font-size:.8rem;font-weight:700;color:#ffd0d6}
+      #withdraw-modal .wl-lock{position:relative;z-index:1;margin-top:26px;text-align:center;font-weight:800;line-height:1.5}
+      #withdraw-modal .wl-dots{display:flex;justify-content:center;gap:8px;margin:0 0 6px}
+      #withdraw-modal .wl-dots i{width:9px;height:9px;border-radius:50%;background:#4b4793;cursor:pointer;transition:.2s}
+      #withdraw-modal .wl-dots i.on{width:22px;border-radius:6px;background:#ffd23f}
+      #withdraw-modal .wl-selected{min-height:18px;margin-bottom:4px;text-align:center;font-size:.85rem;color:#d6d3ff}
+      .wl-admin-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:7px 0;flex-wrap:wrap}
+    </style>
+    <style>
       /* Lite mode: drop the effects that cost the most on weak GPUs. Game logic is untouched. */
       html.gz-lite *, html.gz-lite *::before, html.gz-lite *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; text-shadow: none !important; }
       html.gz-lite .cg-cell.scatter, html.gz-lite .wheel.rb-result-glow { animation: none !important; }
@@ -1176,7 +1208,11 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 <div class="kb-auth-caption">গেমিং জোন ইডি • MEMBER ACCESS</div>
                 <div class="form-group"><input type="email" id="auth-email" placeholder="Email Address" autocomplete="email" required></div>
                 <div class="form-group"><input type="password" id="auth-password" placeholder="Password" autocomplete="current-password" required></div>
-                <div class="form-group" id="auth-phone-wrap" style="display:none"><input type="tel" id="auth-phone" placeholder="Phone Number (বাধ্যতামূলক)" inputmode="tel" autocomplete="tel" maxlength="20"></div>
+                <div class="form-group" id="auth-phone-wrap" style="display:none">
+                    <div class="kb-wallet-hint">📱 bKash বা Nagad: কমপক্ষে <b>একটি</b> নম্বর দিন (বাধ্যতামূলক)।<br>একবার দিলে নিজে বদলানো যাবে না।</div>
+                    <input type="tel" id="auth-bkash" placeholder="bKash নম্বর (01XXXXXXXXX)" inputmode="tel" autocomplete="tel" maxlength="16">
+                    <input type="tel" id="auth-nagad" placeholder="Nagad নম্বর (01XXXXXXXXX)" inputmode="tel" maxlength="16" style="margin-top:8px">
+                </div>
                 <button type="button" class="av-btn av-btn-deposit kb-auth-submit" id="auth-submit-btn">Login</button>
                 <div class="kb-auth-switch"><span id="auth-switch-hint">নতুন সদস্য?</span> <a href="#" id="toggle-auth-mode">Create Account</a></div>
                 <div class="av-error-msg" id="auth-error"></div>
@@ -1304,23 +1340,15 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     <b>৳<span id="wd-main-balance">0.00</span></b>
                 </div>
 
-                <div class="wd-label">পেমেন্ট পদ্ধতি নির্বাচন করুন</div>
+                <div class="wd-label">আবদ্ধ ওয়ালেট (<span id="wd-wallet-count">0</span>/2)</div>
                 <select id="withdraw-method" class="wd-hidden-select" tabindex="-1" aria-hidden="true">
                     <option value="bkash">বিকাশ (Bkash)</option>
                     <option value="nagad">নগদ (Nagad)</option>
                 </select>
-                <div class="wd-methods">
-                    <button type="button" class="wd-method wd-bkash active" data-method="bkash">
-                        <svg viewBox="0 0 40 40" width="30" height="30" aria-hidden="true"><polygon points="3,6 26,14 20,20 14,36 11,20" fill="#e2136e"/><polygon points="26,14 37,10 20,20" fill="#ff5fa2"/></svg>
-                        <span>bKash</span>
-                        <i class="wd-tick">✓</i>
-                    </button>
-                    <button type="button" class="wd-method wd-nagad" data-method="nagad">
-                        <svg viewBox="0 0 40 40" width="30" height="30" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="#f26a21"/><circle cx="20" cy="20" r="8" fill="#fff" opacity=".9"/><circle cx="20" cy="20" r="4" fill="#e8281e"/></svg>
-                        <span>নগদ</span>
-                        <i class="wd-tick">✓</i>
-                    </button>
-                </div>
+                <div class="wl-track" id="wl-track" aria-label="ওয়ালেট কার্ড"></div>
+                <div class="wl-dots" id="wl-dots"><i class="on"></i><i></i></div>
+                <div class="wl-selected" id="wd-account-label"></div>
+                <input type="hidden" id="withdraw-account">
 
                 <div class="wd-label">উত্তোলনের পরিমাণ লিখুন (৳)</div>
                 <div class="wd-chips" id="wd-chips">
@@ -1336,8 +1364,6 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     <div class="wd-amount-badge">৳<span id="wd-amount-badge">0</span></div>
                 </div>
 
-                <div class="wd-label" id="wd-account-label">বিকাশ নম্বর</div>
-                <input type="text" id="withdraw-account" class="wd-account" placeholder="একাউন্ট নম্বর (যেমন: 017xxxxxxxx)" inputmode="tel" required>
 
                 <div class="wd-summary">
                     <div class="wd-row"><span>🎁 বোনাস ব্যালেন্স:</span><b>৳<span id="wd-bonus-bal">0.00</span></b></div>
@@ -1385,8 +1411,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
 
   function setMethod(m){
     select.value=m;
-    modal.querySelectorAll('.wd-method').forEach(b=>b.classList.toggle('active',b.dataset.method===m));
-    $('wd-account-label').textContent=(m==='nagad'?'নগদ':'বিকাশ')+' নম্বর';
+    if(window.gzSelectWalletMethod) window.gzSelectWalletMethod(m);
   }
   function refreshAmount(){
     const v=parseFloat(amount.value);
@@ -1408,6 +1433,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
     $('wd-main-balance').textContent=fmt(bal);
     $('wd-bonus-bal').textContent=fmt(bonus);
     $('wd-withdrawable').textContent=fmt(Math.max(0,bal-bonus));
+    if(window.gzRenderWalletCards) window.gzRenderWalletCards();
     setMethod(select.value||'bkash');
     refreshAmount();
   }
@@ -1418,6 +1444,119 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
   amount.addEventListener('input',refreshAmount);
   modal.addEventListener('click',e=>{ if(e.target===modal) $('close-withdraw-btn').click(); });
   fill(null);
+})();
+</script>
+
+<script>
+/* ===== Wallet cards: bKash + Nagad, one number each, saved once ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const ORDER=['bkash','nagad'];
+  const NAME={bkash:'bKash',nagad:'নগদ (Nagad)'};
+  const LOGO={
+    bkash:'<svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><rect width="40" height="40" rx="10" fill="rgba(255,255,255,.95)"/><polygon points="7,8 27,15 21,20.5 15.5,33 12.5,20" fill="#e2136e"/><polygon points="27,15 35,11.5 21,20.5" fill="#ff5fa2"/></svg>',
+    nagad:'<svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><rect width="40" height="40" rx="10" fill="rgba(255,255,255,.95)"/><circle cx="20" cy="20" r="12.5" fill="#f26a21"/><circle cx="20" cy="20" r="6.2" fill="#fff"/><circle cx="20" cy="20" r="3" fill="#e8281e"/></svg>'
+  };
+  window.gzWallets={}; window.gzWalletBlocked=false;
+  let refs=[], lastSig='', raf=0, busy=false, activeIdx=0;
+  const mask=n=>'*******'+String(n||'').slice(-4);
+  const pad=x=>String(x).padStart(2,'0');
+  const fmtDate=ts=>{ if(!ts) return ''; const d=new Date(Number(ts)); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()); };
+  function normalize(s){ let d=String(s||'').replace(/[^0-9]/g,''); if(d.startsWith('880')&&d.length===13) d=d.slice(2); return /^01[3-9][0-9]{8}$/.test(d)?d:''; }
+
+  function cardHtml(p){
+    const w=window.gzWallets[p], cls='wl-card wl-'+p;
+    if(w&&w.number){
+      return '<div class="'+cls+'" data-p="'+p+'"><div class="wl-top">'+LOGO[p]+'<b>'+NAME[p]+'</b><span class="wl-chip">✓ আবদ্ধ</span></div><div class="wl-num">'+mask(w.number)+'</div><div class="wl-date">'+fmtDate(w.addedAt)+'</div></div>';
+    }
+    if(window.gzWalletBlocked){
+      return '<div class="'+cls+' wl-empty" data-p="'+p+'"><div class="wl-top">'+LOGO[p]+'<b>'+NAME[p]+'</b></div><div class="wl-lock">🔒 অ্যাডমিন নম্বর যোগ করা<br>বন্ধ রেখেছেন</div></div>';
+    }
+    return '<div class="'+cls+' wl-empty" data-p="'+p+'"><div class="wl-top">'+LOGO[p]+'<b>'+NAME[p]+'</b></div><div class="wl-plus">＋</div>'
+      +'<input class="wl-input" id="wl-in-'+p+'" type="tel" inputmode="tel" maxlength="16" placeholder="01XXXXXXXXX" autocomplete="off">'
+      +'<button type="button" class="wl-save" data-save="'+p+'">নম্বর সেভ করুন</button>'
+      +'<div class="wl-note">⚠️ একবার সেভ করলে আপনি নিজে বদলাতে বা মুছতে পারবেন না।</div><div class="wl-msg" id="wl-msg-'+p+'"></div></div>';
+  }
+  function syncActive(){
+    const track=$('wl-track'); if(!track||!track.children.length) return;
+    const first=track.children[0], gap=12, cw=first.offsetWidth+gap;
+    let idx=cw>0?Math.round(track.scrollLeft/cw):0; idx=Math.max(0,Math.min(ORDER.length-1,idx));
+    activeIdx=idx;
+    const p=ORDER[idx], w=window.gzWallets[p];
+    Array.prototype.forEach.call(track.children,(c,i)=>c.classList.toggle('sel',i===idx));
+    const dots=$('wl-dots'); if(dots) Array.prototype.forEach.call(dots.children,(d,i)=>d.classList.toggle('on',i===idx));
+    const sel=$('withdraw-method'); if(sel) sel.value=p;
+    const acc=$('withdraw-account'); if(acc) acc.value=(w&&w.number)||'';
+    const lab=$('wd-account-label'); if(lab) lab.textContent=w&&w.number?('নির্বাচিত: '+NAME[p]+' '+mask(w.number)):('এই কার্ডে নম্বর যোগ করুন, তারপর উইথড্র করুন');
+  }
+  function render(){
+    const track=$('wl-track'); if(!track) return;
+    const sig=JSON.stringify([window.gzWallets,window.gzWalletBlocked]);
+    if(sig===lastSig&&track.children.length){ syncActive(); return; }
+    lastSig=sig;
+    const keep=track.scrollLeft, typed={};
+    ORDER.forEach(p=>{const el=$('wl-in-'+p); if(el) typed[p]=el.value;});
+    track.innerHTML=ORDER.map(cardHtml).join('');
+    ORDER.forEach(p=>{const el=$('wl-in-'+p); if(el&&typed[p]) el.value=typed[p];});
+    track.querySelectorAll('[data-save]').forEach(b=>b.addEventListener('click',()=>save(b.dataset.save)));
+    track.scrollLeft=keep;
+    const n=ORDER.filter(p=>window.gzWallets[p]&&window.gzWallets[p].number).length;
+    const c=$('wd-wallet-count'); if(c) c.textContent=n;
+    syncActive();
+  }
+  async function save(p){
+    if(busy||!currentUser) return;
+    const input=$('wl-in-'+p), msg=$('wl-msg-'+p), btn=document.querySelector('[data-save="'+p+'"]');
+    const bad=t=>{ msg.style.color='#ffd0d6'; msg.textContent=t; };
+    if(window.gzWalletBlocked) return bad('অ্যাডমিন নম্বর যোগ করা বন্ধ রেখেছেন।');
+    if(window.gzWallets[p]&&window.gzWallets[p].number) return;
+    const num=normalize(input.value);
+    if(!num) return bad('সঠিক ১১ সংখ্যার নম্বর লিখুন (01XXXXXXXXX)।');
+    if(!confirm(NAME[p]+' নম্বর '+num+' সেভ করবেন?\n\nএকবার সেভ করলে আপনি নিজে আর বদলাতে বা মুছতে পারবেন না।')) return;
+    busy=true; btn.disabled=true; msg.style.color='#fff3b0'; msg.textContent='সেভ হচ্ছে…';
+    const uid=currentUser.uid; let reserved=false, saved=false;
+    try{
+      if((await db.ref('walletBlocked/'+uid).once('value')).val()) throw new Error('অ্যাডমিন নম্বর যোগ করা বন্ধ রেখেছেন।');
+      if((await db.ref('wallets/'+uid+'/'+p).once('value')).exists()) throw new Error('এই মাধ্যমের নম্বর আগেই সেভ করা আছে।');
+      const tx=await db.ref('walletIndex/'+num).transaction(cur=>cur?(cur.uid===uid?cur:undefined):{uid:uid,at:Date.now()});
+      if(!tx.committed) throw new Error('এই নম্বর আগেই অন্য অ্যাকাউন্টে ব্যবহার করা হয়েছে।');
+      reserved=true;
+      await db.ref('wallets/'+uid+'/'+p).set({number:num,addedAt:firebase.database.ServerValue.TIMESTAMP});
+      saved=true;
+      try{ const ph=(await db.ref('users/'+uid+'/phone').once('value')).val(); if(!ph) await db.ref('users/'+uid).update({phone:num,phoneNumber:num}); }catch(e){}
+    }catch(e){
+      if(reserved&&!saved){ try{ await db.ref('walletIndex/'+num).remove(); }catch(_){} }
+      bad(e.message||'সেভ করা যায়নি। আবার চেষ্টা করুন।');
+    }finally{ busy=false; if(btn) btn.disabled=false; }
+  }
+  window.gzWatchWallets=function(user){
+    refs.forEach(r=>{try{r.off()}catch(e){}}); refs=[];
+    window.gzWallets={}; window.gzWalletBlocked=false; lastSig='';
+    if(!user){ render(); return; }
+    const a=db.ref('wallets/'+user.uid), b=db.ref('walletBlocked/'+user.uid);
+    a.on('value',s=>{ window.gzWallets=s.val()||{}; render(); },e=>console.warn('Wallets read failed:',e));
+    b.on('value',s=>{ window.gzWalletBlocked=!!s.val(); render(); },e=>{});
+    refs=[a,b];
+  };
+  window.gzRenderWalletCards=render;
+  window.gzSelectWalletMethod=function(m){
+    const idx=ORDER.indexOf(m), track=$('wl-track');
+    if(idx<0||!track||!track.children.length||idx===activeIdx) { syncActive(); return; }
+    const cw=track.children[0].offsetWidth+12;
+    track.scrollTo({left:idx*cw,behavior:'auto'}); syncActive();
+  };
+  // swipe/drag + dots
+  function init(){
+    const track=$('wl-track'); if(!track) return;
+    track.addEventListener('scroll',()=>{ if(raf) return; raf=requestAnimationFrame(()=>{raf=0;syncActive();}); },{passive:true});
+    let down=false,sx=0,sl=0;
+    track.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse'||e.target.closest('input,button')) return; down=true; sx=e.clientX; sl=track.scrollLeft; track.style.scrollSnapType='none'; });
+    window.addEventListener('pointermove',e=>{ if(down) track.scrollLeft=sl-(e.clientX-sx); });
+    window.addEventListener('pointerup',()=>{ if(!down) return; down=false; const cw=track.children[0].offsetWidth+12; const idx=Math.max(0,Math.min(ORDER.length-1,Math.round(track.scrollLeft/cw))); track.scrollTo({left:idx*cw,behavior:'smooth'}); setTimeout(()=>{track.style.scrollSnapType='';},350); });
+    const dots=$('wl-dots'); if(dots) Array.prototype.forEach.call(dots.children,(d,i)=>d.addEventListener('click',()=>{ const cw=track.children[0].offsetWidth+12; track.scrollTo({left:i*cw,behavior:'smooth'}); }));
+    render();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
 </script>
 
@@ -2233,11 +2372,18 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 try {
                     // First check existing requests that were created before
                     // the transaction-ID index was introduced.
-                    const existingSnap = await db.ref('adminRequests/deposits').once('value');
-                    const existingDeposits = existingSnap.val() || {};
-                    const duplicateExists = Object.values(existingDeposits).some(req =>
-                        String(req?.trxId || '').replace(/\s+/g, '').toLowerCase() === normalizedTrxId
-                    );
+                    // (Players may no longer read the admin request list. If this read is refused we skip it:
+                    // the atomic transaction-ID reservation below still blocks duplicates.)
+                    let duplicateExists = false;
+                    try {
+                        const existingSnap = await db.ref('adminRequests/deposits').once('value');
+                        const existingDeposits = existingSnap.val() || {};
+                        duplicateExists = Object.values(existingDeposits).some(req =>
+                            String(req?.trxId || '').replace(/\s+/g, '').toLowerCase() === normalizedTrxId
+                        );
+                    } catch (precheckError) {
+                        console.warn('Old-request duplicate check skipped:', precheckError && precheckError.message);
+                    }
 
                     if (duplicateExists) {
                         throw new Error('এই Transaction ID দিয়ে ইতিমধ্যে একটি Deposit Request আছে। একই TrxID আবার ব্যবহার করা যাবে না।');
@@ -2285,7 +2431,10 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     } catch (_) {}
 
                     depositMsg.style.color = "#ef9a9a";
-                    depositMsg.innerText = "ত্রুটি: " + error.message;
+                    const em = String(error && error.message || '');
+                    depositMsg.innerText = /permission_denied/i.test(em)
+                        ? "এই Transaction ID ইতিমধ্যে ব্যবহার করা হয়েছে। অন্য সঠিক TrxID দিন।"
+                        : "ত্রুটি: " + em;
                 }
             })();
         });
@@ -2423,7 +2572,13 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             } catch (err) { e.preventDefault(); withdrawMsg.style.color='#ef9a9a'; withdrawMsg.innerText='উইথড্রের নিয়ম যাচাই করা যায়নি। আবার চেষ্টা করুন।'; return; }
             const amt = parseFloat(document.getElementById('withdraw-amount').value);
             const method = document.getElementById('withdraw-method').value;
-            const accountNo = document.getElementById('withdraw-account').value.trim();
+            const savedWallet = (window.gzWallets || {})[method];
+            if (!savedWallet || !savedWallet.number) {
+                withdrawMsg.style.color = "#ef9a9a";
+                withdrawMsg.innerText = (method === 'nagad' ? 'Nagad' : 'bKash') + ' নম্বর আগে কার্ডে যোগ করুন।';
+                return;
+            }
+            const accountNo = savedWallet.number;   // the saved number only; it cannot be typed or changed here
 
             if (isNaN(amt) || amt < 100) {
                 withdrawMsg.style.color = "#ef9a9a";
@@ -2651,11 +2806,9 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             authSubmitBtn.innerText = isSignUp ? "Create Account" : "Login";
             toggleAuthMode.innerText = isSignUp ? "Login" : "Create Account";
             const phoneWrap = document.getElementById('auth-phone-wrap');
-            const phoneInput = document.getElementById('auth-phone');
             const hint = document.getElementById('auth-switch-hint');
             if (phoneWrap) phoneWrap.style.display = isSignUp ? 'block' : 'none';
-            if (phoneInput) phoneInput.required = isSignUp;
-            if (phoneInput && !isSignUp) phoneInput.value = '';
+            if (!isSignUp) ['auth-bkash', 'auth-nagad'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
             if (hint) hint.innerText = isSignUp ? 'আগে থেকেই অ্যাকাউন্ট আছে?' : 'নতুন সদস্য?';
             const passwordInput = document.getElementById('auth-password');
             if (passwordInput) passwordInput.autocomplete = isSignUp ? 'new-password' : 'current-password';
@@ -2672,48 +2825,80 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         const REGISTER_BONUS_AMOUNT = 60;   // set 0 to switch the registration bonus off
         const REGISTER_BONUS_HOURS = 24;    // how long the new member has to claim it
 
+        function gzNormMobile(s) {
+            let d = String(s || '').replace(/[^0-9]/g, '');
+            if (d.startsWith('880') && d.length === 13) d = d.slice(2);
+            return /^01[3-9][0-9]{8}$/.test(d) ? d : '';
+        }
+        // Creates the account, the ৳60 welcome bonus and the wallet numbers (bKash / Nagad). One number may belong to one account only.
+        async function gzSignUp(email, password, numbers) {
+            const wanted = numbers;   // [['bkash','017…'], …]  at least one
+            const takenMsg = n => 'এই নম্বর (' + n + ') আগেই অন্য অ্যাকাউন্টে ব্যবহার করা হয়েছে।';
+            for (const w of wanted) {   // friendly early check, before the account exists
+                let taken = null;
+                try { taken = (await db.ref('walletIndex/' + w[1]).once('value')).val(); } catch (e) {}
+                if (taken) throw new Error(takenMsg(w[1]));
+            }
+            const cred = await auth.createUserWithEmailAndPassword(email, password);
+            const uid = cred.user.uid, now = Date.now(), reserved = [];
+            const userData = {
+                email, phone: wanted[0][1], phoneNumber: wanted[0][1], balance: 0, games: 0, wins: 0,
+                boxingKingGames: 0, boxingKingWins: 0, createdAt: now
+            };
+            if (REGISTER_BONUS_AMOUNT > 0) {
+                const bonusId = db.ref('users/' + uid + '/bonuses').push().key;
+                userData.bonuses = {};
+                userData.bonuses[bonusId] = {
+                    title: 'Registration bonus', amount: REGISTER_BONUS_AMOUNT,
+                    createdAt: now, expiresAt: now + REGISTER_BONUS_HOURS * 60 * 60 * 1000,
+                    status: 'pending', grantedBy: 'system'
+                };
+            }
+            try {
+                await db.ref('users/' + uid).set(userData);
+                for (const w of wanted) {
+                    const tx = await db.ref('walletIndex/' + w[1]).transaction(cur => cur ? (cur.uid === uid ? cur : undefined) : { uid: uid, at: Date.now() });
+                    if (!tx.committed) throw new Error(takenMsg(w[1]));
+                    reserved.push(w[1]);
+                    await db.ref('wallets/' + uid + '/' + w[0]).set({ number: w[1], addedAt: firebase.database.ServerValue.TIMESTAMP });
+                }
+            } catch (e) {
+                // roll back, so no half-made account (and no bonus) is left behind
+                try { for (const n of reserved) await db.ref('walletIndex/' + n).remove(); } catch (_) {}
+                try { await db.ref('users/' + uid).remove(); await db.ref('wallets/' + uid).remove(); } catch (_) {}
+                try { await cred.user.delete(); } catch (_) {}
+                throw e;
+            }
+        }
+
         authSubmitBtn.addEventListener('click', function() {
             authError.innerText = "Processing...";
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value;
-            const phone = document.getElementById('auth-phone').value.trim();
+            const rawBkash = (document.getElementById('auth-bkash').value || '').trim();
+            const rawNagad = (document.getElementById('auth-nagad').value || '').trim();
 
             if (!email || !password) {
                 authError.innerText = "Please enter both Email and Password";
                 return;
             }
-            if (isSignUp && !phone) {
-                authError.innerText = "রেজিস্ট্রেশনের জন্য ফোন নম্বর দেওয়া বাধ্যতামূলক।";
-                document.getElementById('auth-phone').focus();
-                return;
-            }
-            if (isSignUp && !/^[+0-9()\-\s]{7,20}$/.test(phone)) {
-                authError.innerText = "সঠিক ফোন নম্বর লিখুন।";
-                document.getElementById('auth-phone').focus();
-                return;
+            let numbers = [];
+            if (isSignUp) {
+                if (!rawBkash && !rawNagad) {
+                    authError.innerText = "bKash বা Nagad-এর কমপক্ষে একটি নম্বর দেওয়া বাধ্যতামূলক।";
+                    document.getElementById('auth-bkash').focus();
+                    return;
+                }
+                const bk = rawBkash ? gzNormMobile(rawBkash) : '', ng = rawNagad ? gzNormMobile(rawNagad) : '';
+                if (rawBkash && !bk) { authError.innerText = "সঠিক bKash নম্বর লিখুন (১১ সংখ্যা, 01XXXXXXXXX)।"; document.getElementById('auth-bkash').focus(); return; }
+                if (rawNagad && !ng) { authError.innerText = "সঠিক Nagad নম্বর লিখুন (১১ সংখ্যা, 01XXXXXXXXX)।"; document.getElementById('auth-nagad').focus(); return; }
+                if (bk) numbers.push(['bkash', bk]);
+                if (ng) numbers.push(['nagad', ng]);
             }
 
             authSubmitBtn.disabled = true;
             if (isSignUp) {
-                auth.createUserWithEmailAndPassword(email, password)
-                    .then(cred => {
-                        const now = Date.now();
-                        const userData = {
-                            email, phone, phoneNumber: phone, balance: 0, games: 0, wins: 0,
-                            boxingKingGames: 0, boxingKingWins: 0,
-                            createdAt: now
-                        };
-                        if (REGISTER_BONUS_AMOUNT > 0) {
-                            const bonusId = db.ref('users/' + cred.user.uid + '/bonuses').push().key;
-                            userData.bonuses = {};
-                            userData.bonuses[bonusId] = {
-                                title: 'Registration bonus', amount: REGISTER_BONUS_AMOUNT,
-                                createdAt: now, expiresAt: now + REGISTER_BONUS_HOURS * 60 * 60 * 1000,
-                                status: 'pending', grantedBy: 'system'
-                            };
-                        }
-                        return db.ref('users/' + cred.user.uid).set(userData);
-                    })
+                gzSignUp(email, password, numbers)
                     .then(() => { authError.innerText = ""; })
                     .catch(err => { authError.innerText = err.message; })
                     .finally(() => { authSubmitBtn.disabled = false; });
@@ -2835,6 +3020,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     }
                 });
                 watchAviatorBetState(user);
+                if (window.gzWatchWallets) window.gzWatchWallets(user);
             } else {
                 if (aviatorBetsListener) {
                     aviatorBetsListener.off();
@@ -2844,6 +3030,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 updateLobbyUid('');
                 resetUserRtpReferenceFactor();
                 userDbRef = null;
+                if (window.gzWatchWallets) window.gzWatchWallets(null);
                 authModal.classList.remove('hidden');
                 globalUserBar.classList.add('hidden');
                 currentBalance = 0;
@@ -3565,7 +3752,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 const cell = document.createElement('div');
                 cell.className = 'bk-slot-cell';
                 cell.id = `bk-cell-${i}`;
-                const randomItem = BK_ITEMS[Math.floor(Math.random() * BK_ITEMS.length)];
+                const randomItem = BK_ITEMS[gzSecureInt(BK_ITEMS.length)];
                 cell.innerText = randomItem;
                 bkBoardState[i] = randomItem;
                 bkBoardContainer.appendChild(cell);
@@ -3678,7 +3865,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             const spinInterval = setInterval(() => {
                 playBkSound('spin'); 
                 for (let i = 0; i < 25; i++) {
-                    const randSym = BK_ITEMS[Math.floor(Math.random() * BK_ITEMS.length)];
+                    const randSym = BK_ITEMS[gzSecureInt(BK_ITEMS.length)];
                     bkBoardState[i] = randSym;
                     document.getElementById(`bk-cell-${i}`).innerText = randSym;
                 }
@@ -3795,7 +3982,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                         const emptyCount = 5 - existingSymbolsInCol.length;
                         const newSymbols = [];
                         for (let k = 0; k < emptyCount; k++) {
-                            newSymbols.push(BK_ITEMS[Math.floor(Math.random() * BK_ITEMS.length)]);
+                            newSymbols.push(BK_ITEMS[gzSecureInt(BK_ITEMS.length)]);
                         }
 
                         const fullColSymbols = newSymbols.concat(existingSymbolsInCol);
@@ -3873,6 +4060,20 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
 
 
 /* COLOR GEMS — same lobby/auth/shared-wallet/admin-control pattern as Boxing King */
+        /* Boxing King and Flag King random numbers: browser cryptographic generator (crypto.getRandomValues) instead of Math.random().
+           53 random bits per draw, no modulo bias. Falls back to Math.random() only on very old browsers.
+           Symbol probabilities, payouts and the RTP factor are NOT changed. */
+        function gzSecureRandom() {
+            try {
+                if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+                    const a = new Uint32Array(2);
+                    crypto.getRandomValues(a);
+                    return (a[0] * 2097152 + (a[1] >>> 11)) / 9007199254740992;
+                }
+            } catch (e) {}
+            return Math.random();
+        }
+        function gzSecureInt(n) { return Math.floor(gzSecureRandom() * n); }
         const FK_ITEMS = ['🇧🇩','🇧🇷','🇯🇵','🇮🇷','🇸🇪','🇹🇻','🇵🇰'];
         const FK_SYMBOL_VALUES = {'🇧🇩':1.2,'🇧🇷':2.0,'🇯🇵':1.0,'🇮🇷':0.8,'🇸🇪':0.6,'🇹🇻':1.5,'🇵🇰':0.5};
         let FK_BET_OPTIONS = [1.00, 2.00, 3.00, 5.00, 10.00];
@@ -3955,7 +4156,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 const cell = document.createElement('div');
                 cell.className = 'fk-slot-cell';
                 cell.id = `fk-cell-${i}`;
-                const randomItem = FK_ITEMS[Math.floor(Math.random() * FK_ITEMS.length)];
+                const randomItem = FK_ITEMS[gzSecureInt(FK_ITEMS.length)];
                 cell.innerText = randomItem;
                 fkBoardState[i] = randomItem;
                 fkBoardContainer.appendChild(cell);
@@ -4073,7 +4274,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             const spinInterval = setInterval(() => {
                 playFkSound('spin'); 
                 for (let i = 0; i < 25; i++) {
-                    const randSym = FK_ITEMS[Math.floor(Math.random() * FK_ITEMS.length)];
+                    const randSym = FK_ITEMS[gzSecureInt(FK_ITEMS.length)];
                     fkBoardState[i] = randSym;
                     document.getElementById(`fk-cell-${i}`).innerText = randSym;
                 }
@@ -4190,7 +4391,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                         const emptyCount = 5 - existingSymbolsInCol.length;
                         const newSymbols = [];
                         for (let k = 0; k < emptyCount; k++) {
-                            newSymbols.push(FK_ITEMS[Math.floor(Math.random() * FK_ITEMS.length)]);
+                            newSymbols.push(FK_ITEMS[gzSecureInt(FK_ITEMS.length)]);
                         }
 
                         const fullColSymbols = newSymbols.concat(existingSymbolsInCol);
@@ -4280,6 +4481,8 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         const CG_SCATTER='⭐';
         const CG_SCATTER_DEFAULTS={enabled:true,chancePct:0.7,freeSpins:10,retrigger:5,winMult:3,maxSpins:30,maxWinX:50};
         let cgScatterCfg=Object.assign({},CG_SCATTER_DEFAULTS);
+        /* Color Gems has its OWN RTP factor (admin: config/colorGems/rtpFactor), separate from Boxing King and Flag King. */
+        let cgOwnRtpFactor=1;
         let cgScatterHit=false;
         /* Each of the 25 cells gets a scatter independently with probability p. p is solved so that
            P(3 or more scatters in a round) equals the admin's chance exactly. So 1–2 scatters show up
@@ -4308,7 +4511,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 maxWinX:n(c.scatterMaxWinX,CG_SCATTER_DEFAULTS.maxWinX,1,500)
             };
         }
-        db.ref('config/colorGems').on('value',snap=>{cgScatterCfg=cgReadScatterCfg(snap.val())},err=>console.warn('Color Gems config read failed:',err));
+        db.ref('config/colorGems').on('value',snap=>{const c=snap.val()||{};cgScatterCfg=cgReadScatterCfg(c);const f=Number(c.rtpFactor);cgOwnRtpFactor=(Number.isFinite(f)&&f>0)?f:1;},err=>console.warn('Color Gems config read failed:',err));
         function cgUpdateFreeBadge(){
             const box=document.getElementById('cg-free');if(!box)return;
             box.style.display=cgFree.active?'block':'none';
@@ -4504,7 +4707,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             updateCgMult();
             cgAnimateWin(result.indices);
             const mult=CG_MULTS[Math.min(cascadeNo-1,CG_MULTS.length-1)];
-            const factor=Number(cgConfig.rtpFactor)>0?Number(cgConfig.rtpFactor):1;
+            const factor=cgOwnRtpFactor>0?cgOwnRtpFactor:1;   // Color Gems' own factor, not Boxing King's
             const freeScale=cgFree.active?cgScatterCfg.winMult:1;
             const stepWin=+(activeBet*mult*Math.max(1,result.indices.length/3)*factor*0.5*freeScale*CG_SYMBOL_PAYOUT_SCALE).toFixed(2);
             totalWin=+(totalWin+stepWin).toFixed(2);
