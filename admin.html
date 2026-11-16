@@ -200,6 +200,20 @@ body{background:radial-gradient(circle at 20% -10%,#3a22a8 0,#150f55 38%,#080620
   </section>
 
   <section id="users" class="page">
+    <div class="card" id="regBonusCard">
+      <h2>🎁 Registration Bonus (নতুন সদস্য)</h2>
+      <div class="notice" style="margin-bottom:12px">নতুন কেউ রেজিস্ট্রেশন করলে তার Bonus Box-এ এই টাকা আসবে (claim করলে মেইন ব্যালেন্সে যোগ হবে, bonus turnover নিয়ম প্রযোজ্য)। এখানে টাকার অঙ্ক নিজের হাতে লিখে দিন, আর চাইলে এক ক্লিকে বোনাস বন্ধ করুন। বন্ধ করলে নতুন অ্যাকাউন্ট আর বোনাস পাবে না, আগে দেওয়া বোনাস অপরিবর্তিত থাকবে।</div>
+      <div id="regBonusState" class="notice" style="font-weight:800;margin-bottom:12px"></div>
+      <div class="form">
+        <div class="field"><label>Bonus amount (৳)</label><input id="regBonusAmount" type="number" min="1" max="100000" step="1" placeholder="e.g. 60"></div>
+        <div class="field"><label>Claim করার সময় (ঘণ্টা)</label><input id="regBonusHours" type="number" min="1" max="720" step="1" placeholder="24"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button id="regBonusSaveBtn" class="btn primary" type="button">💾 Save Amount</button>
+        <button id="regBonusToggleBtn" class="btn" type="button">⏸ বোনাস বন্ধ করুন</button>
+        <span id="regBonusMsg" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+    </div>
     <div class="card">
       <h2>Extra Bonus Coins</h2>
       <div class="notice" style="margin-bottom:12px">নির্দিষ্ট user-কে transparent bonus হিসেবে coins যোগ করা যাবে। এটি Boxing King-এর winning probability বা game outcome পরিবর্তন করে না।</div>
@@ -808,6 +822,42 @@ $("saveBonusTurnoverBtn").onclick=async()=>{
   finally{btn.disabled=false;}
 };
 
+// ===== Registration bonus control (config/registrationBonus) =====
+var regBonus={};
+function regBonusValues(){
+  var c=regBonus||{};
+  var amount=Number.isFinite(Number(c.amount))&&c.amount!==undefined&&c.amount!==null?Number(c.amount):60;
+  var hours=Number.isFinite(Number(c.hours))&&Number(c.hours)>0?Number(c.hours):24;
+  return {enabled:c.enabled!==false,amount:amount,hours:hours,saved:!!(regBonus&&Object.keys(regBonus).length)};
+}
+function renderRegBonus(){
+  if(!$("regBonusState"))return;
+  var v=regBonusValues();
+  if(document.activeElement!==$("regBonusAmount")) $("regBonusAmount").value=String(v.amount);
+  if(document.activeElement!==$("regBonusHours")) $("regBonusHours").value=String(v.hours);
+  $("regBonusState").innerHTML=v.enabled?("🟢 চালু — নতুন সদস্য <b>৳"+esc(v.amount)+"</b> পাবে (claim সময়: "+esc(v.hours)+" ঘণ্টা)"+(v.saved?"":" <small style='color:var(--muted)'>(ডিফল্ট, এখনো সেভ করা হয়নি)</small>")):"🔴 বন্ধ — নতুন রেজিস্ট্রেশনে এখন বোনাস দেওয়া হচ্ছে না";
+  $("regBonusToggleBtn").textContent=v.enabled?"⏸ বোনাস বন্ধ করুন":"▶ বোনাস চালু করুন";
+  $("regBonusToggleBtn").className="btn "+(v.enabled?"danger":"primary");
+}
+async function saveRegBonus(enabled,label){
+  var a=Number($("regBonusAmount").value),h=Number($("regBonusHours").value),msg=$("regBonusMsg");
+  if(!Number.isInteger(a)||a<1||a>100000){msg.textContent="১ থেকে ১,০০,০০০-এর মধ্যে পূর্ণ সংখ্যা দিন।";msg.style.color="#ff9aa4";return false;}
+  if(!Number.isInteger(h)||h<1||h>720){msg.textContent="Claim সময় ১ থেকে ৭২০ ঘণ্টার মধ্যে দিন।";msg.style.color="#ff9aa4";return false;}
+  msg.textContent="Saving…";msg.style.color="var(--muted)";
+  try{
+    await db.ref("config/registrationBonus").set({enabled:enabled,amount:a,hours:h,updatedAt:firebase.database.ServerValue.TIMESTAMP});
+    await audit("registration_bonus",label,JSON.stringify({enabled:enabled,amount:a,hours:h}));
+    msg.textContent="✅ Saved";msg.style.color="var(--accent)";toast("Registration bonus: "+label);
+    return true;
+  }catch(e){msg.textContent="❌ Save failed: "+(e.message||e);msg.style.color="#ff9aa4";return false;}
+}
+$("regBonusSaveBtn").onclick=function(){saveRegBonus(regBonusValues().enabled,"amount saved");};
+$("regBonusToggleBtn").onclick=function(){
+  var v=regBonusValues();
+  if(!confirm(v.enabled?"Registration bonus বন্ধ করবেন? নতুন কেউ রেজিস্ট্রেশন করলে আর বোনাস পাবে না।":"Registration bonus চালু করবেন? নতুন সদস্যরা ৳"+v.amount+" পাবে।"))return;
+  saveRegBonus(!v.enabled,v.enabled?"turned OFF":"turned ON");
+};
+
 function renderConfig(){
   $("bonusTurnoverMultiplierInput").value=String(bonusTurnoverMultiplier);
   $("bonusTurnoverCurrent").value=String(bonusTurnoverMultiplier)+"×";
@@ -959,6 +1009,7 @@ function startRequestListeners(){
     deposits=snap.val()||{};
     if(typeof render === "function") render();
   });
+  db.ref("config/registrationBonus").on("value",snap=>{ regBonus=snap.val()||{}; renderRegBonus(); });
   db.ref("wallets").on("value",snap=>{ wallets=snap.val()||{}; if(typeof render==="function") render(); });
   db.ref("walletBlocked").on("value",snap=>{ walletBlocked=snap.val()||{}; });
   db.ref("adminRequests/withdrawals").on("value",snap=>{
