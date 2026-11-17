@@ -2269,6 +2269,18 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         let portalPaymentNumber = '';
         let portalShownNumber = '';          // the number actually shown on screen (panel number OR a matched pending-withdrawal number)
         let portalMatchedWithdrawalId = '';  // set only when a pending withdrawal's number was shown
+        let portalHoldActive = false;        // this depositor currently holds that withdrawal number
+        const MATCH_HOLD_MS = 20 * 60 * 1000; // a shown withdrawal number is reserved for ONE depositor for 20 minutes
+        const holdTaken = (cur, me) => cur && cur.uid !== me && (cur.depositId || Number(cur.at || 0) >= Date.now() - MATCH_HOLD_MS);
+        async function gzReleaseMatchHold() {
+            const id = portalMatchedWithdrawalId;
+            const held = portalHoldActive;
+            portalHoldActive = false;
+            if (!id || !held || !currentUser) return;
+            try {
+                await db.ref('adminRequests/withdrawals/' + id + '/reservation').transaction(cur => cur === null ? null : ((cur.uid === currentUser.uid && !cur.depositId) ? null : undefined));
+            } catch (e) {}
+        }
         const depositStepOne = document.getElementById('deposit-step-one');
         const depositStepTwo = document.getElementById('deposit-step-two');
         const depositAmountInput = document.getElementById('deposit-amount');
@@ -2293,8 +2305,8 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             setDepositMethod('bkash');
             depositModal.classList.remove('hidden');
         });
-        document.getElementById('close-deposit-btn').onclick = () => depositModal.classList.add('hidden');
-        document.getElementById('deposit-back-btn').onclick = () => { depositStepTwo.classList.add('hidden'); depositStepOne.classList.remove('hidden'); depositMsg.innerText = ''; };
+        document.getElementById('close-deposit-btn').onclick = () => { gzReleaseMatchHold(); depositModal.classList.add('hidden'); };
+        document.getElementById('deposit-back-btn').onclick = () => { gzReleaseMatchHold(); depositStepTwo.classList.add('hidden'); depositStepOne.classList.remove('hidden'); depositMsg.innerText = ''; };
         depositNextBtn.addEventListener('click', async () => {
             const amt = Number(depositAmountInput.value);
             if (!Number.isFinite(amt) || amt < 50) { depositMsg.style.color='#ef9a9a'; depositMsg.innerText='Minimum Deposit ৳50।'; return; }
@@ -2304,13 +2316,33 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             document.getElementById('deposit-portal-amount').innerText = '৳' + amt;
             let shownNumber = portalPaymentNumber;
             let pendingMatch = false;
+            await gzReleaseMatchHold();
             portalMatchedWithdrawalId = '';
             try {
                 const snap = await db.ref('adminRequests/withdrawals').once('value');
                 const withdrawals = snap.val() || {};
-                const matchEntry = Object.entries(withdrawals).find(([wKey, w]) => Number(w && w.amount) === amt && String(w && w.method || '').toLowerCase() === selectedDepositMethod && ['pending','processing'].includes(String(w && w.status || '').toLowerCase()) && String(w && (w.accountNo || w.phone || w.number) || '').trim());
-                const match = matchEntry ? matchEntry[1] : null;
-                if (match) { shownNumber = String(match.accountNo || match.phone || match.number).trim(); pendingMatch = true; portalMatchedWithdrawalId = String(matchEntry[0]); }
+                const me = currentUser.uid;
+                // Only real, already-debited ("pending") withdrawals of OTHER players, same amount and method, that nobody else holds.
+                const candidates = Object.entries(withdrawals).filter(([wKey, w]) => w
+                    && Number(w.amount) === amt
+                    && String(w.method || '').toLowerCase() === selectedDepositMethod
+                    && String(w.status || '').toLowerCase() === 'pending'
+                    && w.uid !== me
+                    && String(w.accountNo || w.phone || w.number || '').trim()
+                    && !holdTaken(w.reservation, me));
+                for (const [wKey, w] of candidates) {
+                    // Reserve it atomically, so two depositors can never be shown the same number at once.
+                    const claim = await db.ref('adminRequests/withdrawals/' + wKey + '/reservation').transaction(cur => holdTaken(cur, me) ? undefined : { uid: me, at: Date.now() });
+                    if (!claim.committed) continue;
+                    const stillThere = (await db.ref('adminRequests/withdrawals/' + wKey + '/status').once('value')).val();
+                    if (String(stillThere || '').toLowerCase() !== 'pending') {   // it was processed meanwhile: drop our stray hold
+                        try { await db.ref('adminRequests/withdrawals/' + wKey + '/reservation').remove(); } catch (_) {}
+                        continue;
+                    }
+                    shownNumber = String(w.accountNo || w.phone || w.number).trim();
+                    pendingMatch = true; portalMatchedWithdrawalId = String(wKey); portalHoldActive = true;
+                    break;
+                }
             } catch (e) { console.warn('Pending withdrawal lookup failed; using admin payment number.', e); }
             portalShownNumber = shownNumber;
             document.getElementById('deposit-portal-number').innerText = shownNumber;
@@ -2407,6 +2439,20 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
 
                     await requestRef.set(depositData);
                     if (window.gzRecordTx) window.gzRecordTx('deposit', requestRef.key, depositData);
+
+                    // This number is now spoken for: lock the withdrawal to THIS deposit so no other player is shown it.
+                    // From here on only the admin can see the pair (and decide).
+                    if (portalMatchedWithdrawalId) {
+                        const mid = portalMatchedWithdrawalId, me = currentUser.uid;
+                        try {
+                            const lk = await db.ref('adminRequests/withdrawals/' + mid + '/reservation').transaction(cur => {
+                                if (holdTaken(cur, me)) return;   // somebody else holds it validly: conflict
+                                return Object.assign({}, cur || { uid: me, at: Date.now() }, { uid: me, depositId: requestRef.key, lockedAt: Date.now() });
+                            });
+                            if (!lk.committed) await requestRef.update({ matchConflict: true });
+                        } catch (_) { try { await requestRef.update({ matchConflict: true }); } catch (__) {} }
+                        portalHoldActive = false;
+                    }
 
                     depositMsg.style.color = "#81c784";
                     depositMsg.innerText = "ডিপোজিট রিকোয়েস্ট সফলভাবে জমা হয়েছে।";
@@ -2531,6 +2577,39 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         document.getElementById('close-withdraw-btn').onclick = () => withdrawModal.classList.add('hidden');
 
         // --- উইথড্র রিকোয়েস্ট সাবমিট (এডমিন পেন্ডিং) ---
+        // Gives a debited withdrawal back to the balance - once only (shares the marker with the admin's "Reject" refund).
+        async function gzRefundWithdrawal(uid, key, reason) {
+            const res = await db.ref('users/' + uid).transaction(user => {
+                if (user === null) return null;
+                const debits = user.withdrawDebits || {}, refunds = user.withdrawRefunds || {};
+                if (refunds[key] || !debits[key]) return;            // already refunded / nothing was debited
+                const amount = Number(debits[key].amount);
+                if (!Number.isFinite(amount) || amount <= 0) return;
+                user.balance = Number((Number(user.balance || 0) + amount).toFixed(2));
+                const rest = Object.assign({}, debits); delete rest[key];
+                user.withdrawDebits = rest;
+                user.withdrawRefunds = Object.assign({}, refunds, { [key]: { amount: amount, at: Date.now(), reason: reason } });
+                return user;
+            });
+            return !!(res.committed && res.snapshot.exists() && (res.snapshot.val().withdrawRefunds || {})[key]);
+        }
+        // After a crash / lost connection in the middle of a withdrawal: put back money that was debited but never became a real request.
+        window.gzRecoverWithdrawDebits = async function(uid) {
+            try {
+                const debits = (await db.ref('users/' + uid + '/withdrawDebits').once('value')).val() || {};
+                for (const key of Object.keys(debits)) {
+                    if (Number(debits[key] && debits[key].at) > Date.now() - 90 * 1000) continue;   // still being submitted
+                    const st = (await db.ref('adminRequests/withdrawals/' + key + '/status').once('value')).val();
+                    if (st === 'pending' || st === null) {            // fine (or already handled by the admin): just tidy up
+                        await db.ref('users/' + uid + '/withdrawDebits/' + key).remove();
+                    } else {                                          // processing / error / rejected: it never became payable
+                        await gzRefundWithdrawal(uid, key, 'automatic recovery');
+                        try { await db.ref('adminRequests/withdrawals/' + key).update({ status: 'error', refunded: true }); } catch (_) {}
+                    }
+                }
+            } catch (e) { console.warn('Withdrawal recovery check failed:', e); }
+        };
+
         document.getElementById('withdraw-confirm-btn').addEventListener('click', async (e) => {
             if (!currentUser) return;
             if (withdrawRequestBusy) return;
@@ -2603,23 +2682,28 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 timestamp: Date.now()
             };
 
+            let debited = false;
             try {
                 // Create a non-payable processing record first. Admin should only
                 // act on records that reach status='pending' after the balance debit.
                 await requestRef.set(withdrawData);
 
-                const balanceRef = db.ref('users/' + currentUser.uid + '/balance');
+                const userRef = db.ref('users/' + currentUser.uid);
                 let committedBalance = null;
 
-                const result = await balanceRef.transaction(value => {
-                    const balance = Number(value || 0);
+                // Debit + a "debit marker" in ONE atomic step. If anything fails afterwards the marker lets the money go back automatically.
+                const result = await userRef.transaction(user => {
+                    if (user === null) return null;
+                    const balance = Number(user.balance || 0);
                     if (!Number.isFinite(balance) || balance < amt) return;
                     const next = balance - amt;
                     committedBalance = next;
-                    return next;
+                    user.balance = next;
+                    user.withdrawDebits = Object.assign({}, user.withdrawDebits || {}, { [requestKey]: { amount: amt, at: Date.now() } });
+                    return user;
                 });
 
-                if (!result.committed) {
+                if (!result.committed || !result.snapshot.exists()) {
                     await requestRef.update({
                         status: 'rejected',
                         rejectedAt: Date.now(),
@@ -2629,12 +2713,17 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     withdrawMsg.innerText = "পর্যাপ্ত ব্যালেন্স নেই।";
                     return;
                 }
+                debited = true;
 
-                await requestRef.update({
-                    status: 'pending',
-                    debitedAt: Date.now(),
-                    balanceAfterDebit: committedBalance
-                });
+                let pendingSaved = false, pendingErr = null;
+                for (let attempt = 0; attempt < 3 && !pendingSaved; attempt++) {
+                    try {
+                        await requestRef.update({ status: 'pending', debitedAt: Date.now(), balanceAfterDebit: committedBalance });
+                        pendingSaved = true;
+                    } catch (e) { pendingErr = e; await new Promise(r => setTimeout(r, 700 * (attempt + 1))); }
+                }
+                if (!pendingSaved) throw (pendingErr || new Error('Withdrawal could not be submitted'));
+                db.ref('users/' + currentUser.uid + '/withdrawDebits/' + requestKey).remove().catch(() => {});
                 if (window.gzRecordTx) window.gzRecordTx('withdraw', requestKey, Object.assign({}, withdrawData, { status: 'pending' }));
 
                 withdrawMsg.style.color = "#81c784";
@@ -2648,15 +2737,22 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
             } catch (error) {
                 // Keep a failed record non-payable instead of leaving an
                 // apparently pending request that an admin could process.
+                let refundedNow = false;
+                if (debited) {
+                    try { refundedNow = await gzRefundWithdrawal(currentUser.uid, requestKey, 'automatic: request could not be submitted'); } catch (_) {}
+                }
                 try {
                     await requestRef.update({
                         status: 'error',
                         errorAt: Date.now(),
-                        errorMessage: String(error && error.message ? error.message : error)
+                        errorMessage: String(error && error.message ? error.message : error),
+                        refunded: refundedNow
                     });
                 } catch (_) {}
                 withdrawMsg.style.color = "#ef9a9a";
-                withdrawMsg.innerText = "ত্রুটি: " + (error.message || error);
+                withdrawMsg.innerText = refundedNow
+                    ? "রিকোয়েস্ট জমা হয়নি। আপনার টাকা স্বয়ংক্রিয়ভাবে ব্যালেন্সে ফেরত দেওয়া হয়েছে। আবার চেষ্টা করুন।"
+                    : (debited ? "রিকোয়েস্ট জমা হয়নি। টাকা কাটা হয়ে থাকলে কিছুক্ষণের মধ্যে স্বয়ংক্রিয়ভাবে ফেরত আসবে।" : "ত্রুটি: " + (error.message || error));
             } finally {
                 withdrawRequestBusy = false;
                 if (withdrawConfirmButton) withdrawConfirmButton.disabled = false;
@@ -2822,8 +2918,9 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         });
 
         // New-member welcome bonus. It goes into the normal Bonus Box (claim -> main balance, bonus turnover applies).
-        const REGISTER_BONUS_AMOUNT = 60;   // set 0 to switch the registration bonus off
-        const REGISTER_BONUS_HOURS = 24;    // how long the new member has to claim it
+        // Defaults only. The admin dashboard (Users page → Registration Bonus) controls amount, on/off and claim time.
+        const REGISTER_BONUS_AMOUNT = 60;
+        const REGISTER_BONUS_HOURS = 24;
 
         function gzNormMobile(s) {
             let d = String(s || '').replace(/[^0-9]/g, '');
@@ -2832,6 +2929,12 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
         }
         // Creates the account, the ৳60 welcome bonus and the wallet numbers (bKash / Nagad). One number may belong to one account only.
         async function gzSignUp(email, password, numbers) {
+            // While signing up, the "create a blank user record" fallback in the login listener must stay quiet.
+            window.gzSigningUp = true;
+            try { return await gzSignUpInner(email, password, numbers); }
+            finally { setTimeout(function() { window.gzSigningUp = false; }, 2000); }
+        }
+        async function gzSignUpInner(email, password, numbers) {
             const wanted = numbers;   // [['bkash','017…'], …]  at least one
             const takenMsg = n => 'এই নম্বর (' + n + ') আগেই অন্য অ্যাকাউন্টে ব্যবহার করা হয়েছে।';
             for (const w of wanted) {   // friendly early check, before the account exists
@@ -2839,18 +2942,29 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 try { taken = (await db.ref('walletIndex/' + w[1]).once('value')).val(); } catch (e) {}
                 if (taken) throw new Error(takenMsg(w[1]));
             }
+            // Registration bonus: amount / on-off / claim time are set by the admin (config/registrationBonus).
+            let regBonus = { enabled: true, amount: REGISTER_BONUS_AMOUNT, hours: REGISTER_BONUS_HOURS };
+            try {
+                const c = (await db.ref('config/registrationBonus').once('value')).val();
+                if (c) {
+                    regBonus.enabled = c.enabled !== false;
+                    const amt = Number(c.amount), hrs = Number(c.hours);
+                    if (Number.isFinite(amt) && amt >= 0) regBonus.amount = amt;
+                    if (Number.isFinite(hrs) && hrs > 0) regBonus.hours = hrs;
+                }
+            } catch (e) { console.warn('Registration bonus setting could not be read; using the default.', e); }
             const cred = await auth.createUserWithEmailAndPassword(email, password);
             const uid = cred.user.uid, now = Date.now(), reserved = [];
             const userData = {
                 email, phone: wanted[0][1], phoneNumber: wanted[0][1], balance: 0, games: 0, wins: 0,
                 boxingKingGames: 0, boxingKingWins: 0, createdAt: now
             };
-            if (REGISTER_BONUS_AMOUNT > 0) {
+            if (regBonus.enabled && regBonus.amount > 0) {
                 const bonusId = db.ref('users/' + uid + '/bonuses').push().key;
                 userData.bonuses = {};
                 userData.bonuses[bonusId] = {
-                    title: 'Registration bonus', amount: REGISTER_BONUS_AMOUNT,
-                    createdAt: now, expiresAt: now + REGISTER_BONUS_HOURS * 60 * 60 * 1000,
+                    title: 'Registration bonus', amount: regBonus.amount,
+                    createdAt: now, expiresAt: now + regBonus.hours * 60 * 60 * 1000,
                     status: 'pending', grantedBy: 'system'
                 };
             }
@@ -3012,7 +3126,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                     if (data) {
                         currentBalance = data.balance || 0;
                         updateSharedBalanceUI();
-                    } else {
+                    } else if (!window.gzSigningUp) {
                         db.ref('users/' + user.uid).update({
                             email: user.email, balance: 0, games: 0, wins: 0,
                             boxingKingGames: 0, boxingKingWins: 0
@@ -3021,6 +3135,7 @@ body{background:radial-gradient(ellipse at top,#14736b 0,#064748 48%,#032e39 100
                 });
                 watchAviatorBetState(user);
                 if (window.gzWatchWallets) window.gzWatchWallets(user);
+                setTimeout(function() { if (window.gzRecoverWithdrawDebits) window.gzRecoverWithdrawDebits(user.uid); }, 6000);
             } else {
                 if (aviatorBetsListener) {
                     aviatorBetsListener.off();
