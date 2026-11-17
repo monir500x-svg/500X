@@ -583,6 +583,17 @@ window.adminToggleWalletBlock=async function(uid){
   }catch(e){toast("Failed: "+(e.message||e))}
 };
 window.viewUser=uid=>{const u=users[uid]||{},t=u.bonusTurnover||{},req=Math.max(0,Number(t.required||0)),done=Math.min(req,Math.max(0,Number(t.completed||0))),left=Math.max(0,req-done),phone=String(u.phone||u.phoneNumber||walletPhone(uid)).trim(),phoneHtml=phone?`<a href="tel:${esc(phone)}" style="color:#67a8ff;font-weight:900">📞 ${esc(phone)} — কল করুন</a>`:'Not provided';$("userDetails").innerHTML=`<div class="notice"><b>${esc(u.email||"—")}</b><br>UID: ${esc(uid)}<br>Phone: ${phoneHtml}<br>${walletPanel(uid)}Balance: ${money(u.balance)}<br>Aviator: ${u.wins||0} wins / ${u.games||0} games<br>Boxing King: ${u.boxingKingWins||0} wins / ${u.boxingKingGames||0} games<br><hr style="border-color:var(--line)"><b>Bonus Turnover</b><br>Status: ${req?(left<=0?'Complete':'Pending'):'No active turnover'}<br>Required: ${money(req)}<br>Completed: ${money(done)}<br>Remaining: ${money(left)}<br>Multiplier at claim: ${t.multiplier?esc(t.multiplier)+'×':'—'}</div>`;$("userModal").classList.remove("hidden")};
+function wdMatchInfo(r){
+  // Which deposit (if any) was matched to this withdrawal. Players never see this - only the admin.
+  var res=r.reservation; if(!res) return "";
+  if(res.depositId){
+    var d=deposits[res.depositId];
+    var line=d?(esc(d.trxId||"—")+" • "+money(d.amount)+" • "+esc(d.email||"")):("deposit "+esc(res.depositId)+" (প্রসেস হয়েছে)");
+    var st=d?String(d.status||"pending"):"";
+    return '<div class="dep-num" style="white-space:normal">🔗 Deposit ম্যাচ: '+line+(st?' <span class="badge '+(st==="approved"?"ok":st==="rejected"?"bad":"warn")+'">'+esc(st)+'</span>':'')+(res.funded?' <span class="badge ok">funded</span>':'')+'</div>';
+  }
+  return '<div class="dep-num" style="white-space:normal">⏳ হোল্ড: একজন ডিপোজিটর এই নম্বর দেখছে</div>';
+}
 function depTrxCell(r){
   // TrxID + the number the system SHOWED the player to pay (saved with the request).
   var html="<b>"+esc(r.trxId||"—")+"</b>";
@@ -598,11 +609,11 @@ function depTrxCell(r){
     cur=String(cur||"").trim();
     tag=(cur&&cur!==num)?"<span class=\"badge bad\">পুরোনো প্যানেল নম্বর</span>":"<span class=\"badge\">প্যানেলের নম্বর</span>";
   }
-  return html+"<div class=\"dep-num\">💳 "+shown+" "+tag+"</div>";
+  return html+"<div class=\"dep-num\">💳 "+shown+" "+tag+"</div>"+(r.matchConflict?"<div class=\"dep-num\" style=\"white-space:normal\"><span class=\"badge bad\">⚠️ ম্যাচ সংঘর্ষ — নম্বরটি আরেকজনের কাছেও ছিল</span></div>":"");
 }
 function renderRequests(){
  const dep=Object.entries(deposits).reverse();$("depositsBody").innerHTML=dep.map(([id,r])=>`<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${depTrxCell(r)}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('deposits','${esc(id)}','rejected')">Reject</button>`}</td></tr>`).join("")||`<tr><td colspan="6">No deposit requests.</td></tr>`;
- const wd=Object.entries(withdrawals).reverse();$("withdrawalsBody").innerHTML=wd.map(([id,r])=>`<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.accountNo||"—")}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span></td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','rejected')">Reject</button>`}</td></tr>`).join("")||`<tr><td colspan="6">No withdrawal requests.</td></tr>`;
+ const wd=Object.entries(withdrawals).filter(([id,r])=>r&&r.amount!==undefined&&r.amount!==null).reverse();$("withdrawalsBody").innerHTML=wd.map(([id,r])=>`<tr><td>${esc(r.email||r.uid||"—")}</td><td>${money(r.amount)}</td><td>${esc(r.method)}</td><td>${esc(r.accountNo||"—")}</td><td><span class="badge ${r.status==="approved"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status||"pending")}</span>${wdMatchInfo(r)}</td><td>${(r.status && r.status!=="pending")?"—":`<button class="btn primary" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','approved')">Approve</button> <button class="btn danger" data-request-id="${esc(id)}" onclick="requestAction('withdrawals','${esc(id)}','rejected')">Reject</button>`}</td></tr>`).join("")||`<tr><td colspan="6">No withdrawal requests.</td></tr>`;
 }
 window.requestAction=async(type,id,status)=>{
   if(status!=="approved" && status!=="rejected"){toast("Invalid request action");return}
@@ -745,6 +756,19 @@ window.requestAction=async(type,id,status)=>{
       }else{
         throw new Error("Refund was not committed. Request left in queue.");
       }
+    }
+
+    // Matched deposit (the depositor was shown a withdrawer's number): keep that withdrawal's hold in step with the decision.
+    if(type==="deposits" && processed.matchedWithdrawalId){
+      try{
+        const resRef=db.ref(`adminRequests/withdrawals/${processed.matchedWithdrawalId}/reservation`);
+        if(status==="rejected"){
+          // fake / wrong TrxID: free the withdrawal so another depositor can be matched to it
+          await resRef.transaction(cur=>cur===null?null:(cur.depositId===id?null:undefined));
+        }else if(status==="approved"){
+          await resRef.transaction(cur=>cur===null?null:Object.assign({},cur,{funded:true,fundedAt:Date.now()}));
+        }
+      }catch(matchError){ console.warn("Match hold update failed:",matchError); }
     }
 
     // IMPORTANT: remove the actual request node directly.
