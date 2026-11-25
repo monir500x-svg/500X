@@ -500,6 +500,7 @@ $("giveAllBonusBtn").onclick=async()=>{
   const entries=Object.keys(users);
   if(!entries.length){toast("No users found");return}
   if(!confirm(`Give ${n} bonus coins to all ${entries.length} users?`))return;
+  if(String(prompt("সবাইকে বোনাস দিতে বড় অক্ষরে ALL লিখুন")||"").trim().toUpperCase()!=="ALL"){toast("বাতিল করা হয়েছে — কাউকে বোনাস দেওয়া হয়নি");return}
   const now=Date.now(), updates={};
   entries.forEach(uid=>{
     const bonusId=db.ref("users/"+uid+"/bonuses").push().key;
@@ -658,12 +659,20 @@ window.requestAction=async(type,id,status)=>{
         if(!Number.isFinite(serverOffset)) serverOffset=0;
       }catch(_){ serverOffset=0; }
       const approvedAt=Date.now()+serverOffset;
+      const DEPOSIT_TURNOVER_MULTIPLIER=1; // 1x: turnover = deposit amount
       const balanceResult=await db.ref(`users/${uid}`).transaction(u=>{
         const user=Object.assign({},u||{});
         const currentBalance=Number(user.balance||0);
         if(!Number.isFinite(currentBalance)){ return; }
         user.balance=currentBalance+amount;
         user.lastDepositAt=approvedAt;
+        // Deposit turnover: deposit amount x DEPOSIT_TURNOVER_MULTIPLIER must be wagered before withdrawal.
+        const dt=user.bonusTurnover||{};
+        const reqOld=Math.max(0,Number(dt.required||0));
+        const doneOld=Math.min(reqOld,Math.max(0,Number(dt.completed||0)));
+        const addReq=Number((amount*DEPOSIT_TURNOVER_MULTIPLIER).toFixed(2));
+        const reqNew=Number((reqOld+addReq).toFixed(2));
+        user.bonusTurnover=Object.assign({},dt,{required:reqNew,completed:doneOld,remaining:Number(Math.max(0,reqNew-doneOld).toFixed(2)),status:"pending",depositTurnoverTotal:Number((Number(dt.depositTurnoverTotal||0)+addReq).toFixed(2)),lastDepositTurnoverAt:approvedAt,updatedAt:approvedAt});
         return user;
       });
       if(!balanceResult.committed){
